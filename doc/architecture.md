@@ -1,0 +1,127 @@
+# ScholArk Target MVP Architecture
+
+## Purpose
+
+This diagram defines the proposed target-MVP boundary. ScholArk Administration is expected to continue creating and managing administrative data in the existing Visual Basic application and MSSQL database, subject to validation during discovery. The target MVP adds a modern integration and portal layer for Student and Instructor workflows without replacing the administration application. Milestone 2 will select the subset required for the initial minimum usable pilot.
+
+## Context Diagram
+
+```mermaid
+flowchart TB
+    subgraph Users["Users"]
+        Student["Student"]
+        Instructor["Instructor"]
+    end
+
+    subgraph MVP["ScholArk Target MVP"]
+        StudentPortal["Student Portal"]
+        InstructorPortal["Instructor Portal"]
+        PortalAPI["ScholArk Portal Services / API"]
+        PortalData[("PostgreSQL Portal Store<br/>Option B")]
+        Identity["Identity and Access"]
+        Acquisition["Acquisition and Licensing"]
+        Progress["Progress and Grading"]
+        Config["Game Configuration"]
+
+        StudentPortal --> PortalAPI
+        InstructorPortal --> PortalAPI
+        PortalAPI --> Identity
+        PortalAPI --> Acquisition
+        PortalAPI --> Progress
+        PortalAPI --> Config
+    end
+
+    subgraph Existing["Existing ScholArk Administration"]
+        AdminUsers["ScholArk Administrators"]
+        VBApp["Visual Basic Administration App"]
+        MSSQL[("MSSQL Database")]
+        AdminUsers --> VBApp --> MSSQL
+    end
+
+    subgraph LegacyIntegration["Legacy Integration"]
+        Boundary["Documented Integration Boundary<br/>API, views, or stored procedures"]
+    end
+
+    subgraph Games["Game Integration"]
+        GameAdapter["Validated Game Integration Contract"]
+        WebGame["Representative Triseum Web Game"]
+        GameAdapter <--> WebGame
+    end
+
+    subgraph External["External Services"]
+        Support["Existing Support Channel"]
+        GradeExport["LMS Grade Export<br/>Format and mapping TBD"]
+        Stripe["Stripe"]
+        InstitutionCode["Institution Acquisition Codes<br/>Generation and ownership TBD"]
+    end
+
+    Student --> StudentPortal
+    Instructor --> InstructorPortal
+    PortalAPI <-. "Option A: controlled access" .-> Boundary
+    PortalAPI <-. "Option B: portal data" .-> PortalData
+    PortalData <-. "Option B: sync and reconcile" .-> Boundary
+    Boundary <--> MSSQL
+    PortalAPI <--> GameAdapter
+    PortalAPI --> Support
+    Progress --> GradeExport
+    Acquisition <--> Stripe
+    Acquisition <--> InstitutionCode
+```
+
+## Target MVP Responsibilities
+
+- Provide Student and Instructor portal experiences.
+- Authenticate and authorize portal users within their assigned context.
+- Consume approved administrative data through a documented integration boundary.
+- Manage or expose portal acquisition, launch, progress, grading, and configuration workflows according to the source-of-truth matrix established during discovery.
+- Implement game-data mapping to ScholArk's generic record model and validate it with one representative Triseum-produced web game.
+- Allow an authorized Instructor to initiate and download a classroom-scoped grade file in each LMS-oriented export format included in the finite target-MVP list baselined during discovery; later additions require explicit scope and forecast revision.
+- Activate and renew fixed-term licenses and their approved Game Version entitlements through Student Stripe payments or institution acquisition-code redemption, enforce expiry for game access, and retain historical acquisition, license, game-play, and game-state records.
+
+## Initial Pilot Boundary
+
+- Deliver a working frontend/backend deployment for the Student and Instructor workflows baselined during Milestone 2.
+- Validate role-based access, the legacy integration boundary, and one representative Triseum game integration or an agreed substitute.
+- Treat target-MVP components outside the baselined pilot set as later roadmap work rather than automatic 2-3 month commitments.
+
+## Expected Existing Application Responsibilities
+
+- Create and manage institutions, publishers, instructors, courses, classrooms, and game listings.
+- Maintain classroom, instructor, game-assignment, payment-mode, language, usage, and available configuration data required by the portals.
+- Be expected to remain operational throughout MVP pilot and production rollout, subject to validation during discovery.
+
+## Future Architecture
+
+Future phases may add Administration, Support, Institution, and Game Publisher portals behind the same portal API and integration boundaries. Replacement or modernization of the existing Visual Basic application requires a separately approved scope and transition plan.
+
+## Proposed Technology Direction
+
+- Next.js and React with TypeScript for the Student and Instructor portals.
+- NestJS on Node.js for the proposed Portal Services/API.
+- PostgreSQL for portal-owned data if Milestone 2 selects the synchronized portal-store option; otherwise, portal services use the approved controlled MSSQL integration boundary.
+- A Turborepo monorepo managed with pnpm as the suggested code-organization option for applications, backend services, and shared packages, subject to Milestone 2 validation.
+- Git for version control, following the client's repository hosting, branching, review, and release conventions.
+
+Milestone 2 must validate this direction against the existing implementation, infrastructure, operational model, security constraints, and database-integration decision before it becomes the implementation baseline.
+
+## Decisions for Milestone 2
+
+- Compare controlled direct access to the existing MSSQL data with a PostgreSQL portal database synchronized from MSSQL, and document the selected approach, rejected alternative, tradeoffs, and transition path. Use a limited hybrid only when justified by distinct data-domain needs.
+- Establish stable identifiers, data ownership, write permissions, consistency and latency expectations, conflict handling, synchronization, reconciliation, monitoring, and recovery.
+- Complete a source-of-truth matrix that identifies ownership and authority for overlapping legacy, portal, and game data.
+- Produce the concrete domain model after validating the initial model against the existing MSSQL schema, workflows, integration contracts, and selected persistence architecture.
+- Define the minimum usable pilot acceptance set and its deployment environment.
+- If PostgreSQL synchronization is selected, define direction, triggering or frequency, initial backfill, change detection, idempotency, deletion handling, conflict policy, reconciliation, monitoring, retry and recovery, and acceptable staleness.
+- Define the Store catalog/discovery boundary and the Stripe checkout, webhook, idempotency, failure-handling, and fixed-term license activation flow.
+- Define license duration, activation, expiry, renewal, grace-period, status, and historical-retention rules, including in-progress session behavior at expiry.
+- Define Game Version identity and release lifecycle; whether licenses apply to the Game or specific versions; classroom version selection and upgrade rights; and launch behavior for permitted versions.
+- Define institution acquisition-code generation, ownership, validation, license activation, and renewal behavior.
+- Decide whether and how an existing not-for-credit Student Game and license can be associated with a classroom for credit, including license-term and duplicate-payment rules.
+- Define how game-play and game-state records relate to a Student Game, and whether records created before a later classroom association are visible to the Instructor or eligible for classroom progress and grading.
+- Select the LMS grade-export format(s) and define classroom/student mapping, Instructor authorization, and generation/download behavior.
+- Validate the game event, game-state, configuration, and generic-record model against a representative Triseum game; select the maintainable mapping mechanism and any required onboarding/authoring tooling; and assign ownership of required game-side changes.
+- Define version compatibility for game state, game-play structure, record mappings, progress, and grading, including migration, fallback, reset, and mixed-version history rules.
+- Document versioned JSON schemas, transport, validation, retry, and error-handling contracts for game data.
+- Establish expected users, institutions, games, event volumes, retention, and concurrency, then define measurable performance targets.
+- Validate portal ownership of Student and Instructor identities and linkage to legacy Instructor records.
+- Define active-game rules, grading depth, game-state ownership, and support-request routing.
