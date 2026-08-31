@@ -26,10 +26,6 @@ export class ConfigModule {
 			isGlobal: true,
 			load: configDefinitionList.map(({ config }) => config),
 			validate: options.validate,
-			validationOptions: {
-				abortEarly: false,
-				allowUnknown: true,
-			},
 			validationSchema: buildValidationSchema(configDefinitionList),
 		});
 
