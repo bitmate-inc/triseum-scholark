@@ -3,18 +3,32 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "clean:dist": "rm -rf dist apps/*/dist packages/*/dist",
+    "clean:node_modules": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "clean:out": "rm -rf out apps/*/out packages/*/out",
+    "clean:turbo": "rm -rf .turbo apps/*/.turbo packages/*/.turbo",
+    "clean:all": "run-s clean:node_modules clean:dist clean:out clean:turbo",
+    "docker:remove": "docker compose -f .docker/docker-compose.yml down --remove-orphans -v",
+    "docker:start": "docker compose -f .docker/docker-compose.yml up -d",
+    "docker:start:clean": "run-s docker:remove docker:start",
+    "docker:stop": "docker compose -f .docker/docker-compose.yml down",
+    "format": "turbo run format",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "lint:fix": "turbo run lint:fix",
+    "check-types": "turbo run check-types",
+    "syncpack": "syncpack",
+    "turbo": "turbo"
   },
   "devDependencies": {
-    "prettier": "3.9.6",
+    "syncpack": "14.3.0",
     "turbo": "^2.10.11",
-    "typescript": "7.0.2"
+    "typescript": "5.9.3"
   },
   "packageManager": "pnpm@11.23.0",
   "engines": {
     "node": ">=24"
+  },
+  "dependencies": {
+    "npm-run-all": "^4.1.5"
   }
 }

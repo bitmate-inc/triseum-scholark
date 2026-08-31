@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "nova",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "css": "../../apps/skolark-portal-web/asset/style/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@repo/ui",
+    "utils": "@repo/ui/utils",
+    "ui": "@repo/ui",
+    "lib": "@repo/ui",
+    "hooks": "@repo/ui"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "sortFirst": [
+    "name",
+    "version",
+    "description",
+    "license",
+    "private",
+    "author",
+    "engines",
+    "exports",
+    "files",
+    "main",
+    "module",
+    "type",
+    "types",
+    "typesVersions",
+    "workspaces",
+    "scripts"
+  ],
+  "semverGroups": [
+    {
+      "label": "keep application toolchains independent",
+      "packages": [
+        "**"
+      ],
+      "dependencies": [
+        "@types/node",
+        "tailwindcss",
+        "typescript"
+      ],
+      "isIgnored": true
+    },
+    {
+      "label": "use workspace protocol for local packages",
+      "packages": [
+        "**"
+      ],
+      "dependencyTypes": [
+        "dev",
+        "prod"
+      ],
+      "dependencies": [
+        "@repo/eslint-config",
+        "@repo/typescript-config",
+        "@repo/ui"
+      ],
+      "range": "workspace:*"
+    }
+  ],
+  "versionGroups": [
+    {
+      "label": "keep application toolchains independent",
+      "packages": [
+        "**"
+      ],
+      "dependencies": [
+        "@types/node",
+        "tailwindcss",
+        "typescript"
+      ],
+      "isIgnored": true
+    },
+    {
+      "label": "local packages should use the workspace version",
+      "packages": [
+        "**"
+      ],
+      "dependencies": [
+        "@repo/eslint-config",
+        "@repo/typescript-config",
+        "@repo/ui"
+      ],
+      "pinVersion": "workspace:*"
+    }
+  ]
+}

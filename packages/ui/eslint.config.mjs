@@ -1,4 +1,18 @@
-import { config } from "@repo/eslint-config/react-internal";
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-/** @type {import("eslint").Linter.Config} */
-export default config;
+import config from '@repo/eslint-config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default [
+	...config,
+	{
+		languageOptions: {
+			parserOptions: {
+				tsconfigRootDir: __dirname,
+			},
+		},
+	},
+];

@@ -1,0 +1,109 @@
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    container_name: skolark-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      PGDATA: /var/lib/postgresql/18/docker
+    volumes:
+      - ./pg-init-scripts:/docker-entrypoint-initdb.d
+      - postgres:/var/lib/postgresql
+    env_file:
+      - ./postgres.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:5.4.1
+    container_name: skolark-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_PLUGINS=dark-switcher
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: skolark-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: skolark-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio:/data
+    environment:
+      - MINIO_ROOT_USER=accessKey
+      - MINIO_ROOT_PASSWORD=secretKey
+      - MINIO_REGION=eu-central-1
+      - MINIO_CONSOLE_ADDRESS=:9001
+    command: server /data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mc:
+    image: minio/mc:latest
+    container_name: skolark-mc
+    volumes:
+      - ./data/minio:/opt/minio/data
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set doc http://minio:9000 accessKey secretKey;
+      /usr/bin/mc mb --ignore-existing doc/asset;
+      /usr/bin/mc anonymous set public doc/asset;
+      exit 0;
+      "
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    container_name: skolark-imgproxy
+    restart: unless-stopped
+    ports:
+      - "7000:7000"
+    environment:
+      - IMGPROXY_BIND=:7000
+      - IMGPROXY_USE_S3=true
+      - IMGPROXY_S3_ENDPOINT=http://minio:9000
+      - IMGPROXY_KEY=imgproxykey
+      - IMGPROXY_SALT=imgproxysalt
+      - IMGPROXY_SIGNATURE_SIZE=32
+      - IMGPROXY_LOG_LEVEL=debug
+      - IMGPROXY_MAX_SRC_FILE_SIZE=0
+      - IMGPROXY_MAX_SRC_RESOLUTION=64
+      - AWS_ACCESS_KEY_ID=accessKey
+      - AWS_SECRET_ACCESS_KEY=secretKey
+      - AWS_REGION=eu-central-1
+    links:
+      - minio
+
+volumes:
+  postgres:
+    name: skolark-postgres
+    driver: local
+  minio:
+    name: skolark-minio
+    driver: local
+
+networks:
+  default:
+    name: skolark-network

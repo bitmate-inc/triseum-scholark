@@ -1,159 +1,133 @@
-# Turborepo starter
+# Skolark
 
-This Turborepo starter is maintained by the Turborepo core team.
+Skolark is a TypeScript monorepo containing the Skolark portal, backend services, and shared packages.
 
-## Using this example
+## Applications and packages
 
-Run the following command:
+### Applications
 
-```sh
-npx create-turbo@latest
-```
+- `skolark-portal-web` — Next.js portal application
+- `skolark-portal-api` — NestJS portal services API
 
-## What's inside?
+### Shared packages
 
-This Turborepo includes the following packages/apps:
+- `@repo/ui` — shared React component library
+- `@repo/eslint-config` — shared ESLint configuration
+- `@repo/typescript-config` — shared TypeScript configuration
 
-### Apps and Packages
+## Technology stack
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- [Next.js](https://nextjs.org/)
+- [NestJS](https://nestjs.com/)
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Turborepo](https://turborepo.com/)
+- [pnpm](https://pnpm.io/)
+- [ESLint](https://eslint.org/)
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Prerequisites
 
-### Utilities
+Install the following tools before working with the project:
 
-This Turborepo has some additional tools already setup for you:
+- [Node.js](https://nodejs.org/)
+- [pnpm](https://pnpm.io/installation)
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## Getting started
 
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Clone the repository and install its dependencies:
 
 ```sh
-cd my-turborepo
-turbo build
+git clone <repository-url>
+cd skolark
+pnpm install
 ```
 
-Without global `turbo`, use your package manager:
+## Development
+
+Start all applications and packages in development mode:
 
 ```sh
-cd my-turborepo
-npx turbo build
-pnpm exec turbo build
-pnpm exec turbo build
+pnpm dev
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Start only the portal web application:
 
 ```sh
-turbo build --filter=docs
+pnpm dev --filter=skolark-portal-web
 ```
 
-Without global `turbo`:
+Start only the portal API:
 
 ```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+pnpm dev --filter=skolark-portal-api
 ```
 
-### Develop
+## Build
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Build the entire monorepo:
 
 ```sh
-cd my-turborepo
-turbo dev
+pnpm build
 ```
 
-Without global `turbo`, use your package manager:
+Build a specific application:
 
 ```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
+pnpm build --filter=skolark-portal-web
+pnpm build --filter=skolark-portal-api
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Linting
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Lint all applications and packages:
 
 ```sh
-turbo dev --filter=web
+pnpm lint
 ```
 
-Without global `turbo`:
+Lint a specific application:
 
 ```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+pnpm lint --filter=skolark-portal-web
+pnpm lint --filter=skolark-portal-api
 ```
 
-### Remote Caching
+## Type checking
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Run TypeScript checks across the monorepo:
 
 ```sh
-cd my-turborepo
-turbo login
+pnpm check-types
 ```
 
-Without global `turbo`, use your package manager:
+## Project structure
+
+```text
+skolark/
+├── apps/
+│   ├── skolark-portal-web/    # Next.js portal
+│   └── skolark-portal-api/    # NestJS API
+├── packages/
+│   ├── ui/                    # Shared React components
+│   ├── eslint-config/         # Shared ESLint configuration
+│   └── typescript-config/     # Shared TypeScript configuration
+├── package.json
+├── pnpm-workspace.yaml
+└── turbo.json
+```
+
+## Running filtered tasks
+
+Turborepo filters can be used to run any supported task for one application or package:
 
 ```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
+pnpm exec turbo <task> --filter=<package-name>
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+For example:
 
 ```sh
-turbo link
+pnpm exec turbo build --filter=skolark-portal-web
 ```
 
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Refer to the [Turborepo filtering documentation](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters) for additional filtering options.
