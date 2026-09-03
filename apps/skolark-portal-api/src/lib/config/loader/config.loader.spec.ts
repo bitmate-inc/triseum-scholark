@@ -31,9 +31,15 @@ describe('config loader', () => {
 		);
 		const validationSchema = buildValidationSchema(definitionList);
 
-		expect(definitionList).toHaveLength(5);
+		expect(definitionList).toHaveLength(8);
 		expect(
 			validationSchema?.validate({
+				AUTH_CONFIRM_EMAIL_FROM: 'noreply@skolark.com',
+				AUTH_CONFIRM_EMAIL_SUBJECT: 'Confirm your email',
+				AUTH_CONFIRM_EMAIL_URL: 'http://localhost:3000/auth/confirm-email?token=:token',
+				AUTH_RESET_PASSWORD_EMAIL_FROM: 'noreply@skolark.com',
+				AUTH_RESET_PASSWORD_EMAIL_SUBJECT: 'Reset your password',
+				AUTH_UPDATE_PASSWORD_URL: 'http://localhost:3000/auth/reset-password?token=:token',
 				DEBUG_PREFIX: 'app',
 				MIKRO_ORM_DATABASE_URL: 'postgresql://localhost:5432/skolark',
 			}).error,

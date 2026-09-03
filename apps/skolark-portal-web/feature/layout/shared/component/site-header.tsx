@@ -1,12 +1,9 @@
 import { buttonVariants } from "@repo/ui/button";
-import {
-	BookOpen,
-	Search,
-	UserRound
-} from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
 import Link from "next/link";
 
 import styles from "../../../../asset/style/site.module.css";
+import { AccountControl } from "../../../auth/client/component/account-control";
 
 export function SiteHeader() {
 	return (
@@ -37,13 +34,7 @@ export function SiteHeader() {
 				>
 					<BookOpen/>
 				</button>
-				<button
-					className={buttonVariants({ variant: "outline", size: "sm" })}
-					type="button"
-				>
-					<UserRound data-icon="inline-start"/>
-					Sign in
-				</button>
+				<AccountControl/>
 			</div>
 		</header>
 	);

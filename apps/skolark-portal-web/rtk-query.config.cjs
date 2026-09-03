@@ -8,4 +8,4 @@ const config = {
 	hooks: true,
 };
 
-export default config;
+module.exports = config;

@@ -4,6 +4,32 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
-  }
+    "^.+\\.ts$": [
+      "@swc/jest",
+      {
+        "jsc": {
+          "parser": {
+            "decorators": true,
+            "syntax": "typescript"
+          },
+          "transform": {
+            "decoratorMetadata": true,
+            "legacyDecorator": true
+          }
+        },
+        "module": {
+          "type": "commonjs"
+        }
+      }
+    ],
+    "^.+\\.js$": [
+      "@swc/jest",
+      {
+        "module": {
+          "type": "commonjs"
+        }
+      }
+    ]
+  },
+  "transformIgnorePatterns": []
 }

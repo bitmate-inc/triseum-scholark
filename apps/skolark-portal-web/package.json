@@ -7,7 +7,7 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
-    "generate:api": "rtk-query-codegen-openapi rtk-query.config.mjs && eslint --fix feature/api/client/api/generated-api.ts",
+    "generate:api": "rtk-query-codegen-openapi rtk-query.config.cjs && eslint --fix feature/api/client/api/generated-api.ts",
     "format": "pnpm run lint:fix",
     "lint": "eslint --max-warnings 0",
     "lint:fix": "pnpm run lint --fix",

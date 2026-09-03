@@ -1,0 +1,60 @@
+.accountPage {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.8fr) minmax(360px, 1.2fr);
+  min-height: calc(100vh - 72px);
+  border-bottom: 1px solid var(--border);
+}
+
+.accountIntro {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(54px, 8vw, 112px) clamp(24px, 6vw, 88px);
+  color: #fffdf7;
+  background:
+    linear-gradient(rgba(18, 24, 20, 0.18), rgba(18, 24, 20, 0.88)),
+    url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1600&q=85") center / cover;
+}
+
+.accountIntro > p:first-child {
+  color: #f3ca52;
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.accountIntro h1 {
+  max-width: 600px;
+  margin: 14px 0 22px;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 6vw, 76px);
+  font-weight: 400;
+  line-height: 0.98;
+}
+
+.accountIntro > p:last-child {
+  max-width: 520px;
+  color: #dde4dc;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.accountPanel {
+  display: grid;
+  place-items: center;
+  padding: clamp(36px, 7vw, 96px) clamp(20px, 7vw, 108px);
+}
+
+.formCard { width: min(100%, 500px); }
+.formTitle { font-family: var(--font-display); font-size: 31px; font-weight: 400; }
+.formFooter { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; width: 100%; }
+.formFooter a, .textLink { border-bottom: 1px solid currentColor; font-size: 14px; font-weight: 700; }
+.buttonRow { display: flex; flex-wrap: wrap; gap: 12px; }
+.profileMeta { font-family: var(--font-geist-mono); font-size: 12px; color: var(--muted-foreground); }
+
+@media (max-width: 760px) {
+  .accountPage { grid-template-columns: 1fr; min-height: auto; }
+  .accountIntro { min-height: 330px; padding: 56px 24px 42px; }
+  .accountPanel { padding: 48px 20px 70px; }
+}

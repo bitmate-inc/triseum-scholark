@@ -5,10 +5,13 @@ import { Game } from '../app/core/feature/game/model/game.entity';
 import { GameTaxonomyTerm } from '../app/core/feature/game/model/game.taxonomy.term.entity';
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 import { gameSeedList } from './catalog.data';
+import { UserSeeder } from './user.seeder';
 
 export class DatabaseSeeder extends Seeder {
 
 	async run(em: EntityManager): Promise<void> {
+		await this.call(em, [UserSeeder]);
+
 		await em.transactional(async (transactionalEm) => {
 			const taxonomyTermMap = new Map<string, TaxonomyTerm>();
 			const gameMap = new Map<string, Game>();

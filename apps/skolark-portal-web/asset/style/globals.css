@@ -16,6 +16,7 @@
   --border: #cbc4b5;
   --input: #b9b2a4;
   --ring: #167a75;
+	--destructive: #a52a2a;
   --font-display: Georgia, "Times New Roman", serif;
 }
 
@@ -34,6 +35,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+	--color-destructive: var(--destructive);
 }
 
 * { box-sizing: border-box; }
