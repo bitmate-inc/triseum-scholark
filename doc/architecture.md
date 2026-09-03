@@ -17,7 +17,7 @@ flowchart TB
         StudentPortal["Student Portal"]
         InstructorPortal["Instructor Portal"]
         PortalAPI["ScholArk Portal Services / API"]
-        PortalData[("PostgreSQL Portal Store<br/>Option B")]
+        PortalData[("PostgreSQL Portal Store<br/>Only if justified")]
         Identity["Identity and Access"]
         Acquisition["Acquisition and Licensing"]
         Progress["Progress and Grading"]
@@ -57,9 +57,9 @@ flowchart TB
 
     Student --> StudentPortal
     Instructor --> InstructorPortal
-    PortalAPI <-. "Option A: controlled access" .-> Boundary
-    PortalAPI <-. "Option B: portal data" .-> PortalData
-    PortalData <-. "Option B: sync and reconcile" .-> Boundary
+    PortalAPI <-. "Preferred: controlled MSSQL model" .-> Boundary
+    PortalAPI <-. "Alternative: portal data" .-> PortalData
+    PortalData <-. "If justified: sync and reconcile" .-> Boundary
     Boundary <--> MSSQL
     PortalAPI <--> GameAdapter
     PortalAPI --> Support
@@ -98,7 +98,7 @@ Future phases may add Administration, Support, Institution, and Game Publisher p
 
 - Next.js and React with TypeScript for the Student and Instructor portals.
 - NestJS on Node.js for the proposed Portal Services/API.
-- PostgreSQL for portal-owned data if Milestone 2 selects the synchronized portal-store option; otherwise, portal services use the approved controlled MSSQL integration boundary.
+- MSSQL as the preferred single database, using platform-specific schemas/tables and stable views, stored procedures, or an API rather than assuming direct reuse of legacy tables. PostgreSQL remains an option only if discovery justifies synchronization.
 - A Turborepo monorepo managed with pnpm as the suggested code-organization option for applications, backend services, and shared packages, subject to Milestone 2 validation.
 - Git for version control, following the client's repository hosting, branching, review, and release conventions.
 
@@ -106,7 +106,7 @@ Milestone 2 must validate this direction against the existing implementation, in
 
 ## Decisions for Milestone 2
 
-- Compare controlled direct access to the existing MSSQL data with a PostgreSQL portal database synchronized from MSSQL, and document the selected approach, rejected alternative, tradeoffs, and transition path. Use a limited hybrid only when justified by distinct data-domain needs.
+- Validate the preferred single-MSSQL architecture against the existing code, schema, infrastructure, and operations. It may use new platform-specific schemas/tables and stable views, stored procedures, or an API; it does not require direct legacy-table reuse. Select synchronized PostgreSQL or a limited hybrid only when discovery demonstrates material advantages that justify the added consistency and operational burden, and document the evidence, tradeoffs, and transition path.
 - Establish stable identifiers, data ownership, write permissions, consistency and latency expectations, conflict handling, synchronization, reconciliation, monitoring, and recovery.
 - Complete a source-of-truth matrix that identifies ownership and authority for overlapping legacy, portal, and game data.
 - Produce the concrete domain model after validating the initial model against the existing MSSQL schema, workflows, integration contracts, and selected persistence architecture.

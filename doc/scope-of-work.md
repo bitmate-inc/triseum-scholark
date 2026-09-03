@@ -11,6 +11,7 @@
 **Related artifacts:**
 
 - [Target MVP Architecture](architecture.md)
+- [Portal and Admin App Interdependencies](admin-app-interdependencies.md)
 - [Use Cases and Target MVP Classification](requirements/use-cases.md)
 - [Source User Story](requirements/user-story.md)
 
@@ -86,9 +87,9 @@ For the MVP, the existing standalone Visual Basic ScholArk Administration applic
 - Game listings and classroom game assignments.
 - Classroom setup data, including available payment, language, usage, and configuration settings.
 
-Milestone 2 must recommend one of two primary data-integration approaches: the new platform directly accesses the existing MSSQL data through a controlled integration boundary, such as read-only views, stored procedures, or an API; or the new platform relies on a PostgreSQL portal database populated and reconciled through synchronization with MSSQL. The recommendation may identify a limited hybrid only when different data domains demonstrably require different treatment.
+The client prefers one database as the source of truth. Milestone 2 will therefore begin with a single-MSSQL architecture as the preferred hypothesis, while still assessing the existing code, schema, infrastructure, and operations before adoption. A single database does not require reuse of legacy tables: Portal-owned data may use new platform-specific schemas or tables, while shared or Admin-owned data may be exposed through stable views, stored procedures, or an API shaped for the Portal. A PostgreSQL Portal database synchronized with MSSQL remains an option when discovery demonstrates material advantages, such as workload isolation, independent scaling/deployment, resilience, or a stronger security boundary, that justify synchronization and reconciliation complexity. A limited hybrid requires similarly explicit domain-level justification.
 
-The decision must evaluate data ownership and authority, schema coupling, consistency and acceptable latency, read/write paths, security and network access, expected load on the legacy system, synchronization and reconciliation complexity, failure recovery, auditability, operational support, scalability, and future migration from the Visual Basic application. The resulting architecture must establish stable identifiers, authoritative sources, write responsibilities, conflict handling, and controls that prevent the two databases from silently diverging.
+The decision must evaluate data ownership and authority, schema coupling, consistency and acceptable latency, read/write paths, security and network access, expected load on the legacy system, synchronization and reconciliation complexity, failure recovery, auditability, operational support, scalability, and future migration from the Visual Basic application. The resulting architecture must establish stable identifiers, authoritative sources, write responsibilities, conflict handling, and, if synchronization is selected, controls that prevent the databases from silently diverging.
 
 The MVP does not include replacement or modernization of the existing ScholArk Administration application. The existing application remains responsible for creating and managing the administrative data required by the portals.
 
@@ -214,7 +215,7 @@ The proposed implementation direction is:
 
 - **Frontend:** Next.js and React with shared TypeScript UI packages.
 - **Backend:** NestJS on Node.js with a documented API boundary between portals, games, external services, and legacy data.
-- **Portal-owned data:** PostgreSQL when the selected architecture requires a new portal database. PostgreSQL does not replace the existing MSSQL system by assumption; Milestone 2 must first decide between controlled direct MSSQL access, synchronized PostgreSQL, or a justified limited hybrid.
+- **Portal-owned data:** Stored in platform-specific MSSQL schemas/tables under the preferred single-database hypothesis, or in PostgreSQL only if discovery justifies a synchronized Portal store. Logical ownership does not depend on physical database choice.
 - **Code organization:** A Turborepo monorepo managed with pnpm is the suggested option for organizing portal applications, backend services, and reusable packages by responsibility. Milestone 2 will validate this option against the implementation and deployment needs.
 - **Version control:** Git, using the client's agreed repository hosting, branching, review, and release conventions.
 
@@ -270,7 +271,7 @@ The current sequence is ordered by known dependencies. Each milestone includes i
 
 1. Inventory the existing code, MSSQL schema, infrastructure, authentication, integrations, tests, and operational processes; classify components as reuse, refactor, partially rebuild, or rebuild.
 2. Baseline the initial pilot use cases, acceptance scenarios, target browsers, representative users/data, non-functional targets, and target-MVP continuation scope.
-3. Decide controlled direct MSSQL access versus synchronized PostgreSQL, validate the selected path with proof-of-concept evidence where necessary, and complete the source-of-truth matrix and integration contract.
+3. Validate the preferred single-MSSQL architecture, including platform-specific schemas/tables and stable views, stored procedures, or API boundaries; compare synchronization only where it offers material advantages; validate the selected path with proof-of-concept evidence where necessary; and complete the source-of-truth matrix and integration contract.
 4. Confirm identity ownership, Instructor linkage, authorization boundaries, audit requirements, and multi-User-Type behavior.
 5. Define catalog ownership, both acquisition paths, both for-credit purchase types, license terms and renewal, game-version licensing and upgrade rights, Stripe lifecycle, acquisition-code behavior, support routing, treatment of prior not-for-credit Student Games and licenses, and eligibility of their existing game records for classroom progress and grading.
 6. Validate game launch, version selection, authentication, configuration, game-state ownership and compatibility, versioned JSON contracts, generic record mapping, and responsibility for game-side changes using representative Triseum data.
@@ -416,7 +417,7 @@ The delivery forecast depends on timely system access, representative data, stak
 | Risk | Potential Effect | Planned Control |
 | --- | --- | --- |
 | Existing code, schema, or infrastructure differs materially from current assumptions | Rework or delayed implementation | Complete Milestone 2 assessment before dependent implementation and revise the forecast from evidence. |
-| MSSQL/PostgreSQL ownership or synchronization is unclear | Conflicting or stale data | Approve the source-of-truth matrix, database decision record, consistency rules, and reconciliation plan before platform foundation work. |
+| Physical storage, logical ownership, or synchronization responsibilities are unclear | Conflicting, stale, or tightly coupled data | Validate the single-MSSQL preference, approve the source-of-truth matrix and stable model boundary, and require consistency/reconciliation controls for any synchronized store. |
 | Representative game access, versions, payloads, or game-side changes are delayed | Game launch, resume, mapping, progress, and grading are blocked | Validate the game and version contracts early, assign owners and dates, and use an agreed simulator only when it preserves the same contracts. |
 | A new Game Version changes state or play structure without compatibility rules | Students may lose resume access or grades may become inconsistent | Version licenses, configuration, state, play records, mappings, and grading rules; approve migration, fallback, or reset behavior before rollout. |
 | Stripe, acquisition-code, license-term, or renewal rules remain unresolved | Incorrect access duration, duplicate charges, or failed renewal | Baseline term calculation, expiry, idempotency, validation, renewal, and failure scenarios before acquisition implementation. |
@@ -447,9 +448,10 @@ Artifacts will be produced when their corresponding phase is reached. Milestone 
 The phased artifact set includes:
 
 - An architecture document covering components, boundaries, data flows, and material design decisions.
+- A Portal/Admin interdependency companion covering shared ownership, interfaces, sequencing, repository coordination, and joint acceptance.
 - A requirements traceability and pilot-baseline record mapping accepted workflows to implementation milestones and acceptance scenarios.
 - An integration contract covering identifiers, data mappings, interfaces, synchronization, ownership, validation, and error handling.
-- A database-integration decision record comparing controlled direct MSSQL access with a PostgreSQL portal store synchronized from MSSQL, including the selected approach, rejected alternatives, operational consequences, and transition path.
+- A database-integration decision record validating the preferred single-MSSQL approach against any justified synchronized-store alternative, including platform-specific model boundaries, rejected alternatives, operational consequences, and transition path.
 - A source-of-truth matrix for users, institutions, courses, classrooms, games, assignments, acquisitions, licenses, configurations, progress, and grades.
 - Versioned API and game-data contracts, including representative payloads and validation/error behavior.
 - A test and UAT report recording agreed scenarios, executed results, known limitations, and unresolved defects.
@@ -479,7 +481,7 @@ The intended release sequence begins with a controlled pilot. Broader production
 4. Complete client-led UAT and the agreed acceptance process.
 5. Decide whether to proceed directly to broader production rollout or continue target-MVP implementation and hardening.
 
-Milestone 2 will determine whether the MVP uses controlled direct MSSQL access, a PostgreSQL portal database with MSSQL synchronization, or a justified limited hybrid. If synchronization is selected, the design must define direction, frequency or triggering, initial backfill, change detection, idempotency, deletion handling, conflict policy, reconciliation, monitoring, retry and recovery, and acceptable data staleness. It will also recommend who provisions and operates development, test, staging, and production environments. The transition plan must preserve the existing ScholArk Administration application as the operational administration system unless a separately approved future phase changes that responsibility.
+Milestone 2 will validate whether the preferred single-MSSQL approach meets the MVP’s security, performance, availability, deployment, and operational needs using platform-specific schemas/tables and stable views, stored procedures, or an API where appropriate. If evidence justifies PostgreSQL synchronization or a limited hybrid, the design must define authority, direction, triggering, backfill, change detection, idempotency, deletion handling, conflict policy, reconciliation, monitoring, retry/recovery, and acceptable staleness. It will also recommend who provisions and operates development, test, staging, and production environments. The transition plan must preserve the existing ScholArk Administration application as the operational administration system unless a separately approved future phase changes that responsibility.
 
 # 21. Open Questions
 
@@ -488,7 +490,7 @@ Discovery must resolve:
 - Existing system technologies, production readiness, documentation, tests, infrastructure, and integrations.
 - Expected Year-1 users, institutions, games, event volumes, retention, and concurrency needed to define scalability and performance targets.
 - Which data remains owned by legacy MSSQL versus new portal services, and which system is authoritative where data overlaps.
-- Whether the portal should use controlled direct access to MSSQL or rely on a PostgreSQL database synchronized with MSSQL, based on documented tradeoffs and validation of the existing schema, infrastructure, and operational constraints.
+- Whether discovery validates the preferred single-MSSQL approach, with platform-specific schemas/tables and stable views, stored procedures, or an API, or demonstrates material advantages that justify a synchronized PostgreSQL store or limited hybrid.
 - User Type permissions, invitation workflow, and multi-User-Type switching.
 - Institution/course/classroom ownership and multi-institution enrollment rules.
 - Whether an Instructor can browse the game catalog, and which games, metadata, pricing, availability, and filters are visible in that context.
