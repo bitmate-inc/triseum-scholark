@@ -39,6 +39,12 @@ Environment variables are validated at startup and exposed through namespaced Ne
 
 The committed `.env` provides local defaults. Set `NODE_ENV=stage` to load the ignored `.env.stage` before `.env`; this applies to both the NestJS application and MikroORM CLI commands.
 
+Print a complete dotenv payload with `.env.stage` overlaid on `.env` for deployment import:
+
+```bash
+pnpm --silent --filter scholark-portal-api env:export:stage
+```
+
 Configuration files under `src/config` are loaded automatically. Each file must default-export a Nest `registerAs` factory and may export an `envSchema` object; all discovered schemas are merged for startup validation, and duplicate environment-variable definitions fail fast.
 
 | Variable | Required | Default | Purpose |
