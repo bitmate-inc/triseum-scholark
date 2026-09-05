@@ -20,11 +20,11 @@ services:
       - key: AUTH_JWT_SECRET
         generateValue: true
       - key: AUTH_COOKIE_SECURE
-        value: true
+        value: "true"
       - key: AUTH_COOKIE_SAME_SITE
         value: lax
       - key: TRUST_PROXY
-        value: true
+        value: "true"
       - key: CORS_ORIGIN
         sync: false
       - key: DEBUG_PREFIX
