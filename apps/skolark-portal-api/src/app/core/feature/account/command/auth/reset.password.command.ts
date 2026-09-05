@@ -8,10 +8,10 @@ import {
 import { CommandResult } from '../../../../../../lib/entity/command/command.result';
 import { StaticFactory } from '../../../../../../lib/factory/static.factory';
 import { Validator } from '../../../../infrastructure/validation/validator/validator';
-import { User, UserStatus } from '../../../user/model/user.entity';
-import { UserRepository } from '../../../user/repository/user.repository';
+import { User } from '../../../user/model/user.entity';
+import { UserEntityRepository } from '../../../user/repository/user.entity.repository';
+import { AccountAuthTokenIssuer } from '../../auth/token/account.auth-token.issuer';
 import { AccountAuthTokenType } from '../../model/account.auth-token.entity';
-import { AccountAuthTokenService } from '../../service/account.auth-token.service';
 
 export class ResetPasswordCommandData extends StaticFactory {
 
@@ -35,8 +35,8 @@ export class ResetPasswordCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly userRepository: UserRepository,
-		private readonly accountAuthTokenService: AccountAuthTokenService,
+		private readonly userRepository: UserEntityRepository,
+		private readonly accountAuthTokenIssuer: AccountAuthTokenIssuer,
 	) {
 	}
 
@@ -47,16 +47,16 @@ export class ResetPasswordCommand {
 			return ResetPasswordCommandResult.fail({ validationResult });
 		}
 
-		const user = await this.userRepository.findByEmail(data.email.trim().toLowerCase());
+		const user = await this.userRepository.findOneBy({ email: data.email.trim() });
 
-		if (!user || user.status !== UserStatus.ACTIVE) {
+		if (!user?.isActive()) {
 			return ResetPasswordCommandResult.fail({ isNotFound: true });
 		}
 
-		const token = await this.accountAuthTokenService.issue(
+		const { value: token } = await this.accountAuthTokenIssuer.issue({
+			type: AccountAuthTokenType.PASSWORD_RESET,
 			user,
-			AccountAuthTokenType.PASSWORD_RESET,
-		);
+		});
 
 		return ResetPasswordCommandResult.success({ token, user });
 	}

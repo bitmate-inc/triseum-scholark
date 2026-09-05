@@ -5,7 +5,7 @@ import { CommandResult } from '../../../../../lib/entity/command/command.result'
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
 import { User } from '../model/user.entity';
-import { UserRepository } from '../repository/user.repository';
+import { UserEntityRepository } from '../repository/user.entity.repository';
 
 export class UpdateUserCommandData extends StaticFactory {
 
@@ -30,7 +30,7 @@ export class UpdateUserCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly userRepository: UserRepository,
+		private readonly userRepository: UserEntityRepository,
 	) {
 	}
 
@@ -41,7 +41,7 @@ export class UpdateUserCommand {
 			return UpdateUserCommandResult.fail({ validationResult });
 		}
 
-		let user = await this.userRepository.findById(userId);
+		let user = await this.userRepository.findOneBy({ id: userId });
 
 		if (!user) {
 			return UpdateUserCommandResult.fail({ isNotFound: true });

@@ -12,7 +12,7 @@ import { CommandResult } from '../../../../../../lib/entity/command/command.resu
 import { StaticFactory } from '../../../../../../lib/factory/static.factory';
 import { MailerClient } from '../../../../infrastructure/nodemailer/nodemailer.module';
 import { Validator } from '../../../../infrastructure/validation/validator/validator';
-import { UserRepository } from '../../../user/repository/user.repository';
+import { UserEntityRepository } from '../../../user/repository/user.entity.repository';
 
 export class SendResetPasswordEmailCommandData extends StaticFactory {
 
@@ -36,7 +36,7 @@ export class SendResetPasswordEmailCommand {
 	constructor(
 		@Inject(MailerClient()) private readonly mailer: Transporter,
 		@Inject(accountConfig.KEY) private readonly config: ConfigType<typeof accountConfig>,
-		private readonly userRepository: UserRepository,
+		private readonly userRepository: UserEntityRepository,
 		private readonly validator: Validator,
 	) {
 	}
@@ -48,7 +48,7 @@ export class SendResetPasswordEmailCommand {
 			return SendResetPasswordEmailCommandResult.fail({ validationResult });
 		}
 
-		const user = await this.userRepository.findById(data.userId);
+		const user = await this.userRepository.findOneBy({ id: data.userId });
 
 		if (!user) {
 			return SendResetPasswordEmailCommandResult.fail({ isNotFound: true });

@@ -6,6 +6,8 @@ import {
 	Module
 } from '@nestjs/common';
 
+import authConfig from '../../config/auth';
+import redisConfig from '../../config/redis';
 import { AccountModule } from './feature/account/account.module';
 import { createUserAuthProviderOptions } from './feature/account/auth/user.auth.providers';
 import { CatalogModule } from './feature/catalog/catalog.module';
@@ -17,6 +19,7 @@ import { ConfigModule } from './infrastructure/config/config.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { DebugModule } from './infrastructure/debug/debug.module';
 import { NodemailerModule } from './infrastructure/nodemailer/nodemailer.module';
+import { RedisModule } from './infrastructure/redis/redis.module';
 import { Validator } from './infrastructure/validation/validator/validator';
 
 @Global()
@@ -28,15 +31,20 @@ export class CoreModule {
 			ConfigModule.forRoot({
 				dirPath: join(__dirname, '../../config'),
 			}),
+			RedisModule.forRootAsync(redisConfig.asProvider()),
+			RedisModule.forConnection(),
 			DatabaseModule,
 			DebugModule,
+			UserModule.forRoot(),
 			AccountModule,
-			AuthModule.forRoot(createUserAuthProviderOptions(['local'])),
+			AuthModule.forRootAsync({
+				...authConfig.asProvider(),
+				...createUserAuthProviderOptions(['local']),
+			}),
 			NodemailerModule,
 			TaxonomyModule,
 			GameModule,
 			CatalogModule,
-			UserModule,
 		];
 
 		return {

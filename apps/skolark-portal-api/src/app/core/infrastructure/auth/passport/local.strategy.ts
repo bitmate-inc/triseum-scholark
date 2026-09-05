@@ -12,10 +12,9 @@ import type { SessionBuilder as SessionBuilderContract } from '../contract/auth.
 import {
 	IdentityInputFactory,
 	IdentityProvider,
-	SessionBuilder,
+	SessionBuilder
 } from '../di/auth.token';
 import { AuthSessionData } from '../model/auth.session.model';
-import type { AuthUser } from '../model/auth.user.model';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
@@ -35,7 +34,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
 		});
 	}
 
-	async validate(request: Request): Promise<AuthUser> {
+	async validate(request: Request): Promise<AuthSessionData> {
 		const input = await this.identityInputFactory.create(request);
 		const identity = await this.identityProvider.authenticate(input);
 
@@ -43,9 +42,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
 			throw new UnauthorizedException('Invalid email or password');
 		}
 
-		const session = await this.sessionBuilder.build(identity);
-
-		return session.user;
+		return this.sessionBuilder.build(identity);
 	}
 
 }

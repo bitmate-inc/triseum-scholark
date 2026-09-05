@@ -8,12 +8,14 @@ import {
 import { CommandResult } from '../../../../../../lib/entity/command/command.result';
 import { StaticFactory } from '../../../../../../lib/factory/static.factory';
 import { BCryptPasswordEncoder } from '../../../../../../lib/security/encoder/bcrypt.password-encoder';
+import { RedisExpressSessionRevoker } from '../../../../infrastructure/auth/transport/express-session/redis.express-session.revoker';
 import { Validator } from '../../../../infrastructure/validation/validator/validator';
 import { User } from '../../../user/model/user.entity';
+import { AccountAuthTokenVerifier } from '../../auth/token/account.auth-token.verifier';
 import { AccountAuthTokenType } from '../../model/account.auth-token.entity';
-import { AccountAuthTokenService } from '../../service/account.auth-token.service';
-import { AccountIdentityService } from '../../service/account.identity.service';
-import { AccountSessionService } from '../../service/account.session.service';
+import { AccountIdentityProvider } from '../../model/account.identity.entity';
+import { AccountAuthTokenRepository } from '../../repository/account.auth-token.repository';
+import { AccountIdentityRepository } from '../../repository/account.identity.repository';
 
 export class UpdatePasswordCommandData extends StaticFactory {
 
@@ -39,9 +41,10 @@ export class UpdatePasswordCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly accountIdentityService: AccountIdentityService,
-		private readonly accountAuthTokenService: AccountAuthTokenService,
-		private readonly accountSessionService: AccountSessionService,
+		private readonly accountIdentityRepository: AccountIdentityRepository,
+		private readonly accountAuthTokenVerifier: AccountAuthTokenVerifier,
+		private readonly accountAuthTokenRepository: AccountAuthTokenRepository,
+		private readonly sessionRevoker: RedisExpressSessionRevoker,
 		private readonly passwordEncoder: BCryptPasswordEncoder,
 	) {
 	}
@@ -53,27 +56,32 @@ export class UpdatePasswordCommand {
 			return UpdatePasswordCommandResult.fail({ validationResult });
 		}
 
-		const token = await this.accountAuthTokenService.findActive(
-			data.passwordResetToken,
-			AccountAuthTokenType.PASSWORD_RESET,
-		);
+		const token = await this.accountAuthTokenVerifier.findActive({
+			type: AccountAuthTokenType.PASSWORD_RESET,
+			value: data.passwordResetToken,
+		});
 
 		if (!token) {
 			return UpdatePasswordCommandResult.fail({ isNotFound: true });
 		}
 
-		const identity = await this.accountIdentityService.findLocalByUser(token.user);
+		const { user } = token;
+		const identity = await this.accountIdentityRepository.findByUserAndProvider({
+			provider: AccountIdentityProvider.LOCAL,
+			userId: user.id!,
+		});
 
 		if (!identity) {
 			return UpdatePasswordCommandResult.fail({ isNotFound: true });
 		}
 
-		identity.passwordHash = await this.passwordEncoder.encode(data.plainPassword);
-		await this.accountIdentityService.saveIdentity(identity);
-		await this.accountAuthTokenService.consume(token);
-		await this.accountSessionService.revokeForUser(token.user);
+		identity.setPasswordHash(await this.passwordEncoder.encode(data.plainPassword));
+		await this.accountIdentityRepository.save(identity);
+		token.consume();
+		await this.accountAuthTokenRepository.save(token);
+		await this.sessionRevoker.revoke(user.id!);
 
-		return UpdatePasswordCommandResult.success({ user: token.user });
+		return UpdatePasswordCommandResult.success({ user });
 	}
 
 }

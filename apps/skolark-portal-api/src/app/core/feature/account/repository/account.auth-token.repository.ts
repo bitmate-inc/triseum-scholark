@@ -4,7 +4,6 @@ import { Injectable } from '@nestjs/common';
 
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
-import { User } from '../../user/model/user.entity';
 import { AccountAuthToken, AccountAuthTokenType } from '../model/account.auth-token.entity';
 
 @Injectable()
@@ -17,22 +16,42 @@ export class AccountAuthTokenRepository extends MikroOrmEntityRepository<Account
 		super(AccountAuthToken, repository, transactionContext);
 	}
 
-	findByValueHash(type: AccountAuthTokenType, valueHash: string): Promise<AccountAuthToken | null> {
-		return this.repository.findOne({ type, valueHash }, { populate: ['user'] });
+	async findActiveTokenByValue(query: {
+		type: AccountAuthTokenType;
+		valueHash: string;
+	}): Promise<AccountAuthToken | undefined> {
+		return await this.repository.findOne({
+			consumedAt: null,
+			expiresAt: { $gt: new Date() },
+			type: query.type,
+			valueHash: query.valueHash,
+		}, { orderBy: { createdAt: 'DESC' } }) ?? undefined;
 	}
 
-	async consumeActiveForUser(user: User, type: AccountAuthTokenType): Promise<void> {
-		await this.repository.nativeUpdate({ consumedAt: null, type, user }, { consumedAt: new Date() });
+	async findLatestActiveTokenByUserId(query: {
+		type: AccountAuthTokenType;
+		userId: string;
+	}): Promise<AccountAuthToken | undefined> {
+		return await this.repository.findOne({
+			consumedAt: null,
+			expiresAt: { $gt: new Date() },
+			type: query.type,
+			user: query.userId,
+		}, { orderBy: { createdAt: 'DESC' } }) ?? undefined;
 	}
 
-	async save(token: AccountAuthToken): Promise<AccountAuthToken> {
-		this.repository.getEntityManager().persist(token);
-		await this.repository.getEntityManager().flush();
-		return token;
-	}
+	async invalidateActiveTokensByUserId(query: {
+		type: AccountAuthTokenType;
+		userId: string;
+	}): Promise<void> {
+		const now = new Date();
 
-	async flush(): Promise<void> {
-		await this.repository.getEntityManager().flush();
+		await this.repository.nativeUpdate({
+			consumedAt: null,
+			expiresAt: { $gt: now },
+			type: query.type,
+			user: query.userId,
+		}, { expiresAt: now });
 	}
 
 }

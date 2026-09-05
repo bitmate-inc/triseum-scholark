@@ -11,8 +11,9 @@ import { BCryptPasswordEncoder } from '../../../../../../lib/security/encoder/bc
 import { ValidationResult } from '../../../../../../lib/validator/model/validation.result';
 import { Validator } from '../../../../infrastructure/validation/validator/validator';
 import { User } from '../../../user/model/user.entity';
-import { UserRepository } from '../../../user/repository/user.repository';
-import { AccountIdentityService } from '../../service/account.identity.service';
+import { UserEntityRepository } from '../../../user/repository/user.entity.repository';
+import { AccountIdentityProvider } from '../../model/account.identity.entity';
+import { AccountIdentityRepository } from '../../repository/account.identity.repository';
 
 export class ChangePasswordCommandData extends StaticFactory {
 
@@ -38,8 +39,8 @@ export class ChangePasswordCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly userRepository: UserRepository,
-		private readonly accountIdentityService: AccountIdentityService,
+		private readonly userRepository: UserEntityRepository,
+		private readonly accountIdentityRepository: AccountIdentityRepository,
 		private readonly passwordEncoder: BCryptPasswordEncoder,
 	) {
 	}
@@ -51,13 +52,16 @@ export class ChangePasswordCommand {
 			return ChangePasswordCommandResult.fail({ validationResult });
 		}
 
-		const user = await this.userRepository.findById(userId);
+		const user = await this.userRepository.findOneBy({ id: userId });
 
 		if (!user) {
 			return ChangePasswordCommandResult.fail({ isNotFound: true });
 		}
 
-		const identity = await this.accountIdentityService.findLocalByUser(user);
+		const identity = await this.accountIdentityRepository.findByUserAndProvider({
+			provider: AccountIdentityProvider.LOCAL,
+			userId,
+		});
 		const isCurrentPasswordValid = identity?.passwordHash
 			? await this.passwordEncoder.isEqual(identity.passwordHash, data.currentPassword)
 			: false;
@@ -68,8 +72,8 @@ export class ChangePasswordCommand {
 			});
 		}
 
-		identity.passwordHash = await this.passwordEncoder.encode(data.plainPassword);
-		await this.accountIdentityService.saveIdentity(identity);
+		identity.setPasswordHash(await this.passwordEncoder.encode(data.plainPassword));
+		await this.accountIdentityRepository.save(identity);
 
 		return ChangePasswordCommandResult.success({ user });
 	}

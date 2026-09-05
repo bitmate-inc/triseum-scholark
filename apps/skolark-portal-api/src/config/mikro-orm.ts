@@ -19,8 +19,8 @@ export function createConfig(){
 		clientUrl: process.env.MIKRO_ORM_DATABASE_URL,
 		debug: process.env.MIKRO_ORM_DEBUG === 'true',
 		driver: PostgreSqlDriver,
-		entities: ['./dist/app/core/feature/**/*.entity.js'],
-		entitiesTs: ['./src/app/core/feature/**/*.entity.ts'],
+		entities: ['./dist/app/core/**/*.entity.js'],
+		entitiesTs: ['./src/app/core/**/*.entity.ts'],
 		metadataProvider: ReflectMetadataProvider,
 		migrations: {
 			path: './dist/migration',

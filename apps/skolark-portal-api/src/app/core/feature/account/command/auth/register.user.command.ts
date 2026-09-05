@@ -13,9 +13,8 @@ import { BCryptPasswordEncoder } from '../../../../../../lib/security/encoder/bc
 import { ValidationResult } from '../../../../../../lib/validator/model/validation.result';
 import { Validator } from '../../../../infrastructure/validation/validator/validator';
 import { User, UserStatus } from '../../../user/model/user.entity';
-import { UserRepository } from '../../../user/repository/user.repository';
-import { AccountIdentity } from '../../model/account.identity.entity';
-import { AccountIdentityService } from '../../service/account.identity.service';
+import { UserEntityRepository } from '../../../user/repository/user.entity.repository';
+import { AccountIdentityRepository } from '../../repository/account.identity.repository';
 
 export class RegisterUserCommandData extends StaticFactory {
 
@@ -57,8 +56,8 @@ export class RegisterUserCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly userRepository: UserRepository,
-		private readonly accountIdentityService: AccountIdentityService,
+		private readonly userRepository: UserEntityRepository,
+		private readonly accountIdentityRepository: AccountIdentityRepository,
 		private readonly passwordEncoder: BCryptPasswordEncoder,
 	) {
 	}
@@ -71,7 +70,7 @@ export class RegisterUserCommand {
 		}
 
 		const email = data.email.trim().toLowerCase();
-		const existingUser = await this.userRepository.findByEmail(email);
+		const existingUser = await this.userRepository.findOneBy({ email });
 
 		if (!!existingUser) {
 			return RegisterUserCommandResult.userExistsFail(existingUser);
@@ -87,9 +86,7 @@ export class RegisterUserCommand {
 
 		const passwordHash = await this.passwordEncoder.encode(data.plainPassword);
 
-		await this.accountIdentityService.saveIdentity(
-			AccountIdentity.createLocal(user, email, passwordHash),
-		);
+		await this.accountIdentityRepository.createLocalIdentity({ email, passwordHash, user });
 
 		return RegisterUserCommandResult.success({ user });
 	}

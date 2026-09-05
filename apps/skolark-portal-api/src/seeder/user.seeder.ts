@@ -31,6 +31,8 @@ export class UserSeeder extends Seeder {
 					});
 				}
 
+				await transactionalEm.flush();
+
 				const passwordHash = await passwordEncoder.encode(userSeed.plainPassword);
 				const identity = await transactionalEm.findOne(AccountIdentity, {
 					provider: AccountIdentityProvider.LOCAL,
@@ -41,7 +43,7 @@ export class UserSeeder extends Seeder {
 					transactionalEm.assign(identity, { passwordHash, user });
 				} else {
 					transactionalEm.persist(
-						AccountIdentity.createLocal(user, email, passwordHash),
+						AccountIdentity.createLocalIdentity({ email, passwordHash, user }),
 					);
 				}
 			}

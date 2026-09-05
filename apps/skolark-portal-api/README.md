@@ -43,6 +43,11 @@ Configuration files under `src/config` are loaded automatically. Each file must 
 | --- | --- | --- | --- |
 | `MIKRO_ORM_DATABASE_URL` | Yes | - | PostgreSQL connection URL |
 | `MIKRO_ORM_DEBUG` | No | `false` | Enable MikroORM debug logging |
+| `REDIS_HOST` | Yes | - | Redis host for browser-session storage |
+| `REDIS_PORT` | Yes | - | Redis port for browser-session storage |
+| `AUTH_SESSION_SECRET` | Yes | - | Secret used to sign browser-session cookies |
+| `AUTH_JWT_SECRET` | Yes | - | Secret used by the available JWT auth transport |
+| `AUTH_SESSION_REDIS_PREFIX` | No | `skolark:session:` | Redis key prefix used for browser sessions |
 | `PORT` | No | `3001` | HTTP listen port |
 | `ROUTER_BASE_URL` | No | `api` | Base URL used when generating API links |
 | `TRUST_PROXY` | No | `false` | Trust Express proxy headers |

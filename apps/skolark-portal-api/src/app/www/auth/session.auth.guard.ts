@@ -1,18 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import {
+	CanActivate,
+	ExecutionContext,
+	Injectable,
+	UnauthorizedException
+} from '@nestjs/common';
 import type { Request } from 'express';
 
-import { User } from '../../core/feature/user/model/user.entity';
-
-export interface AuthenticatedRequest extends Request {
-	user: User;
-}
-
 @Injectable()
-export class SessionAuthGuard extends AuthGuard('session') {
+export class SessionAuthGuard implements CanActivate {
 
-	constructor() {
-		super();
+	canActivate(context: ExecutionContext): boolean {
+		const request = context.switchToHttp().getRequest<Request>();
+
+		if (!request.isAuthenticated()) {
+			throw new UnauthorizedException();
+		}
+
+		return true;
 	}
 
 }

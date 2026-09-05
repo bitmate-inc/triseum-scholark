@@ -5,7 +5,7 @@ export interface SessionBuilder<TIdentity = unknown, TSession = AuthSessionData>
 }
 
 export interface SessionSerializer<TSession = AuthSessionData, TSerialized = unknown> {
-	serialize(session: TSession): Promise<TSerialized> | TSerialized;
+	serialize(session: TSession): TSerialized;
 }
 
 export interface SessionResolver<TSerialized = unknown, TSession = AuthSessionData> {

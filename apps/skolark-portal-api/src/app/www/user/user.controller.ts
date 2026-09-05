@@ -6,7 +6,6 @@ import {
 	NotFoundException,
 	Patch,
 	Put,
-	Req,
 	UnprocessableEntityException,
 	UseGuards
 } from '@nestjs/common';
@@ -19,8 +18,9 @@ import {
 import { ChangePasswordCommand, ChangePasswordCommandData } from '../../core/feature/account/command/auth/change.password.command';
 import { UpdateUserCommand, UpdateUserCommandData } from '../../core/feature/user/command/update.user.command';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
+import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
+import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import { MessageResponseDto, UserResponseDto } from '../auth/auth.dto';
-import type { AuthenticatedRequest } from '../auth/session.auth.guard';
 import { SessionAuthGuard } from '../auth/session.auth.guard';
 import { ChangePasswordRequestDto, UpdateProfileRequestDto } from './user.dto';
 
@@ -39,9 +39,9 @@ export class UserController {
 
 	@Get()
 	@ApiOkResponse({ type: UserResponseDto })
-	async getOwnUser(@Req() request: AuthenticatedRequest): Promise<UserResponseDto> {
+	async getOwnUser(@AuthSession() session: AuthSessionData): Promise<UserResponseDto> {
 		const queryResult = await this.getUserQuery.execute(
-			GetUserQueryData.create({ filterBy: { id: request.user.id! } }),
+			GetUserQueryData.create({ filterBy: { id: session.user.id } }),
 		);
 
 		if (!queryResult.user) {
@@ -54,11 +54,11 @@ export class UserController {
 	@Patch()
 	@ApiOkResponse({ type: UserResponseDto })
 	async updateProfile(
-		@Req() request: AuthenticatedRequest,
+		@AuthSession() session: AuthSessionData,
 		@Body() body: UpdateProfileRequestDto,
 	): Promise<UserResponseDto> {
 		const commandResult = await this.updateUserCommand.execute(
-			request.user.id!,
+			session.user.id,
 			UpdateUserCommandData.create(body),
 		);
 
@@ -75,11 +75,11 @@ export class UserController {
 	@Put('password')
 	@ApiOkResponse({ type: MessageResponseDto })
 	async changePassword(
-		@Req() request: AuthenticatedRequest,
+		@AuthSession() session: AuthSessionData,
 		@Body() body: ChangePasswordRequestDto,
 	): Promise<MessageResponseDto> {
 		const commandResult = await this.changePasswordCommand.execute(
-			request.user.id!,
+			session.user.id,
 			ChangePasswordCommandData.create({
 				currentPassword: body.currentPassword,
 				plainPassword: body.password,

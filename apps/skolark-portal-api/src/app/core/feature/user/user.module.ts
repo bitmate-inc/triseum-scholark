@@ -1,21 +1,32 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { Global, Module } from '@nestjs/common';
+import {
+	DynamicModule,
+	Module,
+	Provider
+} from '@nestjs/common';
 
 import { UpdateUserCommand } from './command/update.user.command';
 import { User } from './model/user.entity';
 import { GetUserQuery } from './query/get.user.query';
-import { UserRepository } from './repository/user.repository';
+import { UserEntityRepository } from './repository/user.entity.repository';
 
-const providerList = [
-	GetUserQuery,
-	UpdateUserCommand,
-	UserRepository,
-];
+@Module({})
+export class UserModule {
 
-@Global()
-@Module({
-	exports: providerList,
-	imports: [MikroOrmModule.forFeature([User])],
-	providers: providerList,
-})
-export class UserModule {}
+	static forRoot(): DynamicModule {
+		const providers: Provider[] = [
+			UserEntityRepository,
+			GetUserQuery,
+			UpdateUserCommand,
+		];
+
+		return {
+			exports: providers,
+			global: true,
+			imports: [MikroOrmModule.forFeature([User])],
+			module: UserModule,
+			providers,
+		};
+	}
+
+}

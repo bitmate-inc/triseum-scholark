@@ -1,3 +1,3 @@
 export interface AuthUser {
-	id?: string;
+	id: string;
 }

@@ -17,24 +17,37 @@ export class AccountIdentityRepository extends MikroOrmEntityRepository<AccountI
 		super(AccountIdentity, repository, transactionContext);
 	}
 
-	findLocalByEmail(email: string): Promise<AccountIdentity | null> {
-		return this.repository.findOne({
-			provider: AccountIdentityProvider.LOCAL,
-			providerAccountId: email,
-		}, { populate: ['user'] });
+	async findByProviderAndAccountId(query: {
+		provider: AccountIdentityProvider;
+		providerAccountId: string;
+	}): Promise<AccountIdentity | undefined> {
+		return await this.repository.findOne(query) ?? undefined;
 	}
 
-	findLocalByUser(user: User): Promise<AccountIdentity | null> {
-		return this.repository.findOne({
+	findLocalByEmail(query: { email: string }): Promise<AccountIdentity | undefined> {
+		return this.findByProviderAndAccountId({
 			provider: AccountIdentityProvider.LOCAL,
-			user,
+			providerAccountId: query.email.trim().toLowerCase(),
 		});
 	}
 
-	async save(identity: AccountIdentity): Promise<AccountIdentity> {
-		this.repository.getEntityManager().persist(identity);
-		await this.repository.getEntityManager().flush();
-		return identity;
+	async findByUserAndProvider(query: {
+		provider: AccountIdentityProvider;
+		userId: string;
+	}): Promise<AccountIdentity | undefined> {
+		return await this.repository.findOne({
+			provider: query.provider,
+			user: query.userId,
+		}) ?? undefined;
 	}
+
+	async createLocalIdentity(data: {
+		email: string;
+		passwordHash?: string;
+		providerData?: Record<string, unknown>;
+		user: User;
+	}): Promise<AccountIdentity> {
+		return this.save(AccountIdentity.createLocalIdentity(data));
+	}	
 
 }

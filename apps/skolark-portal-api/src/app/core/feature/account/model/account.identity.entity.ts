@@ -1,4 +1,3 @@
-import type { Rel } from '@mikro-orm/core';
 import {
 	Entity,
 	Index,
@@ -25,8 +24,12 @@ export class AccountIdentity {
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
 
-	@ManyToOne(() => User, { deleteRule: 'cascade' })
-	user!: Rel<User>;
+	@ManyToOne(() => User, {
+		deleteRule: 'cascade',
+		eager: true,
+		fieldName: 'user_id',
+	})
+	user!: User;
 
 	@Property({ type: 'string' })
 	provider!: AccountIdentityProvider;
@@ -49,14 +52,28 @@ export class AccountIdentity {
 	@Property({ onCreate: () => new Date(), onUpdate: () => new Date() })
 	updatedAt?: Date;
 
-	static createLocal(user: User, email: string, passwordHash: string): AccountIdentity {
+	static createLocalIdentity(data: {
+		email: string;
+		passwordHash?: string;
+		providerData?: Record<string, unknown>;
+		user: User;
+	}): AccountIdentity {
 		const identity = new AccountIdentity();
-		identity.user = user;
+		identity.user = data.user;
 		identity.provider = AccountIdentityProvider.LOCAL;
-		identity.providerAccountId = email.trim().toLowerCase();
-		identity.passwordHash = passwordHash;
+		identity.providerAccountId = data.email.trim().toLowerCase();
+		identity.passwordHash = data.passwordHash;
+		identity.providerData = data.providerData;
 
 		return identity;
+	}
+
+	setPasswordHash(passwordHash?: string): void {
+		this.passwordHash = passwordHash;
+	}
+
+	touchLastLogin(lastLoginAt: Date = new Date()): void {
+		this.lastLoginAt = lastLoginAt;
 	}
 
 }

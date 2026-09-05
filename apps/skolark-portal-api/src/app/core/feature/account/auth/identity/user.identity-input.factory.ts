@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
-import type { IdentityInputFactory as IdentityInputFactoryContract } from '../../../infrastructure/auth/contract/auth.identity.contract';
+import type { IdentityInputFactory as IdentityInputFactoryContract } from '../../../../infrastructure/auth/contract/auth.identity.contract';
 import type { UserIdentityInput } from './user.identity.provider';
 
 @Injectable()

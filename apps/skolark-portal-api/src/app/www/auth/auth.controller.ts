@@ -5,9 +5,9 @@ import {
 	Get,
 	HttpCode,
 	HttpStatus,
+	NotFoundException,
 	Post,
 	Req,
-	Res,
 	UnprocessableEntityException,
 	UseGuards,
 } from '@nestjs/common';
@@ -20,11 +20,9 @@ import {
 	ApiTags,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 
 import { ConfirmEmailAddressCommand, ConfirmEmailAddressCommandData } from '../../core/feature/account/command/auth/confirm.email.address.command';
-import { CreateAccountSessionCommand, CreateAccountSessionCommandData } from '../../core/feature/account/command/auth/create.account-session.command';
-import { LogoutUserCommand, LogoutUserCommandData } from '../../core/feature/account/command/auth/logout.user.command';
 import { RegisterUserCommand, RegisterUserCommandData } from '../../core/feature/account/command/auth/register.user.command';
 import { ResetPasswordCommand, ResetPasswordCommandData } from '../../core/feature/account/command/auth/reset.password.command';
 import { UpdatePasswordCommand, UpdatePasswordCommandData } from '../../core/feature/account/command/auth/update.password.command';
@@ -37,9 +35,10 @@ import {
 	SendResetPasswordEmailCommand,
 	SendResetPasswordEmailCommandData
 } from '../../core/feature/account/command/send-email/send.reset-password.email.command';
-import { GetAuthSessionQuery, GetAuthSessionQueryData } from '../../core/feature/account/query/get.auth-session.query';
-import { SessionCookieService } from '../../core/feature/account/service/session.cookie.service';
 import { UserStatus } from '../../core/feature/user/model/user.entity';
+import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
+import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
+import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import {
 	EmailRequestDto,
 	LoginRequestDto,
@@ -50,7 +49,6 @@ import {
 	UserResponseDto,
 } from './auth.dto';
 import { LoginAuthGuard } from './login.auth.guard';
-import type { AuthenticatedRequest } from './session.auth.guard';
 
 @ApiTags('Authentication')
 @Controller('api/v1/auth')
@@ -58,30 +56,25 @@ export class AuthController {
 
 	constructor(
 		private readonly confirmEmailAddressCommand: ConfirmEmailAddressCommand,
-		private readonly createAccountSessionCommand: CreateAccountSessionCommand,
-		private readonly getAuthSessionQuery: GetAuthSessionQuery,
-		private readonly logoutUserCommand: LogoutUserCommand,
 		private readonly registerUserCommand: RegisterUserCommand,
 		private readonly resetPasswordCommand: ResetPasswordCommand,
 		private readonly sendConfirmEmailAddressEmailCommand: SendConfirmEmailAddressEmailCommand,
 		private readonly sendResetPasswordEmailCommand: SendResetPasswordEmailCommand,
-		private readonly sessionCookieService: SessionCookieService,
 		private readonly updatePasswordCommand: UpdatePasswordCommand,
 		private readonly verifyEmailAddressCommand: VerifyEmailAddressCommand,
+		private readonly getUserQuery: GetUserQuery,
 	) {
 	}
 
 	@Get('session')
 	@ApiOperation({ summary: 'Get the current browser session user' })
 	@ApiOkResponse({ type: UserResponseDto })
-	async getSession(@Req() request: Request): Promise<UserResponseDto | null> {
-		const queryResult = await this.getAuthSessionQuery.execute(
-			GetAuthSessionQueryData.create({
-				sessionToken: this.sessionCookieService.read(request),
-			}),
-		);
+	async getSession(@AuthSession() session?: AuthSessionData): Promise<UserResponseDto | null> {
+		if (!session) {
+			return null;
+		}
 
-		return queryResult.user ? UserResponseDto.fromEntity(queryResult.user) : null;
+		return this.getUserResponse(session.user.id);
 	}
 
 	@Post('register')
@@ -115,37 +108,41 @@ export class AuthController {
 	@UseGuards(LoginAuthGuard)
 	async login(
 		@Body() _body: LoginRequestDto,
-		@Req() request: AuthenticatedRequest,
-		@Res({ passthrough: true }) response: Response,
+		@AuthSession() session: AuthSessionData,
+		@Req() request: Request,
 	): Promise<UserResponseDto> {
-		const result = await this.createAccountSessionCommand.execute(
-			CreateAccountSessionCommandData.create({ userId: request.user.id! }),
-		);
+		await new Promise<void>((resolve, reject) => {
+			request.logIn(session, (error: unknown) => error ? reject(error) : resolve());
+		});
 
-		this.throwOnCommandFailure(result);
-		this.sessionCookieService.set(response, result.sessionToken!);
-
-		return UserResponseDto.fromEntity(result.user!);
+		return this.getUserResponse(session.user.id);
 	}
 
 	@Post('logout')
 	@ApiCookieAuth()
 	@ApiOkResponse({ type: MessageResponseDto })
 	@HttpCode(HttpStatus.OK)
-	async logout(
-		@Req() request: Request,
-		@Res({ passthrough: true }) response: Response,
-	): Promise<MessageResponseDto> {
-		const commandResult = await this.logoutUserCommand.execute(
-			LogoutUserCommandData.create({
-				sessionToken: this.sessionCookieService.read(request),
-			}),
-		);
-
-		this.throwOnCommandFailure(commandResult);
-		this.sessionCookieService.clear(response);
+	async logout(@Req() request: Request): Promise<MessageResponseDto> {
+		await new Promise<void>((resolve, reject) => {
+			request.logout(error => error ? reject(error) : resolve());
+		});
+		await new Promise<void>((resolve, reject) => {
+			request.session.destroy(error => error ? reject(error) : resolve());
+		});
 
 		return { message: 'Logged out' };
+	}
+
+	private async getUserResponse(userId: string): Promise<UserResponseDto> {
+		const queryResult = await this.getUserQuery.execute(
+			GetUserQueryData.create({ filterBy: { id: userId } }),
+		);
+
+		if (!queryResult.user) {
+			throw new NotFoundException();
+		}
+
+		return UserResponseDto.fromEntity(queryResult.user);
 	}
 
 	@Post('email/verification')

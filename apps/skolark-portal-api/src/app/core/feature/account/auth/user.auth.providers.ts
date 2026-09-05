@@ -4,31 +4,43 @@ import type {
 	AuthIdentityMechanismProviderOptions,
 	AuthModuleProviderOptions,
 } from '../../../infrastructure/auth/auth.module';
-import { UserIdentityProvider } from './user.identity.provider';
-import { UserIdentityInputFactory } from './user.identity-input.factory';
-import { UserOpaqueSessionResolver } from './user.opaque-session.resolver';
-import { UserOpaqueSessionSerializer } from './user.opaque-session.serializer';
-import { UserOpaqueSessionStrategy } from './user.opaque-session.strategy';
-import { UserSessionBuilder } from './user.session.builder';
+import { GoogleIdentityProvider, MicrosoftIdentityProvider } from './identity/external.identity.provider';
+import { GoogleIdentityInputFactory } from './identity/google.identity-input.factory';
+import { MicrosoftIdentityInputFactory } from './identity/microsoft.identity-input.factory';
+import { UserIdentityProvider } from './identity/user.identity.provider';
+import { UserIdentityInputFactory } from './identity/user.identity-input.factory';
+import { UserExpressSessionResolver } from './session/user.express-session.resolver';
+import { UserExpressSessionSerializer } from './session/user.express-session.serializer';
+import { UserJwtSessionResolver } from './session/user.jwt-session.resolver';
+import { UserJwtSessionSerializer } from './session/user.jwt-session.serializer';
+import { UserSessionBuilder } from './session/user.session.builder';
 
-const authMechanismOptions: Record<AuthIdentityMechanism, AuthIdentityMechanismProviderOptions | undefined> = {
-	google: undefined,
+const authMechanismOptions: Partial<Record<AuthIdentityMechanism, AuthIdentityMechanismProviderOptions>> = {
 	local: {
 		authenticator: UserIdentityProvider,
 		inputFactory: UserIdentityInputFactory,
 	},
-	microsoft: undefined,
+	google: {
+		authenticator: GoogleIdentityProvider,
+		inputFactory: GoogleIdentityInputFactory,
+	},
+	microsoft: {
+		authenticator: MicrosoftIdentityProvider,
+		inputFactory: MicrosoftIdentityInputFactory,
+	},
 };
 
 export function createUserAuthProviderOptions(mechanisms: readonly AuthIdentityMechanism[]): AuthModuleProviderOptions {
 	const providerOptions: AuthModuleProviderOptions = {
-		providers: [BCryptPasswordEncoder],
-		session: {
-			mechanism: 'opaque',
-			resolver: UserOpaqueSessionResolver,
-			serializer: UserOpaqueSessionSerializer,
-			strategies: [UserOpaqueSessionStrategy],
+		expressSession: {
+			sessionResolver: UserExpressSessionResolver,
+			sessionSerializer: UserExpressSessionSerializer,
 		},
+		jwt: {
+			sessionResolver: UserJwtSessionResolver,
+			sessionSerializer: UserJwtSessionSerializer,
+		},
+		providers: [BCryptPasswordEncoder],
 		sessionBuilder: UserSessionBuilder,
 	};
 

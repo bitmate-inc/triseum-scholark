@@ -10,9 +10,10 @@ import { CommandResult } from '../../../../../../lib/entity/command/command.resu
 import { StaticFactory } from '../../../../../../lib/factory/static.factory';
 import { Validator } from '../../../../infrastructure/validation/validator/validator';
 import { User, UserStatus } from '../../../user/model/user.entity';
-import { UserRepository } from '../../../user/repository/user.repository';
+import { UserEntityRepository } from '../../../user/repository/user.entity.repository';
+import { AccountAuthTokenVerifier } from '../../auth/token/account.auth-token.verifier';
 import { AccountAuthTokenType } from '../../model/account.auth-token.entity';
-import { AccountAuthTokenService } from '../../service/account.auth-token.service';
+import { AccountAuthTokenRepository } from '../../repository/account.auth-token.repository';
 
 export class ConfirmEmailAddressCommandData extends StaticFactory {
 
@@ -37,8 +38,9 @@ export class ConfirmEmailAddressCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly userRepository: UserRepository,
-		private readonly accountAuthTokenService: AccountAuthTokenService,
+		private readonly userRepository: UserEntityRepository,
+		private readonly accountAuthTokenVerifier: AccountAuthTokenVerifier,
+		private readonly accountAuthTokenRepository: AccountAuthTokenRepository,
 	) {
 	}
 
@@ -49,20 +51,22 @@ export class ConfirmEmailAddressCommand {
 			return ConfirmEmailAddressCommandResult.fail({ validationResult });
 		}
 
-		const token = await this.accountAuthTokenService.findActive(
-			data.confirmEmailToken,
-			AccountAuthTokenType.EMAIL_VERIFICATION,
-		);
+		const token = await this.accountAuthTokenVerifier.findActive({
+			type: AccountAuthTokenType.EMAIL_VERIFICATION,
+			value: data.confirmEmailToken,
+		});
 
 		if (!token) {
 			return ConfirmEmailAddressCommandResult.fail({ isNotFound: true });
 		}
 
-		let user = token.user;
+		let { user } = token;
 
-		user.status = data.status || UserStatus.ACTIVE;
+		user.status = data.status ?? UserStatus.ACTIVE;
 		user = await this.userRepository.save(user);
-		await this.accountAuthTokenService.consume(token);
+
+		token.consume();
+		await this.accountAuthTokenRepository.save(token);
 
 		return ConfirmEmailAddressCommandResult.success({ user });
 	}
