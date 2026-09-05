@@ -49,6 +49,7 @@ import {
 	UserResponseDto,
 } from './auth.dto';
 import { LoginAuthGuard } from './login.auth.guard';
+import { SessionAuthGuard } from './session.auth.guard';
 
 @ApiTags('Authentication')
 @Controller('api/v1/auth')
@@ -69,6 +70,7 @@ export class AuthController {
 	@Get('session')
 	@ApiOperation({ summary: 'Get the current browser session user' })
 	@ApiOkResponse({ type: UserResponseDto })
+	@UseGuards(SessionAuthGuard)
 	async getSession(@AuthSession() session?: AuthSessionData): Promise<UserResponseDto | null> {
 		if (!session) {
 			return null;
