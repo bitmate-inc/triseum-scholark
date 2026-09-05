@@ -15,9 +15,8 @@ export function SiteHeader() {
 				<span>ScholArk</span>
 			</Link>
 			<nav className={styles.primaryNav} aria-label="Primary navigation">
-				<Link href="/">Discover</Link>
-				<Link href="/catalog">All games</Link>
-				<a href="#subjects">Subjects</a>
+				<Link href="/catalog">Games</Link>
+				<Link href="/institution">Institutions</Link>
 			</nav>
 			<div className={styles.headerActions}>
 				<Link

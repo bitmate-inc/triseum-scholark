@@ -11,6 +11,7 @@ import redisConfig from '../../config/redis';
 import { AccountModule } from './feature/account/account.module';
 import { createUserAuthProviderOptions } from './feature/account/auth/user.auth.providers';
 import { CatalogModule } from './feature/catalog/catalog.module';
+import { EducationModule } from './feature/education/education.module';
 import { GameModule } from './feature/game/game.module';
 import { TaxonomyModule } from './feature/taxonomy/taxonomy.module';
 import { UserModule } from './feature/user/user.module';
@@ -44,6 +45,7 @@ export class CoreModule {
 			NodemailerModule,
 			TaxonomyModule,
 			GameModule,
+			EducationModule,
 			CatalogModule,
 		];
 

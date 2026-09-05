@@ -3,24 +3,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import { GetCatalogGameListQueryResult } from '../../core/feature/catalog/query/get.catalog.game.list.query';
 import { GetFeaturedGameListQueryResult } from '../../core/feature/catalog/query/get.featured.game.list.query';
-import { Game, GameMedia } from '../../core/feature/game/model/game.entity';
+import { Game } from '../../core/feature/game/model/game.entity';
 import { Publisher } from '../../core/feature/publisher/model/publisher.entity';
 import { TaxonomyType } from '../../core/feature/taxonomy/model/taxonomy.term.entity';
+import { MediaResponseDto } from '../media/media.dto';
 
 export class GetGameListQueryDto extends GetListRequestQueryParamsDto {}
-
-class GameMediaResponseDto implements GameMedia {
-
-	@ApiProperty({ enum: ['image', 'video'] })
-	type!: 'image' | 'video';
-
-	@ApiProperty()
-	src!: string;
-
-	@ApiProperty()
-	alt!: string;
-
-}
 
 class TaxonomyTermResponseDto {
 
@@ -84,8 +72,8 @@ export class GameResponseDto {
 	@ApiPropertyOptional()
 	description?: string;
 
-	@ApiPropertyOptional({ type: GameMediaResponseDto })
-	cover?: GameMediaResponseDto;
+	@ApiPropertyOptional({ type: MediaResponseDto })
+	cover?: MediaResponseDto;
 
 	@ApiProperty({ type: [PublisherResponseDto] })
 	publisherList!: PublisherResponseDto[];
@@ -102,8 +90,8 @@ export class GameResponseDto {
 	@ApiPropertyOptional()
 	featured?: boolean;
 
-	@ApiPropertyOptional({ type: [GameMediaResponseDto] })
-	mediaList?: GameMediaResponseDto[];
+	@ApiPropertyOptional({ type: [MediaResponseDto] })
+	mediaList?: MediaResponseDto[];
 
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;

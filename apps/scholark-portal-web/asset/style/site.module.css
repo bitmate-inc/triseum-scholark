@@ -77,6 +77,9 @@
 .aboutGame { display: grid; grid-template-columns: 0.45fr 1.55fr; gap: 60px; margin: 108px 0 28px; padding: 60px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .aboutGame > p:last-child { max-width: 880px; font-family: var(--font-display); font-size: clamp(25px, 3vw, 38px); line-height: 1.35; }
 .mediaSection { padding: 76px 0 30px; }
+.academicSection { padding: 76px 0 30px; border-top: 1px solid var(--border); }
+.academicSection + .academicSection { margin-top: 46px; }
+.academicSearch .searchBar { margin-bottom: 34px; }
 .sectionHeading > span { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 12px; text-transform: uppercase; }
 .mediaGrid { display: grid; grid-template-columns: 1.3fr 0.7fr; grid-auto-rows: minmax(240px, 36vw); gap: 16px; }
 .mediaItem { position: relative; overflow: hidden; border: 1px solid var(--border); background: #191b19; }

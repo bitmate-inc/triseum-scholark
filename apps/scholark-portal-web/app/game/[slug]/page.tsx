@@ -18,10 +18,10 @@ import { getGameRequest } from "../../../feature/catalog/server/request/get-game
 import { getGameListRequest } from "../../../feature/catalog/server/request/get-game-list.request";
 import {
 	formatEstimatedLength,
-	type GameMedia,
 	getGameEyebrow,
 	getGameTagList,
 } from "../../../feature/catalog/shared/model/game";
+import type { Media } from "../../../feature/media/shared/model/media";
 
 type GamePageProps = { params: Promise<{ slug: string }> };
 
@@ -39,7 +39,7 @@ export default async function GamePage({ params }: GamePageProps) {
 	const game = await getGameRequest((await params).slug);
 	if (!game) notFound();
 
-	const fallbackVideo: GameMedia = {
+	const fallbackVideo: Media = {
 		type: "video",
 		src: "/game-trailer.mp4",
 		alt: `${game.title} gameplay trailer`,

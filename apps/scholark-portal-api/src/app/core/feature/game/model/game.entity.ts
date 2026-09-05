@@ -7,14 +7,9 @@ import {
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
+import type { Media } from '../../media/model/media';
 import { Publisher } from '../../publisher/model/publisher.entity';
 import { GameTaxonomyTerm } from './game.taxonomy.term.entity';
-
-export interface GameMedia {
-	type: 'image' | 'video';
-	src: string;
-	alt: string;
-}
 
 @Entity({ tableName: 'game' })
 export class Game {
@@ -35,7 +30,7 @@ export class Game {
 	description?: string;
 
 	@Property({ nullable: true, type: 'json' })
-	cover?: GameMedia;
+	cover?: Media;
 
 	@ManyToMany({ entity: () => Publisher, owner: true })
 	publisherList = new Collection<Publisher>(this);
@@ -53,7 +48,7 @@ export class Game {
 	isFeatured?: boolean;
 
 	@Property({ nullable: true, type: 'json' })
-	mediaList?: GameMedia[];
+	mediaList?: Media[];
 
 	@Property({ nullable: true })
 	publishedAt?: Date;

@@ -1,4 +1,5 @@
-import type { GameMedia } from '../app/core/feature/game/model/game.entity';
+import { EducationCatalogStatus } from '../app/core/feature/education/model/education.catalog.status';
+import type { Media } from '../app/core/feature/media/model/media';
 import { TaxonomyType } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 
 export interface TaxonomyTermSeed {
@@ -23,14 +24,57 @@ export interface GameSeed {
 	title: string;
 	summary: string;
 	description: string;
-	cover: GameMedia;
+	cover: Media;
 	publisherSlugList: string[];
 	taxonomyList: TaxonomyTermSeed[];
 	estimatedLengthMinutesMin: number;
 	estimatedLengthMinutesMax: number;
 	isFeatured: boolean;
 	publishedAt: Date;
-	mediaList: GameMedia[];
+	mediaList: Media[];
+}
+
+export interface EducationalInstitutionSeed {
+	id: string;
+	name: string;
+	slug: string;
+	cover?: Media;
+	summary?: string;
+	description?: string;
+	websiteUrl?: string;
+	status: EducationCatalogStatus;
+}
+
+export interface CourseSeed {
+	id: string;
+	institutionSlug: string;
+	name: string;
+	code: string;
+	slug: string;
+	cover?: Media;
+	summary?: string;
+	description?: string;
+	status: EducationCatalogStatus;
+}
+
+export interface ClassroomSeed {
+	id: string;
+	institutionSlug: string;
+	name: string;
+	code: string;
+	slug: string;
+	cover?: Media;
+	summary?: string;
+	description?: string;
+	status: EducationCatalogStatus;
+	courseSlugList: string[];
+	taxonomyTermKeyList: string[];
+}
+
+export interface ClassroomGameSeed {
+	id: string;
+	classroomSlug: string;
+	gameSlug: string;
 }
 
 type TaxonomyTermSeedInput = Pick<TaxonomyTermSeed, 'label' | 'slug' | 'type'> & {
@@ -236,5 +280,142 @@ export const gameSeedList: GameSeed[] = [
 		isFeatured: false,
 		publishedAt: new Date('2026-01-07T00:00:00.000Z'),
 		mediaList: [],
+	},
+];
+
+export const educationalInstitutionSeedList: EducationalInstitutionSeed[] = [
+	{
+		cover: {
+			alt: 'Northbridge University campus library',
+			src: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1800&q=85',
+			type: 'image',
+		},
+		description: 'A public research university offering interdisciplinary programs.',
+		id: '00000000-0000-4000-8000-000000000201',
+		name: 'Northbridge University',
+		slug: 'northbridge-university',
+		status: EducationCatalogStatus.ACTIVE,
+		summary: 'Interdisciplinary learning shaped by research, culture, and public impact.',
+		websiteUrl: 'https://northbridge.example.edu',
+	},
+	{
+		cover: {
+			alt: 'Riverside College historic academic building',
+			src: 'https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&w=1800&q=85',
+			type: 'image',
+		},
+		description: 'An independent college focused on arts, history, and civic studies.',
+		id: '00000000-0000-4000-8000-000000000202',
+		name: 'Riverside College',
+		slug: 'riverside-college',
+		status: EducationCatalogStatus.ACTIVE,
+		summary: 'A close-knit college for arts, history, and civic inquiry.',
+		websiteUrl: 'https://riverside.example.edu',
+	},
+];
+
+export const courseSeedList: CourseSeed[] = [
+	{
+		code: 'ARTH-201',
+		cover: {
+			alt: 'Renaissance gallery interior',
+			src: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&w=1600&q=85',
+			type: 'image',
+		},
+		description: 'Art, patronage, and civic identity in Renaissance Italy.',
+		id: '00000000-0000-4000-8000-000000000211',
+		institutionSlug: 'northbridge-university',
+		name: 'Renaissance Art and Society',
+		slug: 'renaissance-art-and-society',
+		status: EducationCatalogStatus.ACTIVE,
+		summary: 'Explore how art, money, and influence shaped Renaissance Florence.',
+	},
+	{
+		code: 'HIST-230',
+		cover: {
+			alt: 'Historic European city architecture',
+			src: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=1600&q=85',
+			type: 'image',
+		},
+		description: 'Methods for interpreting social and cultural change in Europe.',
+		id: '00000000-0000-4000-8000-000000000212',
+		institutionSlug: 'northbridge-university',
+		name: 'European Cultural History',
+		slug: 'european-cultural-history',
+		status: EducationCatalogStatus.ACTIVE,
+		summary: 'Read Europe through the ideas, institutions, and objects its people left behind.',
+	},
+	{
+		code: 'MATH-150',
+		cover: {
+			alt: 'Mathematical formulas on a classroom board',
+			src: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1600&q=85',
+			type: 'image',
+		},
+		description: 'A conceptual introduction to limits and continuity.',
+		id: '00000000-0000-4000-8000-000000000213',
+		institutionSlug: 'riverside-college',
+		name: 'Foundations of Calculus',
+		slug: 'foundations-of-calculus',
+		status: EducationCatalogStatus.ACTIVE,
+		summary: 'Build an intuitive foundation for limits, continuity, and calculus.',
+	},
+];
+
+export const classroomSeedList: ClassroomSeed[] = [
+	{
+		code: 'FLORENCE-01',
+		cover: {
+			alt: 'Florence skyline and cathedral',
+			src: 'https://images.unsplash.com/photo-1541370976299-4d24ebbc9077?auto=format&fit=crop&w=1600&q=85',
+			type: 'image',
+		},
+		courseSlugList: ['renaissance-art-and-society', 'european-cultural-history'],
+		id: '00000000-0000-4000-8000-000000000221',
+		institutionSlug: 'northbridge-university',
+		name: 'Florence Seminar',
+		description: 'A cross-listed seminar using game-based inquiry to connect art history with the political and social life of Renaissance Florence.',
+		slug: 'florence-seminar-fall-2026',
+		status: EducationCatalogStatus.ACTIVE,
+		summary: 'A cross-disciplinary seminar on art, power, and civic life in Renaissance Florence.',
+		taxonomyTermKeyList: [
+			`${TaxonomyType.Subject}:art-history`,
+			`${TaxonomyType.Category}:humanities`,
+		],
+	},
+	{
+		code: 'LIMITS-01',
+		cover: {
+			alt: 'Students collaborating on mathematics',
+			src: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=85',
+			type: 'image',
+		},
+		courseSlugList: ['foundations-of-calculus'],
+		id: '00000000-0000-4000-8000-000000000222',
+		institutionSlug: 'riverside-college',
+		name: 'Limits Lab',
+		description: 'A guided lab where students investigate limits through visual models, collaborative problems, and game-based practice.',
+		slug: 'limits-lab-fall-2026',
+		status: EducationCatalogStatus.ACTIVE,
+		summary: 'A hands-on calculus lab for exploring limits through models and play.',
+		taxonomyTermKeyList: [`${TaxonomyType.Subject}:calculus`],
+	},
+];
+
+export const classroomGameSeedList: ClassroomGameSeed[] = [
+	{
+		classroomSlug: 'florence-seminar-fall-2026',
+		gameSlug: 'arte-mecenas',
+		id: '00000000-0000-4000-8000-000000000231',
+	},
+	{
+		classroomSlug: 'florence-seminar-fall-2026',
+		gameSlug: 'shadow-of-the-plague',
+		id: '00000000-0000-4000-8000-000000000232',
+	},
+	{
+		classroomSlug: 'limits-lab-fall-2026',
+		gameSlug: 'variant-limits',
+		id: '00000000-0000-4000-8000-000000000233',
 	},
 ];

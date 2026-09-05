@@ -1,8 +1,4 @@
-export type GameMedia = {
-	type: "image" | "video";
-	src: string;
-	alt: string;
-};
+import type { Media } from "../../../media/shared/model/media";
 
 export type TaxonomyType = "category" | "genre" | "skill" | "subject" | "theme";
 
@@ -32,13 +28,13 @@ export type Game = {
 	title: string;
 	summary?: string;
 	description?: string;
-	cover?: GameMedia;
+	cover?: Media;
 	publisherList: Publisher[];
 	taxonomyList: GameTaxonomyTerm[];
 	estimatedLengthMinutesMin?: number;
 	estimatedLengthMinutesMax?: number;
 	featured?: boolean;
-	mediaList?: GameMedia[];
+	mediaList?: Media[];
 	publishedAt?: string;
 };
 
