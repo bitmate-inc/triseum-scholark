@@ -1,11 +1,11 @@
 import { registerAs } from '@nestjs/config';
 import Joi from 'joi';
 
-import { parseBoolean, parseNumber } from '../lib/config/parse-env';
+import { parseBoolean } from '../lib/config/parse-env';
 
 export const envSchema = {
-	CORS_ORIGIN: Joi.string().trim().optional(),
-	PORT: Joi.number().port().default(3001),
+	CORS_ORIGIN: Joi.string().trim().empty('').optional(),
+	PORT: Joi.number().port().required(),
 	TRUST_PROXY: Joi.boolean()
 		.truthy('true')
 		.falsy('false')
@@ -25,7 +25,7 @@ export default registerAs('server', () => ({
 			.filter(Boolean) ?? true,
 	},
 	server: {
-		port: parseNumber(process.env.PORT, 3001),
+		port: Number(process.env.PORT),
 		trustProxy: parseBoolean(process.env.TRUST_PROXY),
 	},
 	websocket: {

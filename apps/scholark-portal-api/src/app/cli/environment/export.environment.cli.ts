@@ -5,6 +5,8 @@ import { Command, CommandRunner } from 'nest-commander';
 
 import { getEnvFilePath } from '../../../lib/config/env-file';
 
+const EXCLUDED_ENVIRONMENT_VARIABLE_NAME_SET = new Set(['PORT']);
+
 @Injectable()
 @Command({
 	name: 'env:export',
@@ -18,7 +20,11 @@ export class ExportEnvironmentCli extends CommandRunner {
 		for (const name of environmentVariableNameSet) {
 			const value = process.env[name];
 
-			if (typeof value === 'string') {
+			if (
+				!EXCLUDED_ENVIRONMENT_VARIABLE_NAME_SET.has(name) &&
+				typeof value === 'string' &&
+				value.length > 0
+			) {
 				process.stdout.write(`${name}=${JSON.stringify(value)}\n`);
 			}
 		}

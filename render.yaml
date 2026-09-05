@@ -3,7 +3,7 @@ services:
     name: scholark-portal-api
     runtime: node
     plan: free
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter scholark-portal-api build
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm turbo run build --filter=scholark-portal-api
     startCommand: pnpm --filter scholark-portal-api start:prod
     healthCheckPath: /api/v1/health
     envVars:

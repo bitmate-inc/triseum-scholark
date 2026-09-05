@@ -34,6 +34,7 @@ describe('config loader', () => {
 		expect(definitionList).toHaveLength(9);
 		expect(
 			validationSchema?.validate({
+				CORS_ORIGIN: '',
 				AUTH_CONFIRM_EMAIL_FROM: 'noreply@scholark.com',
 				AUTH_CONFIRM_EMAIL_SUBJECT: 'Confirm your email',
 				AUTH_CONFIRM_EMAIL_URL: 'http://localhost:3000/auth/confirm-email?token=:token',
@@ -43,6 +44,7 @@ describe('config loader', () => {
 				AUTH_UPDATE_PASSWORD_URL: 'http://localhost:3000/auth/reset-password?token=:token',
 				DEBUG_PREFIX: 'app',
 				MIKRO_ORM_DATABASE_URL: 'postgresql://localhost:5432/scholark',
+				PORT: 3001,
 				AUTH_SESSION_SECRET: 'test-session-secret-at-least-32-characters',
 				REDIS_URL: 'redis://localhost:6379',
 			}).error,

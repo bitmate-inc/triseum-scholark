@@ -58,7 +58,7 @@ Configuration files under `src/config` are loaded automatically. Each file must 
 | `AUTH_COOKIE_SAME_SITE` | No | `strict` | Browser-session cookie policy: `strict`, `lax`, or `none` |
 | `AUTH_SESSION_REDIS_PREFIX` | No | `scholark:session:` | Redis key prefix used for browser sessions |
 | `CORS_ORIGIN` | No | Reflect request origin | Comma-separated allowed web origins |
-| `PORT` | No | `3001` | HTTP listen port |
+| `PORT` | Yes | - | HTTP listen port |
 | `ROUTER_BASE_URL` | No | `api` | Base URL used when generating API links |
 | `TRUST_PROXY` | No | `false` | Trust Express proxy headers |
 
