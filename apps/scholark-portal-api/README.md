@@ -29,7 +29,7 @@ pnpm install
 pnpm --filter scholark-portal-api start:dev
 ```
 
-The HTTP API listens on port `3001` by default. Its health endpoint is `GET /api/v1/health`.
+The HTTP API listens on the configured `PORT`. Its liveness endpoint is `GET /api/v1/health/alive`, and its dependency health endpoint is `GET /api/v1/health/status`.
 
 Swagger UI is available at `http://localhost:3001/api/v1/doc`. The OpenAPI JSON document is available at `http://localhost:3001/api/v1/doc-json`.
 

@@ -49,7 +49,7 @@ Set `AUTH_CONFIRM_EMAIL_FROM` and `AUTH_RESET_PASSWORD_EMAIL_FROM` to valid send
 After deployment, verify:
 
 ```bash
-curl --fail https://<render-service>.onrender.com/api/v1/health
+curl --fail https://<render-service>.onrender.com/api/v1/health/alive
 ```
 
 ## 4. Vercel
