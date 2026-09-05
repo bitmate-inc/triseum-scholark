@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:18.3-alpine
-    container_name: skolark-postgres
+    container_name: scholark-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
@@ -20,7 +20,7 @@ services:
 
   adminer:
     image: adminer:5.4.1
-    container_name: skolark-adminer
+    container_name: scholark-adminer
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -32,14 +32,14 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    container_name: skolark-redis
+    container_name: scholark-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
 
   minio:
     image: quay.io/minio/minio:latest
-    container_name: skolark-minio
+    container_name: scholark-minio
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -60,7 +60,7 @@ services:
 
   mc:
     image: minio/mc:latest
-    container_name: skolark-mc
+    container_name: scholark-mc
     volumes:
       - ./data/minio:/opt/minio/data
     entrypoint: >
@@ -76,7 +76,7 @@ services:
 
   imgproxy:
     image: darthsim/imgproxy:latest
-    container_name: skolark-imgproxy
+    container_name: scholark-imgproxy
     restart: unless-stopped
     ports:
       - "7000:7000"
@@ -98,12 +98,12 @@ services:
 
 volumes:
   postgres:
-    name: skolark-postgres
+    name: scholark-postgres
     driver: local
   minio:
-    name: skolark-minio
+    name: scholark-minio
     driver: local
 
 networks:
   default:
-    name: skolark-network
+    name: scholark-network

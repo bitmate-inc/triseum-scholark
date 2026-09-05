@@ -1,13 +1,13 @@
-# Skolark
+# Scholark
 
-Skolark is a TypeScript monorepo containing the Skolark portal, backend services, and shared packages.
+Scholark is a TypeScript monorepo containing the Scholark portal, backend services, and shared packages.
 
 ## Applications and packages
 
 ### Applications
 
-- `skolark-portal-web` — Next.js portal application
-- `skolark-portal-api` — NestJS portal services API
+- `scholark-portal-web` — Next.js portal application
+- `scholark-portal-api` — NestJS portal services API
 
 ### Shared packages
 
@@ -38,7 +38,7 @@ Clone the repository and install its dependencies:
 
 ```sh
 git clone <repository-url>
-cd skolark
+cd scholark
 pnpm install
 ```
 
@@ -53,13 +53,13 @@ pnpm dev
 Start only the portal web application:
 
 ```sh
-pnpm dev --filter=skolark-portal-web
+pnpm dev --filter=scholark-portal-web
 ```
 
 Start only the portal API:
 
 ```sh
-pnpm dev --filter=skolark-portal-api
+pnpm dev --filter=scholark-portal-api
 ```
 
 ## Build
@@ -73,8 +73,8 @@ pnpm build
 Build a specific application:
 
 ```sh
-pnpm build --filter=skolark-portal-web
-pnpm build --filter=skolark-portal-api
+pnpm build --filter=scholark-portal-web
+pnpm build --filter=scholark-portal-api
 ```
 
 ## Linting
@@ -88,8 +88,8 @@ pnpm lint
 Lint a specific application:
 
 ```sh
-pnpm lint --filter=skolark-portal-web
-pnpm lint --filter=skolark-portal-api
+pnpm lint --filter=scholark-portal-web
+pnpm lint --filter=scholark-portal-api
 ```
 
 ## Type checking
@@ -103,10 +103,10 @@ pnpm check-types
 ## Project structure
 
 ```text
-skolark/
+scholark/
 ├── apps/
-│   ├── skolark-portal-web/    # Next.js portal
-│   └── skolark-portal-api/    # NestJS API
+│   ├── scholark-portal-web/    # Next.js portal
+│   └── scholark-portal-api/    # NestJS API
 ├── packages/
 │   ├── ui/                    # Shared React components
 │   ├── eslint-config/         # Shared ESLint configuration
@@ -127,7 +127,7 @@ pnpm exec turbo <task> --filter=<package-name>
 For example:
 
 ```sh
-pnpm exec turbo build --filter=skolark-portal-web
+pnpm exec turbo build --filter=scholark-portal-web
 ```
 
 Refer to the [Turborepo filtering documentation](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters) for additional filtering options.

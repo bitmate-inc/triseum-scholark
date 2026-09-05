@@ -22,7 +22,7 @@ importers:
         specifier: 6.0.2
         version: 6.0.2
 
-  apps/skolark-portal-api:
+  apps/scholark-portal-api:
     dependencies:
       '@mikro-orm/core':
         specifier: ^7.1.14
@@ -200,7 +200,7 @@ importers:
         specifier: 6.0.2
         version: 6.0.2
 
-  apps/skolark-portal-web:
+  apps/scholark-portal-web:
     dependencies:
       '@reduxjs/toolkit':
         specifier: ^2.12.0

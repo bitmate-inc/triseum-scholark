@@ -4,7 +4,7 @@
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "css": "../../apps/skolark-portal-web/asset/style/globals.css",
+    "css": "../../apps/scholark-portal-web/asset/style/globals.css",
     "baseColor": "neutral",
     "cssVariables": true
   },
