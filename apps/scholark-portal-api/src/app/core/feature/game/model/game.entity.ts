@@ -1,11 +1,13 @@
 import { Collection } from '@mikro-orm/core';
 import {
 	Entity,
+	ManyToMany,
 	OneToMany,
 	PrimaryKey,
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
+import { Publisher } from '../../publisher/model/publisher.entity';
 import { GameTaxonomyTerm } from './game.taxonomy.term.entity';
 
 export interface GameMedia {
@@ -34,6 +36,9 @@ export class Game {
 
 	@Property({ nullable: true, type: 'json' })
 	cover?: GameMedia;
+
+	@ManyToMany({ entity: () => Publisher, owner: true })
+	publisherList = new Collection<Publisher>(this);
 
 	@OneToMany(() => GameTaxonomyTerm, (gameTaxonomyTerm) => gameTaxonomyTerm.gameId)
 	taxonomyList = new Collection<GameTaxonomyTerm>(this);

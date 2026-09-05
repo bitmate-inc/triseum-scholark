@@ -4,6 +4,7 @@ import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dt
 import { GetCatalogGameListQueryResult } from '../../core/feature/catalog/query/get.catalog.game.list.query';
 import { GetFeaturedGameListQueryResult } from '../../core/feature/catalog/query/get.featured.game.list.query';
 import { Game, GameMedia } from '../../core/feature/game/model/game.entity';
+import { Publisher } from '../../core/feature/publisher/model/publisher.entity';
 import { TaxonomyType } from '../../core/feature/taxonomy/model/taxonomy.term.entity';
 
 export class GetGameListQueryDto extends GetListRequestQueryParamsDto {}
@@ -50,6 +51,22 @@ class GameTaxonomyTermResponseDto {
 
 }
 
+class PublisherResponseDto implements Pick<Publisher, 'id' | 'name' | 'slug' | 'websiteUrl'> {
+
+	@ApiProperty({ format: 'uuid' })
+	id!: string;
+
+	@ApiProperty()
+	name!: string;
+
+	@ApiProperty()
+	slug!: string;
+
+	@ApiPropertyOptional({ format: 'uri' })
+	websiteUrl?: string;
+
+}
+
 export class GameResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
@@ -69,6 +86,9 @@ export class GameResponseDto {
 
 	@ApiPropertyOptional({ type: GameMediaResponseDto })
 	cover?: GameMediaResponseDto;
+
+	@ApiProperty({ type: [PublisherResponseDto] })
+	publisherList!: PublisherResponseDto[];
 
 	@ApiProperty({ type: [GameTaxonomyTermResponseDto] })
 	taxonomyList!: GameTaxonomyTermResponseDto[];
@@ -98,6 +118,12 @@ export class GameResponseDto {
 			id: game.id!,
 			mediaList: game.mediaList,
 			publishedAt: game.publishedAt,
+			publisherList: game.publisherList.getItems().map((publisher) => ({
+				id: publisher.id!,
+				name: publisher.name,
+				slug: publisher.slug,
+				websiteUrl: publisher.websiteUrl,
+			})),
 			slug: game.slug,
 			summary: game.summary,
 			taxonomyList: game.taxonomyList.getItems().map((association) => ({

@@ -38,7 +38,7 @@ export class GameController {
 	async getGameList(@Query() query: GetGameListQueryDto): Promise<GetGameListResponseDto> {
 		const result = await this.getCatalogGameListQuery.execute({
 			filterBy: query.filterBy,
-			include: { taxonomyList: true },
+			include: { publisherList: true, taxonomyList: true },
 			pagination: query.pagination,
 		});
 		return GetGameListResponseDto.fromQueryResult(result);
@@ -49,7 +49,7 @@ export class GameController {
 	@ApiOkResponse({ type: GetGameListResponseDto })
 	async getFeaturedGameList(): Promise<GetGameListResponseDto> {
 		const result = await this.getFeaturedGameListQuery.execute({
-			include: { taxonomyList: true },
+			include: { publisherList: true, taxonomyList: true },
 		});
 		return GetGameListResponseDto.fromQueryResult(result);
 	}
@@ -62,7 +62,7 @@ export class GameController {
 	async getGame(@Param('slug') slug: string): Promise<GetGameResponseDto> {
 		const result = await this.getGameQuery.execute({
 			filterBy: { slug },
-			include: { taxonomyList: true },
+			include: { publisherList: true, taxonomyList: true },
 		});
 
 		if (!result.game) {

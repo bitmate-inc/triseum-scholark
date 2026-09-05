@@ -10,6 +10,13 @@ export interface TaxonomyTermSeed {
 	sortOrder: number;
 }
 
+export interface PublisherSeed {
+	id: string;
+	name: string;
+	slug: string;
+	websiteUrl?: string;
+}
+
 export interface GameSeed {
 	id: string;
 	slug: string;
@@ -17,6 +24,7 @@ export interface GameSeed {
 	summary: string;
 	description: string;
 	cover: GameMedia;
+	publisherSlugList: string[];
 	taxonomyList: TaxonomyTermSeed[];
 	estimatedLengthMinutesMin: number;
 	estimatedLengthMinutesMax: number;
@@ -42,6 +50,15 @@ function createTaxonomyList(
 	}));
 }
 
+export const publisherSeedList: PublisherSeed[] = [
+	{
+		id: '00000000-0000-4000-8000-000000000101',
+		name: 'Triseum',
+		slug: 'triseum',
+		websiteUrl: 'https://triseum.com',
+	},
+];
+
 export const gameSeedList: GameSeed[] = [
 	{
 		id: '00000000-0000-4000-8000-000000000001',
@@ -54,6 +71,7 @@ export const gameSeedList: GameSeed[] = [
 			src: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&w=1800&q=85',
 			alt: 'ARTé: Mecenas key art',
 		},
+		publisherSlugList: ['triseum'],
 		taxonomyList: createTaxonomyList([
 			{ type: TaxonomyType.Subject, label: 'Art History', slug: 'art-history' },
 			{ type: TaxonomyType.Genre, label: 'Strategy', slug: 'strategy' },
@@ -92,6 +110,7 @@ export const gameSeedList: GameSeed[] = [
 			src: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1600&q=85',
 			alt: 'Variant: Limits key art',
 		},
+		publisherSlugList: ['triseum'],
 		taxonomyList: createTaxonomyList([
 			{ type: TaxonomyType.Subject, label: 'Calculus', slug: 'calculus' },
 			{ type: TaxonomyType.Genre, label: 'Adventure', slug: 'adventure' },
@@ -114,6 +133,7 @@ export const gameSeedList: GameSeed[] = [
 			src: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1600&q=85',
 			alt: 'Econland key art',
 		},
+		publisherSlugList: ['triseum'],
 		taxonomyList: createTaxonomyList([
 			{ type: TaxonomyType.Subject, label: 'Economics', slug: 'economics' },
 			{ type: TaxonomyType.Genre, label: 'Simulation', slug: 'simulation' },
@@ -136,6 +156,7 @@ export const gameSeedList: GameSeed[] = [
 			src: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=1600&q=85',
 			alt: 'Shadow of the Plague key art',
 		},
+		publisherSlugList: ['triseum'],
 		taxonomyList: createTaxonomyList([
 			{ type: TaxonomyType.Subject, label: 'History', slug: 'history' },
 			{ type: TaxonomyType.Genre, label: 'Investigation', slug: 'investigation' },
@@ -158,6 +179,7 @@ export const gameSeedList: GameSeed[] = [
 			src: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1600&q=85',
 			alt: 'Orbital Commons key art',
 		},
+		publisherSlugList: ['triseum'],
 		taxonomyList: createTaxonomyList([
 			{ type: TaxonomyType.Subject, label: 'Civics', slug: 'civics' },
 			{ type: TaxonomyType.Skill, label: 'Systems Thinking', slug: 'systems-thinking' },
@@ -180,6 +202,7 @@ export const gameSeedList: GameSeed[] = [
 			src: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1600&q=85',
 			alt: 'The Archive key art',
 		},
+		publisherSlugList: ['triseum'],
 		taxonomyList: createTaxonomyList([
 			{ type: TaxonomyType.Skill, label: 'Media Literacy', slug: 'media-literacy' },
 			{ type: TaxonomyType.Genre, label: 'Puzzle', slug: 'puzzle' },
@@ -202,6 +225,7 @@ export const gameSeedList: GameSeed[] = [
 			src: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=85',
 			alt: 'Signal & Noise key art',
 		},
+		publisherSlugList: ['triseum'],
 		taxonomyList: createTaxonomyList([
 			{ type: TaxonomyType.Subject, label: 'Data Science', slug: 'data-science' },
 			{ type: TaxonomyType.Genre, label: 'Mystery', slug: 'mystery' },

@@ -3,6 +3,7 @@ import { buttonVariants } from "@repo/ui/button";
 import { Separator } from "@repo/ui/separator";
 import {
 	ArrowLeft,
+	Building2,
 	Clock3,
 	MonitorPlay
 } from "lucide-react";
@@ -10,6 +11,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Fragment } from "react";
 
 import styles from "../../../asset/style/site.module.css";
 import { getGameRequest } from "../../../feature/catalog/server/request/get-game.request";
@@ -63,6 +65,21 @@ export default async function GamePage({ params }: GamePageProps) {
 					<Separator/>
 					<dl className={styles.gameFacts}>
 						<div><dt><Clock3 aria-hidden="true"/> Typical length</dt><dd>{formatEstimatedLength(game)}</dd></div>
+						{game.publisherList.length ? (
+							<div>
+								<dt><Building2 aria-hidden="true"/> {game.publisherList.length === 1 ? "Publisher" : "Publishers"}</dt>
+								<dd>
+									{game.publisherList.map((publisher, index) => (
+										<Fragment key={publisher.id}>
+											{index > 0 ? ", " : null}
+											{publisher.websiteUrl ? (
+												<a href={publisher.websiteUrl} rel="noreferrer" target="_blank">{publisher.name}</a>
+											) : publisher.name}
+										</Fragment>
+									))}
+								</dd>
+							</div>
+						) : null}
 					</dl>
 					<button className={buttonVariants({ size: "lg" })} type="button">
 						<MonitorPlay data-icon="inline-start"/>Get access

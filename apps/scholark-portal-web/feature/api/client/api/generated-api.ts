@@ -245,6 +245,12 @@ export type GameMediaResponseDto = {
 	src: string;
 	alt: string;
 };
+export type PublisherResponseDto = {
+	id: string;
+	name: string;
+	slug: string;
+	websiteUrl?: string;
+};
 export type TaxonomyType = "category" | "genre" | "skill" | "subject" | "theme";
 export type TaxonomyTermResponseDto = {
 	id: string;
@@ -264,6 +270,7 @@ export type GameResponseDto = {
 	summary?: string;
 	description?: string;
 	cover?: GameMediaResponseDto;
+	publisherList: PublisherResponseDto[];
 	taxonomyList: GameTaxonomyTermResponseDto[];
 	estimatedLengthMinutesMin?: number;
 	estimatedLengthMinutesMax?: number;

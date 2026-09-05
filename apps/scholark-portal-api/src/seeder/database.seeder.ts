@@ -3,8 +3,9 @@ import { Seeder } from '@mikro-orm/seeder';
 
 import { Game } from '../app/core/feature/game/model/game.entity';
 import { GameTaxonomyTerm } from '../app/core/feature/game/model/game.taxonomy.term.entity';
+import { Publisher } from '../app/core/feature/publisher/model/publisher.entity';
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
-import { gameSeedList } from './catalog.data';
+import { gameSeedList, publisherSeedList } from './catalog.data';
 import { UserSeeder } from './user.seeder';
 
 export class DatabaseSeeder extends Seeder {
@@ -13,8 +14,21 @@ export class DatabaseSeeder extends Seeder {
 		await this.call(em, [UserSeeder]);
 
 		await em.transactional(async (transactionalEm) => {
+			const publisherMap = new Map<string, Publisher>();
 			const taxonomyTermMap = new Map<string, TaxonomyTerm>();
 			const gameMap = new Map<string, Game>();
+
+			for (const publisherSeed of publisherSeedList) {
+				let publisher = await transactionalEm.findOne(Publisher, { slug: publisherSeed.slug });
+
+				if (publisher) {
+					transactionalEm.assign(publisher, publisherSeed);
+				} else {
+					publisher = transactionalEm.create(Publisher, publisherSeed);
+				}
+
+				publisherMap.set(publisher.slug, publisher);
+			}
 
 			for (const gameSeed of gameSeedList) {
 				for (const taxonomySeed of gameSeed.taxonomyList) {
@@ -62,6 +76,10 @@ export class DatabaseSeeder extends Seeder {
 				} else {
 					game = transactionalEm.create(Game, gameData);
 				}
+
+				game.publisherList.set(
+					gameSeed.publisherSlugList.map((slug) => publisherMap.get(slug)!),
+				);
 
 				gameMap.set(game.slug, game);
 			}

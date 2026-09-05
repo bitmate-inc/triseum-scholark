@@ -17,6 +17,7 @@ export class GetGameFilterByDto extends GetOneFilterByDto {
 
 export class GetGameIncludeDto extends IncludeDto {
 
+	publisherList?: boolean;
 	taxonomyList?: boolean;
 
 }
@@ -58,6 +59,10 @@ export class GetGameQuery {
 			queryBuilder
 				.leftJoinAndSelect('game.taxonomyList', 'taxonomy')
 				.leftJoinAndSelect('taxonomy.taxonomyTerm', 'taxonomyTerm');
+		}
+
+		if (data.include?.publisherList) {
+			queryBuilder.leftJoinAndSelect('game.publisherList', 'publisher');
 		}
 
 		queryBuilder.andWhere({ publishedAt: { $lte: new Date() } });

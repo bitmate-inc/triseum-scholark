@@ -19,6 +19,13 @@ export type GameTaxonomyTerm = {
 	sortOrder: number;
 };
 
+export type Publisher = {
+	id: string;
+	name: string;
+	slug: string;
+	websiteUrl?: string;
+};
+
 export type Game = {
 	id: string;
 	slug: string;
@@ -26,6 +33,7 @@ export type Game = {
 	summary?: string;
 	description?: string;
 	cover?: GameMedia;
+	publisherList: Publisher[];
 	taxonomyList: GameTaxonomyTerm[];
 	estimatedLengthMinutesMin?: number;
 	estimatedLengthMinutesMax?: number;
