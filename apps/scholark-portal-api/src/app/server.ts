@@ -76,4 +76,6 @@ export async function bootstrap(): Promise<void> {
 
 	const server = app.get<ConfigType<typeof serverConfig>>(serverConfig.KEY);
 	await app.listen(server.server.port);
+
+	console.log(`=== LISTENING ON PORT ${server.server.port} ===`);
 }
