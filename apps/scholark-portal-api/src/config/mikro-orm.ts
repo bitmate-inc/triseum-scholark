@@ -14,11 +14,35 @@ export const envSchema = {
 		.default(false),
 };
 
-export function createConfig(){
+export function getPostgreSqlDriverOptions(clientUrl?: string): Record<string, boolean> {
+	if (!clientUrl) {
+		return {};
+	}
+
+	const url = new URL(clientUrl);
+	const sslMode = url.searchParams.get('sslmode');
+	const channelBinding = url.searchParams.get('channel_binding');
+	const driverOptions: Record<string, boolean> = {};
+
+	if (sslMode && sslMode !== 'disable') {
+		driverOptions.ssl = true;
+	}
+
+	if (channelBinding === 'prefer' || channelBinding === 'require') {
+		driverOptions.enableChannelBinding = true;
+	}
+
+	return driverOptions;
+}
+
+export function createConfig() {
+	const clientUrl = process.env.MIKRO_ORM_DATABASE_URL;
+
 	return defineConfig({
-		clientUrl: process.env.MIKRO_ORM_DATABASE_URL,
+		clientUrl,
 		debug: process.env.MIKRO_ORM_DEBUG === 'true',
 		driver: PostgreSqlDriver,
+		driverOptions: getPostgreSqlDriverOptions(clientUrl),
 		entities: ['./dist/app/core/**/*.entity.js'],
 		entitiesTs: ['./src/app/core/**/*.entity.ts'],
 		metadataProvider: ReflectMetadataProvider,
