@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: scholark-portal-api
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter scholark-portal-api build
+    startCommand: pnpm --filter scholark-portal-api start:prod
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: NODE_ENV
+        value: stage
+      - key: MIKRO_ORM_DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: AUTH_SESSION_SECRET
+        generateValue: true
+      - key: AUTH_JWT_SECRET
+        generateValue: true
+      - key: AUTH_COOKIE_SECURE
+        value: true
+      - key: AUTH_COOKIE_SAME_SITE
+        value: lax
+      - key: TRUST_PROXY
+        value: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: DEBUG_PREFIX
+        value: scholark-portal-api
+      - key: AUTH_CONFIRM_EMAIL_URL
+        sync: false
+      - key: AUTH_CONFIRM_EMAIL_FROM
+        sync: false
+      - key: AUTH_CONFIRM_EMAIL_SUBJECT
+        value: Confirm your ScholArk email
+      - key: AUTH_UPDATE_PASSWORD_URL
+        sync: false
+      - key: AUTH_RESET_PASSWORD_EMAIL_FROM
+        sync: false
+      - key: AUTH_RESET_PASSWORD_EMAIL_SUBJECT
+        value: Reset your ScholArk password

@@ -63,7 +63,9 @@ Server-only modules import `server-only`, and client entry points use `"use clie
 
 ## API client
 
-Set `NEXT_PUBLIC_API_BASE_URL` to the NestJS API origin. It defaults to `http://localhost:3001` for local development and is used by both App Router server requests and generated RTK Query hooks.
+Set `NEXT_PUBLIC_API_BASE_URL` to the NestJS API origin. It defaults to `http://localhost:3001` for local development and is used by generated RTK Query hooks and other browser requests. `API_SERVER_BASE_URL` optionally provides a direct API origin for App Router server requests.
+
+In Vercel, set `NEXT_PUBLIC_API_BASE_URL=/api` and `API_SERVER_BASE_URL` to the Render origin. The Next.js rewrite proxies browser requests to Render so session cookies remain first-party.
 
 With the API running, regenerate the RTK Query slice from its OpenAPI document:
 

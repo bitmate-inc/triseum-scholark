@@ -2,6 +2,8 @@ import "server-only";
 
 import { API_BASE_URL } from "../../shared/config/api.config";
 
+const API_SERVER_BASE_URL = process.env.API_SERVER_BASE_URL ?? API_BASE_URL;
+
 export class ApiRequestError extends Error {
 
 	constructor(
@@ -15,7 +17,7 @@ export class ApiRequestError extends Error {
 }
 
 export async function apiFetch<Response>(path: string): Promise<Response> {
-	const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}${path}`, {
+	const response = await fetch(`${API_SERVER_BASE_URL.replace(/\/$/, "")}${path}`, {
 		headers: { Accept: "application/json" },
 		next: { revalidate: 300 },
 	});

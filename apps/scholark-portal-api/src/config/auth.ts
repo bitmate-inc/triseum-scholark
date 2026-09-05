@@ -4,6 +4,9 @@ import Joi from 'joi';
 import { parseBoolean, parseNumber } from '../lib/config/parse-env';
 
 export const envSchema = {
+	AUTH_COOKIE_SAME_SITE: Joi.string()
+		.valid('lax', 'none', 'strict')
+		.default('strict'),
 	AUTH_COOKIE_SECURE: Joi.boolean().truthy('true').falsy('false').default(false),
 	AUTH_GOOGLE_CALLBACK_URL: Joi.string().uri().optional(),
 	AUTH_GOOGLE_CLIENT_ID: Joi.string().optional(),
@@ -39,7 +42,7 @@ export default registerAs('auth', () => ({
 		cookie: {
 			httpOnly: true,
 			maxAge: parseNumber(process.env.AUTH_SESSION_TTL_SECONDS, 604800) * 1000,
-			sameSite: 'strict' as const,
+			sameSite: (process.env.AUTH_COOKIE_SAME_SITE ?? 'strict') as 'lax' | 'none' | 'strict',
 			secure: parseBoolean(process.env.AUTH_COOKIE_SECURE),
 		},
 		name: process.env.AUTH_SESSION_COOKIE_NAME ?? 'scholark_session',

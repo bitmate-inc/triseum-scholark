@@ -44,8 +44,7 @@ describe('config loader', () => {
 				DEBUG_PREFIX: 'app',
 				MIKRO_ORM_DATABASE_URL: 'postgresql://localhost:5432/scholark',
 				AUTH_SESSION_SECRET: 'test-session-secret-at-least-32-characters',
-				REDIS_HOST: 'localhost',
-				REDIS_PORT: 6379,
+				REDIS_URL: 'redis://localhost:6379',
 			}).error,
 		).toBeUndefined();
 	});

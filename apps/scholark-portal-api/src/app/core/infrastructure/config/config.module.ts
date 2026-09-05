@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigModule as NestConfigModule, ConfigModuleOptions } from '@nestjs/config';
 
+import { getEnvFilePath } from '../../../../lib/config/env-file';
 import { buildValidationSchema, loadConfigFromDirectory } from '../../../../lib/config/loader/config.loader';
 
 export type AppConfigModuleOptions = Pick<ConfigModuleOptions, 'validate'> & {
@@ -21,7 +22,7 @@ export class ConfigModule {
 			: [];
 
 		const configModule = NestConfigModule.forRoot({
-			envFilePath: ['.env.local', '.env'],
+			envFilePath: getEnvFilePath(),
 			expandVariables: true,
 			isGlobal: true,
 			load: configDefinitionList.map(({ config }) => config),

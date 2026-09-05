@@ -7,6 +7,7 @@
 import { ConfigModule } from '@nestjs/config';
 
 import { createConfig } from './config/mikro-orm';
+import { getEnvFilePath } from './lib/config/env-file';
 
 /*
  * Load env vars
@@ -17,7 +18,7 @@ import { createConfig } from './config/mikro-orm';
  */
 export default async () => {
 	await ConfigModule.forRoot({
-		envFilePath: ['.env.local', '.env'],
+		envFilePath: getEnvFilePath(),
 		expandVariables: true,
 	});
 

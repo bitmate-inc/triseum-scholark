@@ -37,17 +37,21 @@ Swagger UI is available at `http://localhost:3001/api/v1/doc`. The OpenAPI JSON 
 
 Environment variables are validated at startup and exposed through namespaced Nest configuration.
 
+The committed `.env` provides local defaults. Set `NODE_ENV=stage` to load the ignored `.env.stage` before `.env`; this applies to both the NestJS application and MikroORM CLI commands.
+
 Configuration files under `src/config` are loaded automatically. Each file must default-export a Nest `registerAs` factory and may export an `envSchema` object; all discovered schemas are merged for startup validation, and duplicate environment-variable definitions fail fast.
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
 | `MIKRO_ORM_DATABASE_URL` | Yes | - | PostgreSQL connection URL |
 | `MIKRO_ORM_DEBUG` | No | `false` | Enable MikroORM debug logging |
-| `REDIS_HOST` | Yes | - | Redis host for browser-session storage |
-| `REDIS_PORT` | Yes | - | Redis port for browser-session storage |
+| `REDIS_URL` | Yes | - | Redis connection URL for browser-session storage |
 | `AUTH_SESSION_SECRET` | Yes | - | Secret used to sign browser-session cookies |
 | `AUTH_JWT_SECRET` | Yes | - | Secret used by the available JWT auth transport |
+| `AUTH_COOKIE_SECURE` | No | `false` | Send the browser-session cookie only over HTTPS |
+| `AUTH_COOKIE_SAME_SITE` | No | `strict` | Browser-session cookie policy: `strict`, `lax`, or `none` |
 | `AUTH_SESSION_REDIS_PREFIX` | No | `scholark:session:` | Redis key prefix used for browser sessions |
+| `CORS_ORIGIN` | No | Reflect request origin | Comma-separated allowed web origins |
 | `PORT` | No | `3001` | HTTP listen port |
 | `ROUTER_BASE_URL` | No | `api` | Base URL used when generating API links |
 | `TRUST_PROXY` | No | `false` | Trust Express proxy headers |
@@ -81,6 +85,8 @@ The seed is idempotent: it updates the seven fixture games and their taxonomy
 associations without deleting unrelated games or taxonomy terms.
 
 Do not enable automatic schema synchronization in production.
+
+See the [portal deployment guide](../../doc/deployment.md) for the Vercel, Render, Neon, and Upstash configuration.
 
 See [MikroORM notes](doc/notes/mikro-orm.md) for CLI loader, metadata,
 entity-modeling, and local database troubleshooting details.

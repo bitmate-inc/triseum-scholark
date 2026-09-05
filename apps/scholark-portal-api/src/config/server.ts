@@ -4,6 +4,7 @@ import Joi from 'joi';
 import { parseBoolean, parseNumber } from '../lib/config/parse-env';
 
 export const envSchema = {
+	CORS_ORIGIN: Joi.string().trim().optional(),
 	PORT: Joi.number().port().default(3001),
 	TRUST_PROXY: Joi.boolean()
 		.truthy('true')
@@ -18,7 +19,10 @@ export default registerAs('server', () => ({
 		credentials: true,
 		exposedHeaders: ['Link'],
 		methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'],
-		origin: true,
+		origin: process.env.CORS_ORIGIN
+			?.split(',')
+			.map((origin) => origin.trim())
+			.filter(Boolean) ?? true,
 	},
 	server: {
 		port: parseNumber(process.env.PORT, 3001),
