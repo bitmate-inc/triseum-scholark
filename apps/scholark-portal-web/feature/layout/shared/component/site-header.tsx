@@ -1,5 +1,5 @@
 import { buttonVariants } from "@repo/ui/button";
-import { BookOpen, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 
 import styles from "../../../../asset/style/site.module.css";
@@ -26,13 +26,6 @@ export function SiteHeader() {
 				>
 					<Search/>
 				</Link>
-				<button
-					className={buttonVariants({ variant: "ghost", size: "icon" })}
-					aria-label="Choose language"
-					type="button"
-				>
-					<BookOpen/>
-				</button>
 				<AccountControl/>
 			</div>
 		</header>

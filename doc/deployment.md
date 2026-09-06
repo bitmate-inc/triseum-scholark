@@ -43,10 +43,11 @@ Use these URL values after the Vercel project exists, replacing `<web-origin>` w
 | `CORS_ORIGIN` | `<web-origin>` |
 | `AUTH_COOKIE_SECURE` | `true` |
 | `AUTH_COOKIE_SAME_SITE` | `none` |
+| `TRUST_PROXY` | `true` |
 | `AUTH_CONFIRM_EMAIL_URL` | `<web-origin>/auth/confirm-email` |
 | `AUTH_UPDATE_PASSWORD_URL` | `<web-origin>/auth/reset-password` |
 
-Set `AUTH_CONFIRM_EMAIL_FROM` and `AUTH_RESET_PASSWORD_EMAIL_FROM` to valid sender addresses. Configure the optional `SMTP_*` variables for a production mail provider. Render supplies `PORT`; do not set it manually.
+Set `AUTH_CONFIRM_EMAIL_FROM` and `AUTH_RESET_PASSWORD_EMAIL_FROM` to valid sender addresses. Configure the optional `SMTP_*` variables for a production mail provider. `TRUST_PROXY=true` is required for Express to emit secure session cookies behind Render's TLS proxy. Render supplies `PORT`; do not set it manually.
 
 After deployment, verify:
 
