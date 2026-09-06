@@ -36,11 +36,13 @@ Copy the output into **Environment > Add from .env** in the Render dashboard, th
 
 The Blueprint sets `NODE_ENV=stage`. NestJS and MikroORM CLI therefore resolve files in this order: `.env.stage.local`, `.env.stage`, `.env.local`, then the committed `.env`. Environment variables supplied by Render take precedence over every file.
 
-Use these URL values after the Vercel project exists, replacing `<web-origin>` with its HTTPS origin and omitting trailing slashes:
+Use these URL values after the Vercel project exists, replacing `<web-origin>` with its HTTPS origin and omitting trailing slashes. The production Blueprint already sets `CORS_ORIGIN` to `https://scholark-web.vercel.app`:
 
 | Variable | Value |
 | --- | --- |
 | `CORS_ORIGIN` | `<web-origin>` |
+| `AUTH_COOKIE_SECURE` | `true` |
+| `AUTH_COOKIE_SAME_SITE` | `none` |
 | `AUTH_CONFIRM_EMAIL_URL` | `<web-origin>/auth/confirm-email` |
 | `AUTH_UPDATE_PASSWORD_URL` | `<web-origin>/auth/reset-password` |
 
@@ -60,13 +62,13 @@ Set these variables for Production and Preview as appropriate:
 
 | Variable | Value |
 | --- | --- |
-| `NEXT_PUBLIC_API_BASE_URL` | `/api` |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://triseum-skolark.onrender.com` |
 | `API_SERVER_BASE_URL` | `https://triseum-skolark.onrender.com` |
 
-The `/api` rewrite proxies browser requests through Vercel, keeping session cookies first-party. Server Components use `API_SERVER_BASE_URL` to call Render directly. `API_SERVER_BASE_URL` is required during the Vercel build and must be an absolute HTTPS URL, not `/api`.
+Browser requests and Server Components call Render directly; the application does not define a Next.js API rewrite. Both variables must be absolute HTTPS origins without a trailing slash. Because authentication uses a cross-site session cookie, Render must use the exact Vercel origin for `CORS_ORIGIN`, enable credentials, and issue cookies with `Secure` and `SameSite=None`.
 
 For preview deployments, either use a stable custom preview domain or add the preview origin to Render's comma-separated `CORS_ORIGIN`. Production should use an exact origin rather than a wildcard.
 
 ## 5. Release check
 
-Verify registration, login, logout, password reset, and an authenticated profile request in a private browser window. Then inspect Render logs for database or Redis TLS errors and confirm the browser stores the secure session cookie on the Vercel domain.
+Verify registration, login, logout, password reset, and an authenticated profile request in a private browser window. Then inspect Render logs for database or Redis TLS errors and confirm the browser stores the secure session cookie for the Render domain. Browsers that block third-party cookies can prevent this cross-site session model; use custom domains under one parent domain or restore a same-origin proxy if broad browser compatibility is required.

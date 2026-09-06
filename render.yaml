@@ -22,11 +22,11 @@ services:
       - key: AUTH_COOKIE_SECURE
         value: "true"
       - key: AUTH_COOKIE_SAME_SITE
-        value: lax
+        value: none
       - key: TRUST_PROXY
         value: "true"
       - key: CORS_ORIGIN
-        sync: false
+        value: https://scholark-web.vercel.app
       - key: DEBUG_PREFIX
         value: scholark-portal-api
       - key: AUTH_CONFIRM_EMAIL_URL
