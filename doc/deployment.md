@@ -61,9 +61,9 @@ Set these variables for Production and Preview as appropriate:
 | Variable | Value |
 | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | `/api` |
-| `API_SERVER_BASE_URL` | `https://<render-service>.onrender.com` |
+| `API_SERVER_BASE_URL` | `https://triseum-skolark.onrender.com` |
 
-The `/api` rewrite proxies browser requests through Vercel, keeping session cookies first-party. Server Components use `API_SERVER_BASE_URL` to call Render directly.
+The `/api` rewrite proxies browser requests through Vercel, keeping session cookies first-party. Server Components use `API_SERVER_BASE_URL` to call Render directly. `API_SERVER_BASE_URL` is required during the Vercel build and must be an absolute HTTPS URL, not `/api`.
 
 For preview deployments, either use a stable custom preview domain or add the preview origin to Render's comma-separated `CORS_ORIGIN`. Production should use an exact origin rather than a wildcard.
 
