@@ -13,6 +13,7 @@ import { TaxonomyTerm } from '../../taxonomy/model/taxonomy.term.entity';
 import { Course } from './course.entity';
 import { EducationCatalogStatus } from './education.catalog.status';
 import { EducationalInstitution } from './educational.institution.entity';
+import { Instructor } from './instructor.entity';
 
 @Entity({ tableName: 'classroom' })
 @Unique({ properties: ['institution', 'code'] })
@@ -47,6 +48,9 @@ export class Classroom {
 
 	@ManyToMany({ entity: () => Course, owner: true })
 	courseList = new Collection<Course>(this);
+
+	@ManyToMany({ entity: () => Instructor, owner: true })
+	instructorList = new Collection<Instructor>(this);
 
 	@ManyToMany({ entity: () => TaxonomyTerm, owner: true })
 	taxonomyTermList = new Collection<TaxonomyTerm>(this);

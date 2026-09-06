@@ -62,6 +62,7 @@ function addClassroomRelations(queryBuilder: ReturnType<EntityRepository<Classro
 	queryBuilder
 		.leftJoinAndSelect('classroom.institution', 'institution')
 		.leftJoinAndSelect('classroom.courseList', 'course')
+		.leftJoinAndSelect('classroom.instructorList', 'instructor')
 		.leftJoinAndSelect('classroom.taxonomyTermList', 'taxonomyTerm');
 }
 

@@ -13,16 +13,26 @@ export const envSchema = {
 		.optional(),
 };
 
+export function parseCorsOrigin(value?: string): true | string[] {
+	const originList = value
+		?.split(',')
+		.map((origin) => origin.trim())
+		.filter(Boolean) ?? [];
+
+	if (originList.length === 0) {
+		return true;
+	}
+
+	return originList;
+}
+
 export default registerAs('server', () => ({
 	cors: {
 		allowedHeaders: ['Content-Type', 'Authorization'],
 		credentials: true,
 		exposedHeaders: ['Link'],
 		methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'],
-		origin: process.env.CORS_ORIGIN
-			?.split(',')
-			.map((origin) => origin.trim())
-			.filter(Boolean) ?? true,
+		origin: parseCorsOrigin(process.env.CORS_ORIGIN),
 	},
 	server: {
 		port: Number(process.env.PORT),

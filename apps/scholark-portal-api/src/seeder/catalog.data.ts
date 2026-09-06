@@ -38,11 +38,18 @@ export interface EducationalInstitutionSeed {
 	id: string;
 	name: string;
 	slug: string;
+	instructorSlugList: string[];
 	cover?: Media;
 	summary?: string;
 	description?: string;
 	websiteUrl?: string;
 	status: EducationCatalogStatus;
+}
+
+export interface InstructorSeed {
+	id: string;
+	name: string;
+	slug: string;
 }
 
 export interface CourseSeed {
@@ -68,6 +75,7 @@ export interface ClassroomSeed {
 	description?: string;
 	status: EducationCatalogStatus;
 	courseSlugList: string[];
+	instructorSlugList: string[];
 	taxonomyTermKeyList: string[];
 }
 
@@ -100,6 +108,24 @@ export const publisherSeedList: PublisherSeed[] = [
 		name: 'Triseum',
 		slug: 'triseum',
 		websiteUrl: 'https://triseum.com',
+	},
+];
+
+export const instructorSeedList: InstructorSeed[] = [
+	{
+		id: '00000000-0000-4000-8000-000000000241',
+		name: 'Dr. Elena Rossi',
+		slug: 'elena-rossi',
+	},
+	{
+		id: '00000000-0000-4000-8000-000000000242',
+		name: 'Professor Marcus Chen',
+		slug: 'marcus-chen',
+	},
+	{
+		id: '00000000-0000-4000-8000-000000000243',
+		name: 'Dr. Priya Shah',
+		slug: 'priya-shah',
 	},
 ];
 
@@ -292,6 +318,7 @@ export const educationalInstitutionSeedList: EducationalInstitutionSeed[] = [
 		},
 		description: 'A public research university offering interdisciplinary programs.',
 		id: '00000000-0000-4000-8000-000000000201',
+		instructorSlugList: ['elena-rossi', 'marcus-chen'],
 		name: 'Northbridge University',
 		slug: 'northbridge-university',
 		status: EducationCatalogStatus.ACTIVE,
@@ -306,6 +333,7 @@ export const educationalInstitutionSeedList: EducationalInstitutionSeed[] = [
 		},
 		description: 'An independent college focused on arts, history, and civic studies.',
 		id: '00000000-0000-4000-8000-000000000202',
+		instructorSlugList: ['priya-shah'],
 		name: 'Riverside College',
 		slug: 'riverside-college',
 		status: EducationCatalogStatus.ACTIVE,
@@ -373,6 +401,7 @@ export const classroomSeedList: ClassroomSeed[] = [
 		courseSlugList: ['renaissance-art-and-society', 'european-cultural-history'],
 		id: '00000000-0000-4000-8000-000000000221',
 		institutionSlug: 'northbridge-university',
+		instructorSlugList: ['elena-rossi', 'marcus-chen'],
 		name: 'Florence Seminar',
 		description: 'A cross-listed seminar using game-based inquiry to connect art history with the political and social life of Renaissance Florence.',
 		slug: 'florence-seminar-fall-2026',
@@ -393,6 +422,7 @@ export const classroomSeedList: ClassroomSeed[] = [
 		courseSlugList: ['foundations-of-calculus'],
 		id: '00000000-0000-4000-8000-000000000222',
 		institutionSlug: 'riverside-college',
+		instructorSlugList: ['priya-shah'],
 		name: 'Limits Lab',
 		description: 'A guided lab where students investigate limits through visual models, collaborative problems, and game-based practice.',
 		slug: 'limits-lab-fall-2026',

@@ -1,5 +1,5 @@
 import { buttonVariants } from "@repo/ui/button";
-import { Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import Link from "next/link";
 
 import styles from "../../../../asset/style/site.module.css";
@@ -15,8 +15,8 @@ export function SiteHeader() {
 				<span>ScholArk</span>
 			</Link>
 			<nav className={styles.primaryNav} aria-label="Primary navigation">
-				<Link href="/catalog">Games</Link>
-				<Link href="/institution">Institutions</Link>
+				<Link href="/catalog">Game Catalog</Link>
+				<Link href="/institution">Educational Institutions</Link>
 			</nav>
 			<div className={styles.headerActions}>
 				<Link
@@ -27,6 +27,29 @@ export function SiteHeader() {
 					<Search/>
 				</Link>
 				<AccountControl/>
+			</div>
+			<div className={styles.mobileActions}>
+				<Link
+					className={buttonVariants({ variant: "ghost", size: "icon" })}
+					href="/catalog"
+					aria-label="Search games"
+				>
+					<Search/>
+				</Link>
+				<details className={styles.mobileMenu}>
+					<summary aria-label="Open navigation menu">
+						<Menu aria-hidden="true"/>
+					</summary>
+					<div className={styles.mobileMenuPanel}>
+						<nav aria-label="Mobile navigation">
+							<Link href="/catalog">Game Catalog</Link>
+							<Link href="/institution">Institutions</Link>
+						</nav>
+						<div className={styles.mobileAccount}>
+							<AccountControl/>
+						</div>
+					</div>
+				</details>
 			</div>
 		</header>
 	);

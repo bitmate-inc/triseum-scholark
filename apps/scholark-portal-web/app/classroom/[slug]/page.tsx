@@ -1,3 +1,4 @@
+import { UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -22,6 +23,16 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
 	return (
 		<main className={styles.gamePage}>
 			<AcademicMasthead item={classroom} resource="classroom" backHref={`/institution/${classroom.institution.slug}`} backLabel={classroom.institution.name}/>
+			{classroom.instructorList.length ? (
+				<section className={styles.instructorSection}>
+					<div><p className={styles.kicker}>Teaching team</p><h2>Instructors</h2></div>
+					<ul className={styles.instructorList}>
+						{classroom.instructorList.slice(0, 4).map((instructor) => (
+							<li key={instructor.id}><UserRound aria-hidden="true"/><span>{instructor.name}</span></li>
+						))}
+					</ul>
+				</section>
+			) : null}
 			<section className={styles.academicSection}>
 				<div className={styles.sectionHeading}>
 					<div><p className={styles.kicker}>Assigned experiences</p><h2>Classroom games</h2></div>

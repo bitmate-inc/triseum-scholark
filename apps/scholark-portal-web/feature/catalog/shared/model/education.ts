@@ -3,6 +3,12 @@ import type { Game, TaxonomyTerm } from "./game";
 
 export type EducationCatalogStatus = "active" | "inactive";
 
+export type Instructor = {
+	id: string;
+	name: string;
+	slug: string;
+};
+
 export type Institution = {
 	id: string;
 	name: string;
@@ -37,6 +43,7 @@ export type Classroom = {
 	description?: string;
 	status: EducationCatalogStatus;
 	courseList: Pick<Course, "id" | "name" | "code" | "slug">[];
+	instructorList: Instructor[];
 	taxonomyTermList: TaxonomyTerm[];
 };
 

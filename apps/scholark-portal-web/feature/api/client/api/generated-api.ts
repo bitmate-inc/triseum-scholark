@@ -526,6 +526,11 @@ export type ClassroomCourseResponseDto = {
 	code: string;
 	slug: string;
 };
+export type ClassroomInstructorResponseDto = {
+	id: string;
+	name: string;
+	slug: string;
+};
 export type ClassroomTaxonomyTermResponseDto = {
 	id: string;
 	type: TaxonomyType;
@@ -541,9 +546,9 @@ export type ClassroomResponseDto = {
 	cover?: MediaResponseDto;
 	summary?: string;
 	description?: string;
-	term?: string;
 	status: EducationCatalogStatus;
 	courseList: ClassroomCourseResponseDto[];
+	instructorList: ClassroomInstructorResponseDto[];
 	taxonomyTermList: ClassroomTaxonomyTermResponseDto[];
 };
 export type GetClassroomListResponseDto = {

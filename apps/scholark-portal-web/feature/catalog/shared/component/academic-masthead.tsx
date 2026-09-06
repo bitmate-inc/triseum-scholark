@@ -1,8 +1,5 @@
 import { Badge } from "@repo/ui/badge";
-import {
-	ArrowLeft,
-	Building2
-} from "lucide-react";
+import { ArrowLeft, Building2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 

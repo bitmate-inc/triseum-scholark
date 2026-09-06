@@ -43,8 +43,7 @@ html { scroll-behavior: smooth; }
 body {
   min-width: 320px;
   color: var(--foreground);
-  background: linear-gradient(rgba(21, 23, 21, 0.035) 1px, transparent 1px), var(--background);
-  background-size: 100% 48px;
+  background: var(--background);
   font-family: var(--font-geist-sans), sans-serif;
 }
 a { color: inherit; text-decoration: none; }

@@ -79,6 +79,19 @@ class ClassroomTaxonomyTermResponseDto {
 
 }
 
+class ClassroomInstructorResponseDto {
+
+	@ApiProperty({ format: 'uuid' })
+	id!: string;
+
+	@ApiProperty()
+	name!: string;
+
+	@ApiProperty()
+	slug!: string;
+
+}
+
 export class ClassroomResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
@@ -111,6 +124,9 @@ export class ClassroomResponseDto {
 	@ApiProperty({ type: [ClassroomCourseResponseDto] })
 	courseList!: ClassroomCourseResponseDto[];
 
+	@ApiProperty({ type: [ClassroomInstructorResponseDto] })
+	instructorList!: ClassroomInstructorResponseDto[];
+
 	@ApiProperty({ type: [ClassroomTaxonomyTermResponseDto] })
 	taxonomyTermList!: ClassroomTaxonomyTermResponseDto[];
 
@@ -127,6 +143,11 @@ export class ClassroomResponseDto {
 			description: classroom.description,
 			id: classroom.id!,
 			institution: InstitutionResponseDto.fromEntity(classroom.institution),
+			instructorList: classroom.instructorList.getItems().map((instructor) => ({
+				id: instructor.id!,
+				name: instructor.name,
+				slug: instructor.slug,
+			})),
 			name: classroom.name,
 			slug: classroom.slug,
 			status: classroom.status,

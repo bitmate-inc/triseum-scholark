@@ -1,11 +1,14 @@
+import { Collection } from '@mikro-orm/core';
 import {
 	Entity,
+	ManyToMany,
 	PrimaryKey,
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
 import type { Media } from '../../media/model/media';
 import { EducationCatalogStatus } from './education.catalog.status';
+import { Instructor } from './instructor.entity';
 
 @Entity({ tableName: 'educational_institution' })
 export class EducationalInstitution {
@@ -33,6 +36,9 @@ export class EducationalInstitution {
 
 	@Property({ default: EducationCatalogStatus.ACTIVE, type: 'string' })
 	status: EducationCatalogStatus = EducationCatalogStatus.ACTIVE;
+
+	@ManyToMany({ entity: () => Instructor, owner: true })
+	instructorList = new Collection<Instructor>(this);
 
 	@Property({ onCreate: () => new Date() })
 	createdAt?: Date;

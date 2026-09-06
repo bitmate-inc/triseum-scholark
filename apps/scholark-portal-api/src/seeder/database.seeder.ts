@@ -5,6 +5,7 @@ import { Classroom } from '../app/core/feature/education/model/classroom.entity'
 import { ClassroomGame } from '../app/core/feature/education/model/classroom.game.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
 import { EducationalInstitution } from '../app/core/feature/education/model/educational.institution.entity';
+import { Instructor } from '../app/core/feature/education/model/instructor.entity';
 import { Game } from '../app/core/feature/game/model/game.entity';
 import { GameTaxonomyTerm } from '../app/core/feature/game/model/game.taxonomy.term.entity';
 import { Publisher } from '../app/core/feature/publisher/model/publisher.entity';
@@ -15,6 +16,7 @@ import {
 	courseSeedList,
 	educationalInstitutionSeedList,
 	gameSeedList,
+	instructorSeedList,
 	publisherSeedList,
 } from './catalog.data';
 import { UserSeeder } from './user.seeder';
@@ -31,6 +33,7 @@ export class DatabaseSeeder extends Seeder {
 			const taxonomyTermMap = new Map<string, TaxonomyTerm>();
 			const gameMap = new Map<string, Game>();
 			const institutionMap = new Map<string, EducationalInstitution>();
+			const instructorMap = new Map<string, Instructor>();
 
 			for (const publisherSeed of publisherSeedList) {
 				let publisher = await transactionalEm.findOne(Publisher, { slug: publisherSeed.slug });
@@ -120,16 +123,33 @@ export class DatabaseSeeder extends Seeder {
 
 			await transactionalEm.flush();
 
+			for (const instructorSeed of instructorSeedList) {
+				let instructor = await transactionalEm.findOne(Instructor, { slug: instructorSeed.slug });
+
+				if (instructor) {
+					transactionalEm.assign(instructor, instructorSeed);
+				} else {
+					instructor = transactionalEm.create(Instructor, instructorSeed);
+				}
+
+				instructorMap.set(instructor.slug, instructor);
+			}
+
 			for (const institutionSeed of educationalInstitutionSeedList) {
+				const { instructorSlugList, ...institutionData } = institutionSeed;
 				let institution = await transactionalEm.findOne(EducationalInstitution, {
 					slug: institutionSeed.slug,
 				});
 
 				if (institution) {
-					transactionalEm.assign(institution, institutionSeed);
+					transactionalEm.assign(institution, institutionData);
 				} else {
-					institution = transactionalEm.create(EducationalInstitution, institutionSeed);
+					institution = transactionalEm.create(EducationalInstitution, institutionData);
 				}
+
+				institution.instructorList.set(
+					instructorSlugList.map((slug) => instructorMap.get(slug)!),
+				);
 
 				institutionMap.set(institution.slug, institution);
 			}
@@ -152,6 +172,7 @@ export class DatabaseSeeder extends Seeder {
 				const {
 					courseSlugList,
 					institutionSlug,
+					instructorSlugList,
 					taxonomyTermKeyList,
 					...classroomData
 				} = classroomSeed;
@@ -165,6 +186,9 @@ export class DatabaseSeeder extends Seeder {
 				}
 
 				classroom.courseList.set(courseSlugList.map((slug) => courseMap.get(slug)!));
+				classroom.instructorList.set(
+					instructorSlugList.map((slug) => instructorMap.get(slug)!),
+				);
 				classroom.taxonomyTermList.set(
 					taxonomyTermKeyList.map((key) => taxonomyTermMap.get(key)!),
 				);
