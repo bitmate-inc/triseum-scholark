@@ -54,7 +54,7 @@ The target MVP includes:
 - Student self-registration, login, profile, and preferred language. The new portal is expected to own Student and Instructor authentication and profiles, subject to validation during discovery and linkage to legacy Instructor records. The MVP ships an English UI with internationalization-ready structure; additional translations are future work.
 - Invitation-based Instructor onboarding, login, and active User Type switching when applicable.
 - A returning Student's licensed-game list, with games under an active license shown first and expired licenses retained in history.
-- Two acquisition paths: for-credit acquisition through an institution, course, classroom, and assigned game; and not-for-credit acquisition through the game catalog without a classroom association.
+- Two acquisition paths: for-credit acquisition through an institution, course, classroom, and assigned Game Version; and not-for-credit acquisition of a publicly available base Game Version through the game catalog without a classroom association. Classroom-associated Game Versions are excluded from general catalog discovery.
 - Two purchase types within the for-credit path: Student purchase through Stripe, or institution purchase redeemed by acquisition code. Not-for-credit acquisition is always Student-purchased through Stripe.
 - Student-paid license acquisition through Stripe, including payment confirmation, license activation, and a fixed access period.
 - Institution-paid acquisition-code redemption that activates a fixed-term license. Institution invoicing is outside the MVP; discovery must determine how codes are generated, who generates them, and where institution-funded licenses are authoritative.
@@ -128,7 +128,7 @@ Only Student and Instructor are MVP portal User Types. Institutional Administrat
 
 ## Student
 
-Students can register, sign in, maintain a profile, select a language, view and acquire games, select institutions/courses/assigned games, purchase games through the ScholArk store, launch and resume games, review progress and grading information, and access support.
+Students can register, sign in, maintain a profile, select a language, view and acquire publicly catalog-visible base Game Versions or classroom-assigned Game Versions, select institutions/courses/classrooms, purchase games through the ScholArk store, launch and resume games, review progress and grading information, and access support.
 
 ## Instructor
 
@@ -136,7 +136,7 @@ Instructors establish accounts by invitation, access assigned classrooms across 
 
 ## ScholArk Administration and Game Companies (Future Work)
 
-Administration configures classrooms, instructors, course data, assigned games, payment mode, game usage, language, future custom content, catalog entries, integrations, configuration, and support. Game Company Support and Administrator functionality requires further definition.
+Administration configures institutional contracts, classrooms, instructors, course data, contracted games, immutable Game Version assignments, assignment periods, license duration, payment mode, game usage, language, future custom content, catalog entries, integrations, configuration, and support. Game Company Support and Administrator functionality requires further definition.
 
 # 7. Initial Domain Model
 
@@ -145,8 +145,9 @@ The following represents the initial domain model derived from the current requi
 Initial domain concepts include User, User Type, User Profile, Institution, Course, Classroom, Instructor, Student, Game, Game Version, Student Game, Game Assignment, Game Acquisition, Game License, Classroom Game Association, Game Configuration, Game-Play Record, Game-State Record, Progress, Grade, Support Request, and LMS Integration. In this initial model, **Student Game** represents a Student's persistent relationship and history for a particular Game, while **Game License** represents a time-bounded right to access the Game or permitted Game Version(s), subject to the licensing model established during discovery.
 
 ```text
-Institution -> Course -> Classroom (section) -> Instructor, Student, Game Assignment
-Game -> one or more Game Versions
+Institution -> Contract -> Contracted Game
+Institution -> Course -> Classroom (section) -> Instructor, Student, Game Version Assignment
+Game -> one or more immutable Game Versions
 Game Version -> Configuration, Record Structure
 Student -> Game Acquisition
 Game Acquisition -> Game License
@@ -154,6 +155,7 @@ Student -> Student Game -> Game
 Student Game -> one or more Game Licenses
 Student Game -> Game-Play Records, Game-State Records -> source Game Version
 Student Game -> optional Classroom Game Association
+Game Version Assignment -> exact Game Version, active period, license duration
 ```
 
 Game-play and game-state records are therefore related to the Student's Game rather than only to the catalog Game or classroom. A classroom association supplies an educational context for that Student Game but may be created after personal game activity has already been recorded.
@@ -162,22 +164,22 @@ An expired license prevents further game access but does not delete the Student 
 
 # 8. Student Game Acquisition
 
-Game acquisition has two independent dimensions: **acquisition path** and **purchase type**.
+Game acquisition has two independent dimensions: **acquisition path** and **purchase type**. For a classroom acquisition, the active classroom assignment also determines the exact immutable Game Version and the duration of the resulting license.
 
-In the **for-credit acquisition path**, a Student selects an institution with active games, optionally defaulting to the last active institution, then selects a course, classroom, and assigned game not yet associated with that Student in the classroom. Unlisted institutions, courses, or games generate support requests. The existing classroom payment mode is expected to determine the purchase type, subject to discovery validation:
+In the **for-credit acquisition path**, a Student selects an institution with an active contract, optionally defaulting to the last active institution, then selects a course, classroom, and assigned Game Version not yet associated with that Student in the classroom. Unlisted institutions, courses, or games generate support requests. The classroom assignment determines the purchase type and license duration, subject to discovery validation:
 
 - **Institution-purchased:** The Student enters an acquisition code to activate a fixed-term license.
 - **Student-purchased:** The Student purchases a fixed-term license through Stripe.
 
-In the **not-for-credit acquisition path**, a Student browses the ScholArk game catalog and purchases a fixed-term game license through Stripe without an institution, course, or classroom association. This path is always Student-purchased.
+In the **not-for-credit acquisition path**, a Student browses the ScholArk game catalog and purchases a fixed-term license for a publicly available base Game Version through Stripe without an institution, course, or classroom association. Classroom-associated Game Versions, including customized versions, are shown only through the relevant ClassroomGame assignment. This path is always Student-purchased.
 
-Access is permitted only during an active license term. When a license expires, launch and resume access are disabled, while the acquisition, license, game-play, and game-state history remains available according to the approved visibility rules. A license can be renewed without discarding that history.
+Access is permitted only during an active license term and to the exact Game Version referenced by the license. When a license expires, launch and resume access are disabled, while the acquisition, license, game-play, and game-state history remains available according to the approved visibility rules. A license can be renewed without discarding that history. A license is generalized and is not required to reference a classroom; classroom context is recorded separately where educational reporting requires it.
 
-Institution invoicing is outside the MVP. Discovery must determine license duration and start-date rules, renewal timing and pricing, grace periods if any, code generation and ownership, the authoritative source for institution-funded licenses, and the exact catalog/discovery experience. It must also determine what happens when a Student with a not-for-credit Student Game later needs the same game for credit in a classroom, including whether ScholArk associates the existing Student Game and active license, requires a classroom-specific license, or applies another business rule. If the Student Game already has game-play or game-state history, discovery must determine whether those earlier records are visible in the classroom and eligible for progress or grading. Bookstore Management System support for scholarship/grant funds is a future requirement.
+Institution invoicing is outside the MVP. Discovery must determine license duration and start-date rules, renewal timing and pricing, grace periods if any, code generation and ownership, the authoritative source for institution-funded licenses, and the exact catalog/discovery experience. It must also determine what happens when a Student with a not-for-credit Student Game later needs the same game for credit in a classroom, including whether ScholArk associates the existing Student Game and active license with the classroom context, requires a new license for the assigned Game Version, or applies another business rule. If the Student Game already has game-play or game-state history, discovery must determine whether those earlier records are visible in the classroom and eligible for progress or grading. Bookstore Management System support for scholarship/grant funds is a future requirement.
 
 # 9. Classroom and Game Catalog
 
-A classroom is a specific course section and can hold institution, course number/name, instructor, assigned games, language, usage mode, payment mode, and future custom content. Students can acquire assigned games once the classroom is configured.
+A classroom is a specific course section and can hold institution, course number/name, instructor, Game Version assignments, language, usage mode, payment mode, assignment periods, license duration, and future custom content. Students can acquire an assigned Game Version once the classroom and institutional contract are active. A published assignment cannot be changed; a replacement assignment is required. Classroom-associated Game Versions are visible on the classroom page as part of the ClassroomGame assignment and are excluded from general catalog discovery.
 
 Catalog onboarding may require game metadata, website, configuration, and game-play/game-state mapping. Mapping the MVP game data to ScholArk's generic record structure is required. Milestone 2 will determine whether this is implemented through configuration, scripts, administrative tooling, or another maintainable mechanism. ScholArk may eventually sell games without providing all other platform services.
 
@@ -187,7 +189,7 @@ Licensed web games launch from their stored website only while the Student has a
 
 Games create game-play records for milestones such as levels and sub-levels, supporting progress, learning objectives, metrics, and grading. Game-state records let a player resume after exiting. Both record types belong to the relevant Student Game and persist independently of whether it currently has a classroom association. The architecture must decide whether state is normalized, opaque, API/SDK-managed, or handled by another mechanism.
 
-Discovery must define game release and version licensing. A new Game Version may change game-state compatibility, game-play events, hierarchy, milestones, learning objectives, generic-record mappings, and the structure used for grading. The design must determine whether a license applies to the Game generally or to specific versions; whether a classroom pins, permits, or automatically adopts a version; how launch selects the version; and whether existing state can be migrated, remains available only in its original version, or must be reset with explicit approval. Game-play and game-state records must retain their source Game Version so historical progress and grades remain explainable.
+Game Version licensing is version-specific: a license references one exact immutable Game Version, and a classroom assignment selects the version available for acquisition. A new Game Version may change game-state compatibility, game-play events, hierarchy, milestones, learning objectives, generic-record mappings, and the structure used for grading. Discovery must define replacement/renewal behavior and whether existing state can be migrated, remains available only in its original version, or must be reset with explicit approval. Game-play and game-state records must retain their source Game Version so historical progress and grades remain explainable. Future Game Forge customization creates a new standalone version based on a selected base version; it does not mutate the base version. A source-version or parent reference may preserve lineage but is optional metadata, not part of the license identity.
 
 The MVP requires a generic ScholArk record model and an implemented mapping path from MVP game data into that model so game-specific terminology, hierarchy, events, and learning objectives can support progress, metrics, and grading. Milestone 2 must determine whether an existing model can be reused or a new model must be designed; select a maintainable mapping mechanism; and define game authentication, identifiers, event submission, state handling, record mapping, progress calculation, retry behavior, and integration versioning. It will also document versioned JSON schemas and validation/error-handling contracts for game-play and game-state data. Reusable self-service onboarding and authoring tools remain subject to discovery rather than being presumed excluded or required.
 
@@ -496,7 +498,7 @@ Discovery must resolve:
 - Whether an Instructor can browse the game catalog, and which games, metadata, pricing, availability, and filters are visible in that context.
 - Whether an Instructor can submit a request to assign a catalog game to one of their classrooms; if so, define the request data, eligibility rules, approval and notification workflow, support or administration owner, and system that records the approved assignment.
 - Game API/SDK approach, authentication, identifiers, event/state processing, canonical records, mapping ownership, and grading data.
-- Game Version identity and release lifecycle; whether licenses cover the Game or specific versions; classroom version selection; upgrade rights; state compatibility and migration; record provenance; and the effect of changed play structure on progress and grading rules.
+- Game Version identity and release lifecycle; classroom Game Version selection; replacement and renewal rights; state compatibility and migration; record provenance; and the effect of changed play structure on progress and grading rules. The target requirement is that licenses reference exact immutable Game Versions.
 - Versioned JSON schemas, transport, validation, retry, and error-handling contracts for game data pipelines.
 - Configuration authoring, versioning, classroom applicability, and distribution.
 - Grading models, calculation, storage, and manual adjustment.
@@ -504,7 +506,7 @@ Discovery must resolve:
 - Stripe payment details, Store catalog/discovery boundaries, license activation, and payment reconciliation.
 - License duration, activation date, expiration calculation, renewal timing and pricing, grace periods, status visibility, and behavior for in-progress game sessions when a license expires.
 - Acquisition-code generation and ownership, plus the authoritative source for institution-funded licenses and their renewal process.
-- Treatment of a not-for-credit Student Game and license when the Student later needs the same game for credit in a classroom, including whether a new classroom-specific license is required and whether game-play and game-state records created before classroom association are visible to the Instructor or eligible for classroom progress and grading.
+- Treatment of a not-for-credit Student Game and license when the Student later needs the same game for credit in a classroom, including whether the existing version-specific license can be associated with the classroom context or a new license for the assigned Game Version is required, and whether game-play and game-state records created before classroom association are visible to the Instructor or eligible for classroom progress and grading.
 - Support ticketing, assignment, notifications, desktop application ownership, and localization requirements.
 
 # 22. Proposed Next Steps

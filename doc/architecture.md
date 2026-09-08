@@ -21,7 +21,7 @@ flowchart TB
         Identity["Identity and Access"]
         Acquisition["Acquisition and Licensing"]
         Progress["Progress and Grading"]
-        Config["Game Configuration"]
+        Config["Game Version and Configuration"]
 
         StudentPortal --> PortalAPI
         InstructorPortal --> PortalAPI
@@ -76,7 +76,10 @@ flowchart TB
 - Manage or expose portal acquisition, launch, progress, grading, and configuration workflows according to the source-of-truth matrix established during discovery.
 - Implement game-data mapping to ScholArk's generic record model and validate it with one representative Triseum-produced web game.
 - Allow an authorized Instructor to initiate and download a classroom-scoped grade file in each LMS-oriented export format included in the finite target-MVP list baselined during discovery; later additions require explicit scope and forecast revision.
-- Activate and renew fixed-term licenses and their approved Game Version entitlements through Student Stripe payments or institution acquisition-code redemption, enforce expiry for game access, and retain historical acquisition, license, game-play, and game-state records.
+- Activate and renew fixed-term licenses for exact immutable Game Versions through the approved acquisition paths, enforce expiry for game access, and retain historical acquisition, license, game-play, and game-state records.
+- Represent institutional contracts separately from classroom game assignments. Contracts determine which games an institution may assign; assignments select a Game Version, active period, license duration, and payment arrangement.
+- Treat published classroom Game Version assignments and published customized Game Versions as immutable. Changes create replacement assignments or new versions.
+- Separate catalog visibility from classroom availability: publicly available base Game Versions may be listed in the general catalog, while classroom-associated Game Versions are excluded from catalog discovery and exposed only through their ClassroomGame assignment.
 
 ## Initial Pilot Boundary
 
@@ -113,8 +116,11 @@ Milestone 2 must validate this direction against the existing implementation, in
 - Define the minimum usable pilot acceptance set and its deployment environment.
 - If PostgreSQL synchronization is selected, define direction, triggering or frequency, initial backfill, change detection, idempotency, deletion handling, conflict policy, reconciliation, monitoring, retry and recovery, and acceptable staleness.
 - Define the Store catalog/discovery boundary and the Stripe checkout, webhook, idempotency, failure-handling, and fixed-term license activation flow.
+- Define catalog visibility rules for public base Game Versions versus classroom-only Game Versions, including the ClassroomGame page used to expose classroom-associated versions.
 - Define license duration, activation, expiry, renewal, grace-period, status, and historical-retention rules, including in-progress session behavior at expiry.
-- Define Game Version identity and release lifecycle; whether licenses apply to the Game or specific versions; classroom version selection and upgrade rights; and launch behavior for permitted versions.
+- Define Game Version identity and release lifecycle. The target model licenses exact immutable Game Versions and classroom assignments select the permitted version; discovery must define upgrade/replacement behavior and launch behavior for permitted versions.
+- Define institutional contract structure, contract-to-game eligibility, contract periods, and how contract changes affect existing classroom assignments.
+- Define the future Game Forge publication flow for customized Game Versions, including content snapshots, enabled languages/locales, global identifiers, and optional source-version lineage.
 - Define institution acquisition-code generation, ownership, validation, license activation, and renewal behavior.
 - Decide whether and how an existing not-for-credit Student Game and license can be associated with a classroom for credit, including license-term and duplicate-payment rules.
 - Define how game-play and game-state records relate to a Student Game, and whether records created before a later classroom association are visible to the Instructor or eligible for classroom progress and grading.

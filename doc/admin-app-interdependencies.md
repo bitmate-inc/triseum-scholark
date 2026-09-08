@@ -32,9 +32,10 @@ This working hypothesis remains unconfirmed until discovery validates the code, 
 | Instructor business records and assignments | Admin app / MSSQL | Maintain Instructor record and classroom assignments | Link portal identity and enforce assigned access | Decide linkage |
 | Student and Instructor authentication | Portal identity service | Supply stable legacy Instructor reference where applicable | Register/invite, authenticate, and authorize | Validate |
 | Game catalog metadata | Admin app / MSSQL | Maintain game identity, publisher, availability, URL, and metadata | Present eligible catalog and licensed-game views | Validate fields |
-| Game Versions and release availability | To decide jointly | May maintain available/approved versions | Enforce license and classroom version policy | Open |
-| Classroom game assignments | Admin app / MSSQL | Assign games and applicable settings | Read assignment and associate Student Game | Validate |
-| Classroom payment, language, usage, and configuration settings | Admin app / MSSQL, subject to configuration design | Maintain approved settings | Read and deliver applicable launch configuration | Validate/version |
+| Institutional game contracts | Admin app / MSSQL, subject to ownership validation | Create contracts, define periods, payer, and contracted games | Read active eligibility for assignment/acquisition | Open |
+| Game Versions and release availability | To decide jointly | Maintain available/approved immutable versions and catalog visibility | Enforce exact version entitlement and launch policy | Open |
+| Classroom Game Version assignments | Admin app / MSSQL, subject to workflow validation | Select contracted Game Version, assignment period, license duration, and classroom-only visibility | Read assignment and create version-specific license context | Validate |
+| Classroom payment, language, usage, and configuration settings | Admin app / MSSQL, subject to configuration design | Maintain approved settings for the assignment | Read and deliver applicable launch configuration | Validate/version |
 | Institution acquisition codes | To decide jointly | May generate, store, fund, revoke, or expose codes | Validate/redact code and activate license exactly once | Open |
 | Student acquisitions and Game Licenses | Portal expected; institution-funded authority is open | May supply institution-funded entitlement authority | Record acquisition, term, status, renewal, and version entitlement | Open |
 | Game-play and game-state records | Game produces; Portal expected to persist | No MVP administration dependency expected | Validate, store, version, and associate with Student Game | Validate |
@@ -48,9 +49,9 @@ The Milestone 2 source-of-truth matrix resolves this table. For each domain it m
 | Workflow | Required Admin context | Decision or invariant |
 | --- | --- | --- |
 | Instructor access | Stable Instructor ID, institution/classroom assignments, authorization state, and unambiguous matching data | Decide invitation origin and Portal identity linkage. Email is not an immutable cross-system ID. |
-| For-credit acquisition | Eligible institution; active course/classroom; Instructor assignment where required; assigned Game; payment, language, usage, Game Version, and configuration; institution entitlement mechanism where applicable | Portal records the Student Game, license, and classroom association under the approved ownership model. |
-| Not-for-credit acquisition | Catalog metadata, direct-sale status, launch URL, pricing source, and supported Game Versions | Distinguish catalog visibility, direct purchase, classroom assignment, licensed launch, and historical-only states. |
-| Launch and configuration | Stable Game ID, permitted Version, launch endpoint, and applicable configuration | Define the effect of assignment/configuration changes after acquisition and during active sessions. |
+| For-credit acquisition | Eligible institution; active course/classroom; Instructor assignment where required; active contract; assigned immutable Game Version; payment, language, usage, and configuration; institution entitlement mechanism where applicable | Portal records a license for the exact Game Version and keeps classroom context separate for educational workflows. |
+| Not-for-credit acquisition | Catalog metadata, direct-sale status, launch URL, pricing source, and publicly available base Game Versions | Exclude classroom-associated Game Versions from general catalog discovery; expose them only through their ClassroomGame assignment. |
+| Launch and configuration | Stable Game ID, exact permitted Game Version, launch endpoint, and applicable configuration | Published assignments and versions are immutable; define behavior for replacement assignments and active sessions. |
 | Instructor progress and grades | Stable classroom and assignment IDs | Renaming or disabling related Admin records must not sever historical progress or grade attribution. |
 
 ## 4. Database and Integration Decision
