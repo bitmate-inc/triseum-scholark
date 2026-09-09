@@ -1,10 +1,13 @@
+import { Collection } from '@mikro-orm/core';
 import {
 	Entity,
 	ManyToOne,
+	OneToMany,
 	PrimaryKey,
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
+import { ClassroomGameEnrollment } from '../../education/model/classroom.game.enrollment.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
 import { GameVersion } from './game.version.entity';
@@ -23,6 +26,9 @@ export class GameLicense {
 
 	@ManyToOne(() => GameCustomization, { nullable: true, deleteRule: 'restrict' })
 	customization?: GameCustomization;
+
+	@OneToMany(() => ClassroomGameEnrollment, (enrollment) => enrollment.gameLicense)
+	enrollmentList = new Collection<ClassroomGameEnrollment>(this);
 
 	@Property()
 	startAt!: Date;

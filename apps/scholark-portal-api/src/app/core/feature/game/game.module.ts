@@ -8,11 +8,12 @@ import { GameLicense } from './model/game.license.entity';
 import { GameTaxonomyTerm } from './model/game.taxonomy.term.entity';
 import { GameVersion } from './model/game.version.entity';
 import { GetGameListQuery } from './query/get.game.list.query';
+import { GetUserLibraryQuery } from './query/get.user.library.query';
 import { GameRepository } from './repository/game.repository';
 
 @Global()
 @Module({
-	exports: [MikroOrmModule, GetGameListQuery],
+	exports: [MikroOrmModule, GetGameListQuery, GetUserLibraryQuery],
 	imports: [
 		MikroOrmModule.forFeature([
 			Game,
@@ -23,6 +24,6 @@ import { GameRepository } from './repository/game.repository';
 		]),
 		TaxonomyModule,
 	],
-	providers: [GameRepository, GetGameListQuery],
+	providers: [GameRepository, GetGameListQuery, GetUserLibraryQuery],
 })
 export class GameModule {}

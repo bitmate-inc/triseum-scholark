@@ -17,6 +17,7 @@ export function SiteHeader() {
 			<nav className={styles.primaryNav} aria-label="Primary navigation">
 				<Link href="/catalog">Game Catalog</Link>
 				<Link href="/institution">Educational Institutions</Link>
+				<Link href="/library">Your Library</Link>
 			</nav>
 			<div className={styles.headerActions}>
 				<Link
@@ -44,6 +45,7 @@ export function SiteHeader() {
 						<nav aria-label="Mobile navigation">
 							<Link href="/catalog">Game Catalog</Link>
 							<Link href="/institution">Institutions</Link>
+							<Link href="/library">Your Library</Link>
 						</nav>
 						<div className={styles.mobileAccount}>
 							<AccountControl/>

@@ -117,6 +117,16 @@ export interface ClassroomGameSeed {
 	customizationSeedId?: string;
 }
 
+export interface UserGameLicenseSeed {
+	id: string;
+	email: string;
+	gameVersionSeedId: string;
+	customizationSeedId?: string;
+	classroomGameSeedId?: string;
+	startAt: Date;
+	endAt: Date;
+}
+
 type TaxonomyTermSeedInput = Pick<TaxonomyTermSeed, 'label' | 'slug' | 'type'> & {
 	isPrimary?: boolean;
 };
@@ -341,12 +351,34 @@ export const gameSeedList: GameSeed[] = [
 	},
 ];
 
-export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.map((game, index) => ({
-	gameSlug: game.slug,
-	id: `00000000-0000-4000-8000-${String(301 + index).padStart(12, '0')}`,
-	publishedAt: game.publishedAt,
-	publisherVersion: '1.0.0',
-}));
+export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game, index) => [
+	{
+		gameSlug: game.slug,
+		id: `00000000-0000-4000-8000-${String(301 + index).padStart(12, '0')}`,
+		publishedAt: game.publishedAt,
+		publisherVersion: '1.0.0',
+	},
+	...(game.slug === 'arte-mecenas' ? [
+		{
+			gameSlug: game.slug,
+			id: '00000000-0000-4000-8000-000000000311',
+			publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+			publisherVersion: '1.4.0',
+		},
+		{
+			gameSlug: game.slug,
+			id: '00000000-0000-4000-8000-000000000312',
+			publishedAt: new Date('2026-05-15T00:00:00.000Z'),
+			publisherVersion: 'v1.4.1-demo',
+		},
+	] : []),
+	...(game.slug === 'variant-limits' ? [{
+		gameSlug: game.slug,
+		id: '00000000-0000-4000-8000-000000000313',
+		publishedAt: new Date('2026-04-10T00:00:00.000Z'),
+		publisherVersion: '1.1.0',
+	}] : []),
+]);
 
 export const gameCustomizationSeedList: GameCustomizationSeed[] = [
 	{
@@ -362,6 +394,23 @@ export const gameCustomizationSeedList: GameCustomizationSeed[] = [
 		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'arte-mecenas')!.id,
 		id: '00000000-0000-4000-8000-000000000321',
 		publishedAt: new Date('2026-02-01T00:00:00.000Z'),
+	},
+	{
+		content: {
+			introText: 'Demo content for the spring pilot.',
+			mediaList: [],
+		},
+		gameVersionSeedId: '00000000-0000-4000-8000-000000000312',
+		id: '00000000-0000-4000-8000-000000000322',
+		publishedAt: new Date('2026-06-01T00:00:00.000Z'),
+	},
+	{
+		content: {
+			introText: 'Draft localization and instructor notes.',
+			mediaList: [],
+		},
+		gameVersionSeedId: '00000000-0000-4000-8000-000000000313',
+		id: '00000000-0000-4000-8000-000000000323',
 	},
 ];
 
@@ -515,8 +564,8 @@ export const classroomGameSeedList: ClassroomGameSeed[] = [
 	{
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'arte-mecenas',
-		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'arte-mecenas')!.id,
-		customizationSeedId: '00000000-0000-4000-8000-000000000321',
+		gameVersionSeedId: '00000000-0000-4000-8000-000000000312',
+		customizationSeedId: '00000000-0000-4000-8000-000000000322',
 		id: '00000000-0000-4000-8000-000000000231',
 	},
 	{
@@ -530,5 +579,47 @@ export const classroomGameSeedList: ClassroomGameSeed[] = [
 		gameSlug: 'variant-limits',
 		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'variant-limits')!.id,
 		id: '00000000-0000-4000-8000-000000000233',
+	},
+];
+
+export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
+	{
+		classroomGameSeedId: '00000000-0000-4000-8000-000000000231',
+		customizationSeedId: '00000000-0000-4000-8000-000000000322',
+		email: 'user1@scholark.com',
+		endAt: new Date('2026-10-30T23:59:59.999Z'),
+		gameVersionSeedId: '00000000-0000-4000-8000-000000000312',
+		id: '00000000-0000-4000-8000-000000000341',
+		startAt: new Date('2026-06-01T00:00:00.000Z'),
+	},
+	{
+		classroomGameSeedId: '00000000-0000-4000-8000-000000000232',
+		email: 'user1@scholark.com',
+		endAt: new Date('2026-12-15T23:59:59.999Z'),
+		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'shadow-of-the-plague')!.id,
+		id: '00000000-0000-4000-8000-000000000342',
+		startAt: new Date('2026-08-20T00:00:00.000Z'),
+	},
+	{
+		email: 'user1@scholark.com',
+		endAt: new Date('2026-05-01T23:59:59.999Z'),
+		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'variant-limits')!.id,
+		id: '00000000-0000-4000-8000-000000000343',
+		startAt: new Date('2026-01-20T00:00:00.000Z'),
+	},
+	{
+		email: 'student2@scholark.com',
+		endAt: new Date('2027-01-31T23:59:59.999Z'),
+		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'econland')!.id,
+		id: '00000000-0000-4000-8000-000000000344',
+		startAt: new Date('2026-09-01T00:00:00.000Z'),
+	},
+	{
+		classroomGameSeedId: '00000000-0000-4000-8000-000000000233',
+		email: 'student2@scholark.com',
+		endAt: new Date('2026-12-20T23:59:59.999Z'),
+		gameVersionSeedId: '00000000-0000-4000-8000-000000000313',
+		id: '00000000-0000-4000-8000-000000000345',
+		startAt: new Date('2026-09-01T00:00:00.000Z'),
 	},
 ];

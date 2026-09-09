@@ -28,6 +28,7 @@ import {
 	institutionContractSeedList,
 	instructorSeedList,
 	publisherSeedList,
+	userGameLicenseSeedList,
 } from './catalog.data';
 import { UserSeeder } from './user.seeder';
 
@@ -46,7 +47,7 @@ export class DatabaseSeeder extends Seeder {
 			const instructorMap = new Map<string, Instructor>();
 			const gameVersionSeedMap = new Map<string, GameVersion>();
 			const gameCustomizationMap = new Map<string, GameCustomization>();
-			const classroomGameMap = new Map<string, ClassroomGame>();
+			const classroomGameSeedMap = new Map<string, ClassroomGame>();
 
 			for (const publisherSeed of publisherSeedList) {
 				let publisher = await transactionalEm.findOne(Publisher, { slug: publisherSeed.slug });
@@ -306,10 +307,8 @@ export class DatabaseSeeder extends Seeder {
 				const customization = classroomGameSeed.customizationSeedId
 					? gameCustomizationMap.get(classroomGameSeed.customizationSeedId)
 					: undefined;
-				const classroomGame = await transactionalEm.findOne(ClassroomGame, {
-					classroom,
-					gameVersion,
-				});
+				const classroomGame = await transactionalEm.findOne(ClassroomGame, { id: classroomGameSeed.id })
+					?? await transactionalEm.findOne(ClassroomGame, { classroom, gameVersion });
 
 				if (!classroomGame) {
 					const createdClassroomGame = transactionalEm.create(ClassroomGame, {
@@ -322,7 +321,7 @@ export class DatabaseSeeder extends Seeder {
 						id: classroomGameSeed.id,
 						publishedAt: new Date(),
 					});
-					classroomGameMap.set(`${classroomGameSeed.classroomSlug}:${classroomGameSeed.gameSlug}`, createdClassroomGame);
+					classroomGameSeedMap.set(classroomGameSeed.id, createdClassroomGame);
 				} else {
 					transactionalEm.assign(classroomGame, {
 						customization,
@@ -331,40 +330,56 @@ export class DatabaseSeeder extends Seeder {
 						endAt: new Date('2026-12-31T23:59:59.999Z'),
 						licenseDurationDays: 120,
 					});
-					classroomGameMap.set(`${classroomGameSeed.classroomSlug}:${classroomGameSeed.gameSlug}`, classroomGame);
+					classroomGameSeedMap.set(classroomGameSeed.id, classroomGame);
 				}
 			}
 
 			await transactionalEm.flush();
 
-			const user = await transactionalEm.findOne(User, { email: 'user1@scholark.com' });
-			const classroomGame = classroomGameMap.get('florence-seminar-fall-2026:arte-mecenas');
-			if (user && classroomGame) {
-				let gameLicense = await transactionalEm.findOne(GameLicense, {
-					customization: classroomGame.customization,
-					endAt: new Date('2026-04-30T23:59:59.999Z'),
-					gameVersion: classroomGame.gameVersion,
-					startAt: new Date('2026-01-01T00:00:00.000Z'),
-					user,
-				});
+			for (const licenseSeed of userGameLicenseSeedList) {
+				const user = await transactionalEm.findOne(User, { email: licenseSeed.email });
+				const gameVersion = gameVersionSeedMap.get(licenseSeed.gameVersionSeedId);
+				const customization = licenseSeed.customizationSeedId
+					? gameCustomizationMap.get(licenseSeed.customizationSeedId)
+					: undefined;
+				const classroomGame = licenseSeed.classroomGameSeedId
+					? classroomGameSeedMap.get(licenseSeed.classroomGameSeedId)
+					: undefined;
+
+				if (!user || !gameVersion) {
+					throw new Error(`Missing seeded user or game version for license: ${licenseSeed.id}`);
+				}
+
+				let gameLicense = await transactionalEm.findOne(GameLicense, { id: licenseSeed.id });
 				if (!gameLicense) {
 					gameLicense = transactionalEm.create(GameLicense, {
-						customization: classroomGame.customization,
-						endAt: new Date('2026-04-30T23:59:59.999Z'),
-						gameVersion: classroomGame.gameVersion,
-						startAt: new Date('2026-01-01T00:00:00.000Z'),
+						customization,
+						endAt: licenseSeed.endAt,
+						gameVersion,
+						id: licenseSeed.id,
+						startAt: licenseSeed.startAt,
+						user,
+					});
+				} else {
+					transactionalEm.assign(gameLicense, {
+						customization,
+						endAt: licenseSeed.endAt,
+						gameVersion,
+						startAt: licenseSeed.startAt,
 						user,
 					});
 				}
 
 				await transactionalEm.flush();
 
-				let enrollment = await transactionalEm.findOne(ClassroomGameEnrollment, {
-					classroomGame,
-					gameLicense,
-				});
-				if (!enrollment) {
-					transactionalEm.create(ClassroomGameEnrollment, { classroomGame, gameLicense });
+				if (classroomGame) {
+					const enrollment = await transactionalEm.findOne(ClassroomGameEnrollment, {
+						classroomGame,
+						gameLicense,
+					});
+					if (!enrollment) {
+						transactionalEm.create(ClassroomGameEnrollment, { classroomGame, gameLicense });
+					}
 				}
 			}
 		});
