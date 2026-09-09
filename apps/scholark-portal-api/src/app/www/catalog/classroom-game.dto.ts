@@ -86,7 +86,7 @@ export class ClassroomGameResponseDto {
 				slug: classroomGame.classroom.slug,
 			},
 			createdAt: classroomGame.createdAt!,
-			game: GameResponseDto.fromEntity(classroomGame.game),
+			game: GameResponseDto.fromEntity(classroomGame.gameVersion.game),
 			id: classroomGame.id!,
 			updatedAt: classroomGame.updatedAt!,
 		};

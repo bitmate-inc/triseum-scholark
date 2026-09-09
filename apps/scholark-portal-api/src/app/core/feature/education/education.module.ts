@@ -4,9 +4,12 @@ import { Global, Module } from '@nestjs/common';
 import { GameModule } from '../game/game.module';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { Classroom } from './model/classroom.entity';
+import { ClassroomGameEnrollment } from './model/classroom.game.enrollment.entity';
 import { ClassroomGame } from './model/classroom.game.entity';
+import { ContractGame } from './model/contract.game.entity';
 import { Course } from './model/course.entity';
 import { EducationalInstitution } from './model/educational.institution.entity';
+import { InstitutionContract } from './model/institution.contract.entity';
 import { Instructor } from './model/instructor.entity';
 
 @Global()
@@ -18,7 +21,10 @@ import { Instructor } from './model/instructor.entity';
 			Course,
 			Classroom,
 			ClassroomGame,
+			ClassroomGameEnrollment,
+			ContractGame,
 			Instructor,
+			InstitutionContract,
 		]),
 		GameModule,
 		TaxonomyModule,

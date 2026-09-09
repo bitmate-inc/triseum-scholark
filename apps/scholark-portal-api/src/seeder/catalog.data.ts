@@ -1,4 +1,9 @@
 import { EducationCatalogStatus } from '../app/core/feature/education/model/education.catalog.status';
+import {
+	InstitutionContractDesignatedPayor,
+	InstitutionContractStatus,
+	InstitutionContractType,
+} from '../app/core/feature/education/model/institution.contract.entity';
 import type { Media } from '../app/core/feature/media/model/media';
 import { TaxonomyType } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 
@@ -32,6 +37,31 @@ export interface GameSeed {
 	isFeatured: boolean;
 	publishedAt: Date;
 	mediaList: Media[];
+}
+
+export interface GameVersionSeed {
+	id: string;
+	gameSlug: string;
+	publisherVersion: string;
+	publishedAt: Date;
+}
+
+export interface GameCustomizationSeed {
+	id: string;
+	gameVersionSeedId: string;
+	content: Record<string, unknown>;
+	publishedAt?: Date;
+}
+
+export interface InstitutionContractSeed {
+	id: string;
+	institutionSlug: string;
+	type: InstitutionContractType;
+	designatedPayor: InstitutionContractDesignatedPayor;
+	status: InstitutionContractStatus;
+	startAt: Date;
+	endAt: Date;
+	gameSlugList: string[];
 }
 
 export interface EducationalInstitutionSeed {
@@ -83,6 +113,8 @@ export interface ClassroomGameSeed {
 	id: string;
 	classroomSlug: string;
 	gameSlug: string;
+	gameVersionSeedId: string;
+	customizationSeedId?: string;
 }
 
 type TaxonomyTermSeedInput = Pick<TaxonomyTermSeed, 'label' | 'slug' | 'type'> & {
@@ -309,6 +341,30 @@ export const gameSeedList: GameSeed[] = [
 	},
 ];
 
+export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.map((game, index) => ({
+	gameSlug: game.slug,
+	id: `00000000-0000-4000-8000-${String(301 + index).padStart(12, '0')}`,
+	publishedAt: game.publishedAt,
+	publisherVersion: '1.0.0',
+}));
+
+export const gameCustomizationSeedList: GameCustomizationSeed[] = [
+	{
+		content: {
+			introText: 'Welcome to the Florence patronage seminar.',
+			mediaList: [
+				{
+					alt: 'Florence skyline at sunset',
+					src: 'https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=1200&q=85',
+				},
+			],
+		},
+		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'arte-mecenas')!.id,
+		id: '00000000-0000-4000-8000-000000000321',
+		publishedAt: new Date('2026-02-01T00:00:00.000Z'),
+	},
+];
+
 export const educationalInstitutionSeedList: EducationalInstitutionSeed[] = [
 	{
 		cover: {
@@ -339,6 +395,29 @@ export const educationalInstitutionSeedList: EducationalInstitutionSeed[] = [
 		status: EducationCatalogStatus.ACTIVE,
 		summary: 'A close-knit college for arts, history, and civic inquiry.',
 		websiteUrl: 'https://riverside.example.edu',
+	},
+];
+
+export const institutionContractSeedList: InstitutionContractSeed[] = [
+	{
+		designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
+		endAt: new Date('2026-12-31T23:59:59.999Z'),
+		gameSlugList: ['arte-mecenas', 'shadow-of-the-plague'],
+		id: '00000000-0000-4000-8000-000000000331',
+		institutionSlug: 'northbridge-university',
+		startAt: new Date('2026-01-01T00:00:00.000Z'),
+		status: InstitutionContractStatus.ACTIVE,
+		type: InstitutionContractType.ADOPTION,
+	},
+	{
+		designatedPayor: InstitutionContractDesignatedPayor.INSTITUTION,
+		endAt: new Date('2026-12-31T23:59:59.999Z'),
+		gameSlugList: ['variant-limits'],
+		id: '00000000-0000-4000-8000-000000000332',
+		institutionSlug: 'riverside-college',
+		startAt: new Date('2026-01-01T00:00:00.000Z'),
+		status: InstitutionContractStatus.ACTIVE,
+		type: InstitutionContractType.PILOT,
 	},
 ];
 
@@ -436,16 +515,20 @@ export const classroomGameSeedList: ClassroomGameSeed[] = [
 	{
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'arte-mecenas',
+		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'arte-mecenas')!.id,
+		customizationSeedId: '00000000-0000-4000-8000-000000000321',
 		id: '00000000-0000-4000-8000-000000000231',
 	},
 	{
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'shadow-of-the-plague',
+		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'shadow-of-the-plague')!.id,
 		id: '00000000-0000-4000-8000-000000000232',
 	},
 	{
 		classroomSlug: 'limits-lab-fall-2026',
 		gameSlug: 'variant-limits',
+		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'variant-limits')!.id,
 		id: '00000000-0000-4000-8000-000000000233',
 	},
 ];

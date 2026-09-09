@@ -3,14 +3,13 @@ import {
 	ManyToOne,
 	PrimaryKey,
 	Property,
-	Unique,
 } from '@mikro-orm/decorators/legacy';
 
-import { Game } from '../../game/model/game.entity';
+import { GameCustomization } from '../../game/model/game.customization.entity';
+import { GameVersion } from '../../game/model/game.version.entity';
 import { Classroom } from './classroom.entity';
 
 @Entity({ tableName: 'classroom_game' })
-@Unique({ properties: ['classroom', 'game'] })
 export class ClassroomGame {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
@@ -19,8 +18,23 @@ export class ClassroomGame {
 	@ManyToOne(() => Classroom, { deleteRule: 'cascade' })
 	classroom!: Classroom;
 
-	@ManyToOne(() => Game, { deleteRule: 'cascade' })
-	game!: Game;
+	@ManyToOne(() => GameVersion, { deleteRule: 'restrict' })
+	gameVersion!: GameVersion;
+
+	@ManyToOne(() => GameCustomization, { nullable: true, deleteRule: 'restrict' })
+	customization?: GameCustomization;
+
+	@Property()
+	startAt!: Date;
+
+	@Property()
+	endAt!: Date;
+
+	@Property()
+	licenseDurationDays!: number;
+
+	@Property({ nullable: true })
+	publishedAt?: Date;
 
 	@Property({ onCreate: () => new Date() })
 	createdAt?: Date;

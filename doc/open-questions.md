@@ -13,8 +13,8 @@ This living document tracks questions raised after the client-delivered scope ba
 | --- | --- | --- | --- | --- | --- |
 | OQ-001 | Game catalog | Should `Game` support soft deletion through a nullable `deletedAt` timestamp? | Product / Architecture | Open | Catalog persistence baseline |
 | OQ-002 | Contracts and assignments | Who owns institutional contracts, contracted-game links, and immutable classroom Game Version assignments between the Admin app and Portal? | Product / Admin / Architecture | Open | Domain and source-of-truth baseline |
-| OQ-003 | Version lineage | Should customized Game Versions retain a source/base-version reference for compatibility and provenance? | Product / Game Integration | Open | Game Forge design |
-| OQ-004 | Catalog visibility | Which Game Versions are publicly catalog-visible versus classroom-only? | Product / Catalog / Architecture | Resolved | Catalog and acquisition baseline |
+| OQ-004 | Catalog and capabilities | How should catalog availability and publisher/game-version capabilities be represented? | Product / Catalog / Game Integration | Open | Catalog and game-version baseline |
+| OQ-005 | Game customization | Which data-driven customization content can be authored, validated, and consumed for each Game Version? | Product / Game Integration | Open | Game Forge design |
 
 ## OQ-001 - Game Soft Deletion
 
@@ -38,17 +38,17 @@ This living document tracks questions raised after the client-delivered scope ba
 
 **Resolution:** Pending.
 
-## OQ-004 - Game Version Catalog Visibility
+## OQ-004 - Catalog and Game Version Capabilities
 
-**Question:** Which Game Versions may appear in the general catalog?
+**Question:** How should catalog availability and publisher/game-version capabilities be represented?
 
-**Decision:** Publicly available base Game Versions may appear in the general catalog for not-for-credit acquisition. A Game Version associated with a classroom, including an instructor-customized version, must not appear in general catalog discovery. It is exposed only on the relevant classroom page as part of its `ClassroomGame` assignment.
+**Context:** Publishers may publish games with different levels of ScholArk integration. Some games may have no integration, while others may support events, state, progress, grading, or data-driven customization. Catalog availability and capability metadata should not be prematurely fixed in the domain model.
 
-**Remaining implementation details:**
+**Open details:**
 
-- Whether a base Game Version remains publicly visible after it is used by a classroom assignment.
-- Whether a classroom-only version can be reused by more than one `ClassroomGame` assignment.
-- Which authorized roles can view inactive or historical classroom-only versions.
+- Whether availability is represented on `Game`, `GameVersion`, a publication relation, or an external catalog projection.
+- Whether integration/customization capabilities are modeled as fields, structured metadata, or a separate contract.
+- How the rule excluding versions intended for classroom use from general catalog discovery is represented and enforced.
 
 ## OQ-002 - Institutional Contracts and Classroom Game Version Assignments
 
@@ -65,16 +65,11 @@ This living document tracks questions raised after the client-delivered scope ba
 
 **Resolution:** Pending.
 
-## OQ-003 - Customized Game Version Lineage
+## OQ-005 - Game Customization Content
 
-**Question:** Should a customized Game Version store the base version from which it was created?
+**Question:** What content types and validation rules should Game Forge support for `GameCustomization.content`?
 
-**Context:** Future Game Forge functionality may allow an Instructor to add text or media and select enabled languages/locales. The result is a standalone immutable Game Version that can be licensed independently. A source-version reference would support provenance, compatibility analysis, and migration decisions, but it is not required to identify or license the version.
-
-**Options:**
-
-1. Store a nullable `sourceVersionId`/`parentVersionId` for provenance and compatibility analysis.
-2. Do not store lineage; retain only the customized version's own immutable content and configuration snapshot.
+**Context:** Customization is data-driven only and does not create a separate executable or Game Version. The initial model does not include customization dates, status, locale lists, or classroom ownership. Assignment dates belong to `ClassroomGame`; publication is represented by `publishedAt`.
 
 **Resolution:** Pending.
 

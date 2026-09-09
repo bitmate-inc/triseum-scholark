@@ -2,20 +2,30 @@ import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
 import { Classroom } from '../app/core/feature/education/model/classroom.entity';
+import { ClassroomGameEnrollment } from '../app/core/feature/education/model/classroom.game.enrollment.entity';
 import { ClassroomGame } from '../app/core/feature/education/model/classroom.game.entity';
+import { ContractGame } from '../app/core/feature/education/model/contract.game.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
 import { EducationalInstitution } from '../app/core/feature/education/model/educational.institution.entity';
+import { InstitutionContract } from '../app/core/feature/education/model/institution.contract.entity';
 import { Instructor } from '../app/core/feature/education/model/instructor.entity';
+import { GameCustomization } from '../app/core/feature/game/model/game.customization.entity';
 import { Game } from '../app/core/feature/game/model/game.entity';
+import { GameLicense } from '../app/core/feature/game/model/game.license.entity';
 import { GameTaxonomyTerm } from '../app/core/feature/game/model/game.taxonomy.term.entity';
+import { GameVersion } from '../app/core/feature/game/model/game.version.entity';
 import { Publisher } from '../app/core/feature/publisher/model/publisher.entity';
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
+import { User } from '../app/core/feature/user/model/user.entity';
 import {
 	classroomGameSeedList,
 	classroomSeedList,
 	courseSeedList,
 	educationalInstitutionSeedList,
+	gameCustomizationSeedList,
 	gameSeedList,
+	gameVersionSeedList,
+	institutionContractSeedList,
 	instructorSeedList,
 	publisherSeedList,
 } from './catalog.data';
@@ -34,6 +44,9 @@ export class DatabaseSeeder extends Seeder {
 			const gameMap = new Map<string, Game>();
 			const institutionMap = new Map<string, EducationalInstitution>();
 			const instructorMap = new Map<string, Instructor>();
+			const gameVersionSeedMap = new Map<string, GameVersion>();
+			const gameCustomizationMap = new Map<string, GameCustomization>();
+			const classroomGameMap = new Map<string, ClassroomGame>();
 
 			for (const publisherSeed of publisherSeedList) {
 				let publisher = await transactionalEm.findOne(Publisher, { slug: publisherSeed.slug });
@@ -197,24 +210,163 @@ export class DatabaseSeeder extends Seeder {
 
 			await transactionalEm.flush();
 
-			for (const classroomGameSeed of classroomGameSeedList) {
-				const classroom = classroomMap.get(classroomGameSeed.classroomSlug)!;
-				const game = gameMap.get(classroomGameSeed.gameSlug)!;
-				const classroomGame = await transactionalEm.findOne(ClassroomGame, {
-					classroom,
+			for (const gameVersionSeed of gameVersionSeedList) {
+				const game = gameMap.get(gameVersionSeed.gameSlug)!;
+				let gameVersion = await transactionalEm.findOne(GameVersion, {
 					game,
+					publisherVersion: gameVersionSeed.publisherVersion,
 				});
 
-				if (!classroomGame) {
-					transactionalEm.create(ClassroomGame, {
-						classroom,
+				if (!gameVersion) {
+					gameVersion = transactionalEm.create(GameVersion, {
+						id: gameVersionSeed.id,
 						game,
-						id: classroomGameSeed.id,
+						publishedAt: gameVersionSeed.publishedAt,
+						publisherVersion: gameVersionSeed.publisherVersion,
 					});
+				}
+
+				gameVersionSeedMap.set(gameVersionSeed.id, gameVersion);
+			}
+
+			await transactionalEm.flush();
+
+			for (const customizationSeed of gameCustomizationSeedList) {
+				const gameVersion = gameVersionSeedMap.get(customizationSeed.gameVersionSeedId);
+				if (!gameVersion) {
+					throw new Error(`Missing seeded game version: ${customizationSeed.gameVersionSeedId}`);
+				}
+
+				let customization = await transactionalEm.findOne(GameCustomization, {
+					id: customizationSeed.id,
+				});
+				if (customization) {
+					transactionalEm.assign(customization, {
+						content: customizationSeed.content,
+						gameVersion,
+						publishedAt: customizationSeed.publishedAt,
+					});
+				} else {
+					customization = transactionalEm.create(GameCustomization, {
+						content: customizationSeed.content,
+						gameVersion,
+						id: customizationSeed.id,
+						publishedAt: customizationSeed.publishedAt,
+					});
+				}
+
+				gameCustomizationMap.set(customizationSeed.id, customization);
+			}
+
+			await transactionalEm.flush();
+
+			for (const contractSeed of institutionContractSeedList) {
+				const institution = institutionMap.get(contractSeed.institutionSlug)!;
+				let contract = await transactionalEm.findOne(InstitutionContract, {
+					id: contractSeed.id,
+				});
+
+				if (contract) {
+					transactionalEm.assign(contract, {
+						designatedPayor: contractSeed.designatedPayor,
+						endAt: contractSeed.endAt,
+						institution,
+						startAt: contractSeed.startAt,
+						status: contractSeed.status,
+						type: contractSeed.type,
+					});
+				} else {
+					contract = transactionalEm.create(InstitutionContract, {
+						designatedPayor: contractSeed.designatedPayor,
+						endAt: contractSeed.endAt,
+						id: contractSeed.id,
+						institution,
+						startAt: contractSeed.startAt,
+						status: contractSeed.status,
+						type: contractSeed.type,
+					});
+				}
+
+				await transactionalEm.flush();
+
+				for (const gameSlug of contractSeed.gameSlugList) {
+					const game = gameMap.get(gameSlug)!;
+					let contractGame = await transactionalEm.findOne(ContractGame, { contract, game });
+					if (!contractGame) {
+						contractGame = transactionalEm.create(ContractGame, { contract, game });
+					}
 				}
 			}
 
 			await transactionalEm.flush();
+
+			for (const classroomGameSeed of classroomGameSeedList) {
+				const classroom = classroomMap.get(classroomGameSeed.classroomSlug)!;
+				const gameVersion = gameVersionSeedMap.get(classroomGameSeed.gameVersionSeedId)!;
+				const customization = classroomGameSeed.customizationSeedId
+					? gameCustomizationMap.get(classroomGameSeed.customizationSeedId)
+					: undefined;
+				const classroomGame = await transactionalEm.findOne(ClassroomGame, {
+					classroom,
+					gameVersion,
+				});
+
+				if (!classroomGame) {
+					const createdClassroomGame = transactionalEm.create(ClassroomGame, {
+						classroom,
+						customization,
+						gameVersion,
+						startAt: new Date('2026-01-01T00:00:00.000Z'),
+						endAt: new Date('2026-12-31T23:59:59.999Z'),
+						licenseDurationDays: 120,
+						id: classroomGameSeed.id,
+						publishedAt: new Date(),
+					});
+					classroomGameMap.set(`${classroomGameSeed.classroomSlug}:${classroomGameSeed.gameSlug}`, createdClassroomGame);
+				} else {
+					transactionalEm.assign(classroomGame, {
+						customization,
+						gameVersion,
+						startAt: new Date('2026-01-01T00:00:00.000Z'),
+						endAt: new Date('2026-12-31T23:59:59.999Z'),
+						licenseDurationDays: 120,
+					});
+					classroomGameMap.set(`${classroomGameSeed.classroomSlug}:${classroomGameSeed.gameSlug}`, classroomGame);
+				}
+			}
+
+			await transactionalEm.flush();
+
+			const user = await transactionalEm.findOne(User, { email: 'user1@scholark.com' });
+			const classroomGame = classroomGameMap.get('florence-seminar-fall-2026:arte-mecenas');
+			if (user && classroomGame) {
+				let gameLicense = await transactionalEm.findOne(GameLicense, {
+					customization: classroomGame.customization,
+					endAt: new Date('2026-04-30T23:59:59.999Z'),
+					gameVersion: classroomGame.gameVersion,
+					startAt: new Date('2026-01-01T00:00:00.000Z'),
+					user,
+				});
+				if (!gameLicense) {
+					gameLicense = transactionalEm.create(GameLicense, {
+						customization: classroomGame.customization,
+						endAt: new Date('2026-04-30T23:59:59.999Z'),
+						gameVersion: classroomGame.gameVersion,
+						startAt: new Date('2026-01-01T00:00:00.000Z'),
+						user,
+					});
+				}
+
+				await transactionalEm.flush();
+
+				let enrollment = await transactionalEm.findOne(ClassroomGameEnrollment, {
+					classroomGame,
+					gameLicense,
+				});
+				if (!enrollment) {
+					transactionalEm.create(ClassroomGameEnrollment, { classroomGame, gameLicense });
+				}
+			}
 		});
 	}
 

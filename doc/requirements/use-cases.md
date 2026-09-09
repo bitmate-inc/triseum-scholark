@@ -19,7 +19,7 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-09 | Mixed | Student submission and routing are MVP; Milestone 2 selects the routing mechanism, while ScholArk Support resolution UI/workflow is future work. |
 | UC-10 | Mixed | Student submission and routing are MVP; Milestone 2 selects the routing mechanism, while ScholArk Support resolution UI/workflow is future work. |
 | UC-11 | MVP | Not-for-credit catalog acquisition of a fixed-term license for a publicly available base Game Version through Stripe checkout and webhook confirmation, without a classroom association; classroom-associated versions are excluded from catalog discovery. |
-| UC-12 | MVP | For-credit acquisition of a fixed-term license for the immutable Game Version selected by the classroom assignment, with either Student-purchased or institution-purchased purchase type; institution invoicing is excluded. |
+| UC-12 | MVP | For-credit acquisition of a fixed-term license for the immutable Game Version selected by the classroom assignment, with a user-to-ClassroomGame enrollment for progress and grading; either Student-purchased or institution-purchased purchase type; institution invoicing is excluded. |
 | UC-13 | MVP | Launch of the exact permitted web-game version while the license is active; native desktop launching is excluded. |
 | UC-14 | MVP | Resume behavior for the representative MVP game under the approved cross-version state policy. |
 | UC-15 | MVP | Student progress presentation using the mapping applicable to each source Game Version. |
@@ -50,7 +50,7 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-40 | MVP | A fixed-term game license can be renewed without deleting historical acquisitions, license terms, game-play records, or game-state records. |
 | UC-41 | Future | Institutional contracts define which games an institution may assign; contract administration remains outside the target Student and Instructor portals. |
 | UC-42 | MVP | An authorized employee or Instructor publishes an immutable classroom Game Version assignment with an active period and configured acquisition-license duration; changing it requires a replacement assignment. |
-| UC-43 | Future | Game Forge can create an immutable customized Game Version from a selected base version with custom content and enabled languages/locales. |
+| UC-43 | Future | Game Forge can create a data-only GameCustomization for a selected Game Version; unpublished customizations are drafts and published customizations are immutable. |
 
 The classifications identify target-roadmap scope, not requirement deletion or initial-engagement sequencing. Future and unselected TBD cases remain part of the longer-term product requirements.
 
@@ -170,7 +170,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 5. For a Student-purchased game, the Student pays through Stripe and ScholArk activates a fixed-term license.
 6. For an institution-purchased game, the Student continues to acquisition-code redemption.
 7. ScholArk activates a license for the exact Game Version selected by the classroom assignment, using the assignment's configured license duration.
-8. ScholArk records the classroom context separately for educational progress and grading; the license itself remains valid independently of the classroom.
+8. ScholArk creates a ClassroomGameEnrollment linking the ClassroomGame and acquired GameLicense for educational progress and grading; the enrolled User is the user associated with that license, and the license itself remains valid independently of the classroom.
 
 ### UC-39 — Student redeems an institution-purchased game
 **Actor:** Student
@@ -301,7 +301,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 7. Employee creates classroom game assignments with a selected immutable Game Version.
 8. Employee specifies the assignment active period.
 9. Employee specifies the duration of licenses acquired through the assignment.
-10. Employee designates the payment mode.
+10. Employee records the contract's designated payor for the classroom assignment.
 
 ### UC-25 — ScholArk employee assigns an instructor
 **Actor:** ScholArk Employee
@@ -325,14 +325,14 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 1. Employee configures how a Game Version will be used in a classroom.
 2. Employee specifies the game usage mode.
 3. Employee specifies the language.
-4. Custom content is a future Game Forge capability and is published as a new immutable Game Version rather than changing the assigned version.
+4. Custom content is a future Game Forge capability and is published as a new immutable GameCustomization rather than changing the assigned Game Version.
 
 ### UC-41 — ScholArk employee manages an institution game contract
 **Actor:** ScholArk Employee
 
 1. Employee creates or updates an institutional contract.
-2. Employee specifies the contract status, institution, contract type, channel, sales region, start date, and end date.
-3. Employee specifies whether the student or institution is the designated payer.
+2. Employee specifies the contract status, institution, type, channel, sales region, start date, and end date.
+3. Employee specifies the designated payor as Student or Institution.
 4. Employee links games that the institution may assign under the contract.
 5. Only games linked to an active contract may be selected for a classroom assignment.
 
@@ -347,15 +347,15 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 6. After publication, the assignment and its selected Game Version cannot be changed.
 7. A change requires a replacement assignment, and a change to game content requires a new Game Version.
 
-### UC-43 — Instructor creates a customized Game Version
+### UC-43 — Instructor creates a GameCustomization
 **Actor:** Instructor / Game Forge
 
-1. Instructor selects a ScholArk-available base Game Version.
-2. Instructor adds supported custom content, such as text or media.
-3. Instructor selects the enabled languages or locales.
-4. Game Forge creates a standalone immutable Game Version with a globally unique identifier.
-5. The customized version records which base version it was created from when lineage is supported.
-6. The customized version must be selected by a new classroom assignment before students can acquire licenses for it.
+1. Instructor selects a publisher Game Version that supports customization.
+2. Instructor adds data-only custom content, such as text or media.
+3. Game Forge saves the customization as a draft while `publishedAt` is null.
+4. When the customization is approved, Game Forge sets `publishedAt`.
+5. A published GameCustomization cannot be edited; changes require a new customization.
+6. The customization must be selected by a classroom assignment before students can acquire licenses that include it.
 
 ---
 
@@ -365,8 +365,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 **Actor:** ScholArk Employee
 
 1. Employee adds a new game and its publicly available base Game Versions to the ScholArk catalog.
-2. Basic game information and catalog visibility are established.
-3. Classroom-associated Game Versions are excluded from general catalog discovery and are exposed only through their ClassroomGame assignments.
+2. Basic game information is established.
 3. If ScholArk portals are to be used, the game's game-play records and game-state records are mapped to ScholArk's generic record structure.
 
 ### UC-29 — ScholArk maps a game's records

@@ -52,7 +52,8 @@ function addClassroomGameRelations(
 	queryBuilder
 		.leftJoinAndSelect('classroomGame.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
-		.leftJoinAndSelect('classroomGame.game', 'game')
+		.leftJoinAndSelect('classroomGame.gameVersion', 'gameVersion')
+		.leftJoinAndSelect('gameVersion.game', 'game')
 		.leftJoinAndSelect('game.publisherList', 'publisher')
 		.leftJoinAndSelect('game.taxonomyList', 'gameTaxonomy')
 		.leftJoinAndSelect('gameTaxonomy.taxonomyTerm', 'taxonomyTerm');
@@ -69,7 +70,7 @@ export class GetCatalogClassroomGameListQuery {
 	async execute(data: GetCatalogClassroomGameListQueryData): Promise<GetCatalogClassroomGameListQueryResult> {
 		const queryBuilder = this.classroomGameRepository.createQueryBuilder('classroomGame');
 		addClassroomGameRelations(queryBuilder);
-		queryBuilder.distinct().andWhere({ game: { publishedAt: { $lte: new Date() } } });
+		queryBuilder.distinct().andWhere({ gameVersion: { game: { publishedAt: { $lte: new Date() } } } });
 
 		if (data.filterBy?.id) {
 			queryBuilder.andWhere({ id: { $in: data.filterBy.id } });
@@ -84,11 +85,11 @@ export class GetCatalogClassroomGameListQuery {
 		}
 
 		if (data.filterBy?.gameId) {
-			queryBuilder.andWhere({ game: data.filterBy.gameId });
+			queryBuilder.andWhere({ gameVersion: { game: data.filterBy.gameId } });
 		}
 
 		if (data.filterBy?.taxonomyTermId) {
-			queryBuilder.andWhere({ game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } });
+			queryBuilder.andWhere({ gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
@@ -96,9 +97,11 @@ export class GetCatalogClassroomGameListQuery {
 			const searchPattern = `%${normalizeCatalogSearchQuery(searchQuery)}%`;
 			queryBuilder.andWhere({
 				$or: ['title', 'slug'].map((property) => ({
-					game: {
-						[raw((alias) => `translate(lower(${alias}.${property}), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}')`)]: {
-							$like: searchPattern,
+					gameVersion: {
+						game: {
+							[raw((alias) => `translate(lower(${alias}.${property}), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}')`)]: {
+								$like: searchPattern,
+							},
 						},
 					},
 				})),
@@ -130,7 +133,7 @@ export class GetCatalogClassroomGameQuery {
 		const queryBuilder = this.classroomGameRepository.createQueryBuilder('classroomGame');
 		addClassroomGameRelations(queryBuilder);
 		queryBuilder.where({
-			game: { publishedAt: { $lte: new Date() } },
+			gameVersion: { game: { publishedAt: { $lte: new Date() } } },
 			id: data.filterBy.id,
 		});
 
