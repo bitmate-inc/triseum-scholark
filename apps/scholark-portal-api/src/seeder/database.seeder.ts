@@ -2,7 +2,7 @@ import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
 import { Classroom } from '../app/core/feature/education/model/classroom.entity';
-import { ClassroomGameEnrollment } from '../app/core/feature/education/model/classroom.game.enrollment.entity';
+import { ClassroomGameLicence } from '../app/core/feature/education/model/classroom.game.enrollment.entity';
 import { ClassroomGame } from '../app/core/feature/education/model/classroom.game.entity';
 import { ContractGame } from '../app/core/feature/education/model/contract.game.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
@@ -373,12 +373,12 @@ export class DatabaseSeeder extends Seeder {
 				await transactionalEm.flush();
 
 				if (classroomGame) {
-					const enrollment = await transactionalEm.findOne(ClassroomGameEnrollment, {
+					const enrollment = await transactionalEm.findOne(ClassroomGameLicence, {
 						classroomGame,
 						gameLicense,
 					});
 					if (!enrollment) {
-						transactionalEm.create(ClassroomGameEnrollment, { classroomGame, gameLicense });
+						transactionalEm.create(ClassroomGameLicence, { classroomGame, gameLicense });
 					}
 				}
 			}

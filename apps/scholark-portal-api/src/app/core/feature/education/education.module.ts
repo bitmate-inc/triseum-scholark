@@ -4,7 +4,7 @@ import { Global, Module } from '@nestjs/common';
 import { GameModule } from '../game/game.module';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { Classroom } from './model/classroom.entity';
-import { ClassroomGameEnrollment } from './model/classroom.game.enrollment.entity';
+import { ClassroomGameLicence } from './model/classroom.game.enrollment.entity';
 import { ClassroomGame } from './model/classroom.game.entity';
 import { ContractGame } from './model/contract.game.entity';
 import { Course } from './model/course.entity';
@@ -21,7 +21,7 @@ import { Instructor } from './model/instructor.entity';
 			Course,
 			Classroom,
 			ClassroomGame,
-			ClassroomGameEnrollment,
+			ClassroomGameLicence,
 			ContractGame,
 			Instructor,
 			InstitutionContract,

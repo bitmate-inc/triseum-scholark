@@ -11,7 +11,7 @@ import { ClassroomGame } from './classroom.game.entity';
 
 @Entity({ tableName: 'classroom_game_enrollment' })
 @Unique({ properties: ['classroomGame', 'gameLicense'] })
-export class ClassroomGameEnrollment {
+export class ClassroomGameLicence {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
