@@ -26,6 +26,9 @@ export function AccountControl() {
 
 	return (
 		<>
+			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/library">
+				Library
+			</Link>
 			<Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/profile">
 				<UserRound data-icon="inline-start"/>
 				Profile

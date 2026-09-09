@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import styles from "../../asset/style/site.module.css";
 import { LibraryView } from "../../feature/library/client/component/library-view";
+import { ProtectedLibrary } from "../../feature/library/client/component/protected-library";
 
 export const metadata: Metadata = {
 	description: "Your acquired ScholArk games, versions, and classroom assignments.",
@@ -16,7 +17,7 @@ export default function LibraryPage() {
 				<h1>Every experience, accounted for.</h1>
 				<p>Keep track of your standalone games, classroom assignments, exact publisher versions, and custom content.</p>
 			</header>
-			<LibraryView/>
+			<ProtectedLibrary><LibraryView/></ProtectedLibrary>
 		</main>
 	);
 }
