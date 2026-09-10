@@ -1,7 +1,7 @@
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 
-import { ClassroomGameLicence } from '../../education/model/classroom.game.enrollment.entity';
+import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
 import { GameLicense } from '../model/game.license.entity';
 
 export type UserLibraryItem = {

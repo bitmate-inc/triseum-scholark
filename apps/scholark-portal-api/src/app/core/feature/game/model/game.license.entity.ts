@@ -7,7 +7,7 @@ import {
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
-import { ClassroomGameLicence } from '../../education/model/classroom.game.enrollment.entity';
+import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
 import { GameVersion } from './game.version.entity';

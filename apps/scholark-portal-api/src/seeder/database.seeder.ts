@@ -2,7 +2,7 @@ import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
 import { Classroom } from '../app/core/feature/education/model/classroom.entity';
-import { ClassroomGameLicence } from '../app/core/feature/education/model/classroom.game.enrollment.entity';
+import { ClassroomGameLicence } from '../app/core/feature/education/model/classroom.game.licence.entity';
 import { ClassroomGame } from '../app/core/feature/education/model/classroom.game.entity';
 import { ContractGame } from '../app/core/feature/education/model/contract.game.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
