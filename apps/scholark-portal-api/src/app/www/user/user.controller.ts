@@ -16,7 +16,7 @@ import {
 } from '@nestjs/swagger';
 
 import { ChangePasswordCommand, ChangePasswordCommandData } from '../../core/feature/account/command/auth/change.password.command';
-import { GetUserLibraryQuery } from '../../core/feature/game/query/get.user.library.query';
+import { GetUserLibraryQuery } from '../../core/feature/catalog/query/get.user.library.query';
 import { UpdateUserCommand, UpdateUserCommandData } from '../../core/feature/user/command/update.user.command';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';

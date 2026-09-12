@@ -1,5 +1,6 @@
 import { Collection } from '@mikro-orm/core';
 import {
+	Embedded,
 	Entity,
 	ManyToMany,
 	OneToMany,
@@ -7,6 +8,7 @@ import {
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
+import { Money } from '../../../shared/commerce/model/money.entity';
 import type { Media } from '../../media/model/media';
 import { Publisher } from '../../publisher/model/publisher.entity';
 import { GameTaxonomyTerm } from './game.taxonomy.term.entity';
@@ -49,6 +51,9 @@ export class Game {
 
 	@Property({ nullable: true, type: 'json' })
 	mediaList?: Media[];
+
+	@Embedded(() => Money, { prefix: 'price_', persist: false })
+	price?: Money;
 
 	@Property({ nullable: true })
 	publishedAt?: Date;

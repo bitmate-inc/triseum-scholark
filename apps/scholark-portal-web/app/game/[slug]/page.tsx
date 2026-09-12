@@ -81,9 +81,9 @@ export default async function GamePage({ params }: GamePageProps) {
 							</div>
 						) : null}
 					</dl>
-					<button className={buttonVariants({ size: "lg" })} type="button">
+					<Link className={buttonVariants({ size: "lg" })} href={`/game/${game.slug}/acquire`}>
 						<MonitorPlay data-icon="inline-start"/>Get access
-					</button>
+					</Link>
 				</div>
 			</section>
 			<section className={styles.aboutGame}>

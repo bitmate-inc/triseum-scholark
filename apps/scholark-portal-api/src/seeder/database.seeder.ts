@@ -2,8 +2,8 @@ import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
 import { Classroom } from '../app/core/feature/education/model/classroom.entity';
-import { ClassroomGameLicence } from '../app/core/feature/education/model/classroom.game.licence.entity';
 import { ClassroomGame } from '../app/core/feature/education/model/classroom.game.entity';
+import { ClassroomGameLicence } from '../app/core/feature/education/model/classroom.game.licence.entity';
 import { ContractGame } from '../app/core/feature/education/model/contract.game.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
 import { EducationalInstitution } from '../app/core/feature/education/model/educational.institution.entity';
@@ -224,6 +224,13 @@ export class DatabaseSeeder extends Seeder {
 						game,
 						publishedAt: gameVersionSeed.publishedAt,
 						publisherVersion: gameVersionSeed.publisherVersion,
+						runUrl: gameVersionSeed.runUrl,
+						price: gameVersionSeed.price,
+					});
+				} else {
+					transactionalEm.assign(gameVersion, {
+						publishedAt: gameVersionSeed.publishedAt,
+						runUrl: gameVersionSeed.runUrl,
 					});
 				}
 

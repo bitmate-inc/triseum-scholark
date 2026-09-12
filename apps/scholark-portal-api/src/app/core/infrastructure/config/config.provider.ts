@@ -2,7 +2,7 @@ import type { ConfigurableModuleAsyncOptions, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { validate, ValidationError as ClassValidatorValidationError } from 'class-validator';
 
-import { createInstance, StaticFactory } from '../../../../lib/factory/static.factory';
+import { createShallowInstance, StaticFactory } from '../../../../lib/factory/static.factory';
 import type { Constructor } from '../../../../lib/mixin/type';
 
 export type ConfigProviderOptions = {
@@ -59,7 +59,7 @@ export class ConfigProvider {
 
 		const config = isStaticFactoryClass(configClass)
 			? configClass.create((configObject ?? {}) as object)
-			: createInstance(configClass, (configObject ?? {}) as object);
+			: createShallowInstance(configClass, (configObject ?? {}) as object);
 		const validationErrorList = await validate(config, {
 			validationError: { target: true },
 			whitelist: !preserveUnknownFields,

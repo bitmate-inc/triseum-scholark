@@ -9,7 +9,7 @@ import {
 	ValidateNested,
 } from 'class-validator';
 
-import { StaticFactory } from '../../../../lib/factory/static.factory';
+import { DeepStaticFactory, StaticFactory } from '../../../../lib/factory/static.factory';
 import { trimAndNullEmptyString } from '../../../../lib/util/string';
 
 export const DEFAULT_NAME = 'default';
@@ -29,7 +29,7 @@ export class RedisConnectionConfig extends StaticFactory implements RedisClientO
 
 }
 
-export class RedisModuleConfig extends StaticFactory {
+export class RedisModuleConfig extends DeepStaticFactory {
 
 	@IsArray()
 	@ArrayNotEmpty()

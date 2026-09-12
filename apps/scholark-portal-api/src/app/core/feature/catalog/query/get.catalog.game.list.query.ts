@@ -8,16 +8,13 @@ import { addOrderBy, addPagination } from '../../../../../lib/database/mikro.orm
 import { GetListQueryData, GetListQueryResult } from '../../../../../lib/entity/query/get.list.query';
 import { GetListFilterByDto, IncludeDto } from '../../../../../lib/entity/query/query.dto';
 import { Game } from '../../game/model/game.entity';
-
-const DIACRITIC_CHARACTER_LIST = 'áàâäãåāăąçćčďđéèêëēėęěğíìîïīįłñńňóòôöõøōőřśšşťúùûüūůűýÿžźż';
-const ASCII_CHARACTER_LIST = 'aaaaaaaaacccddeeeeeeeegiiiiiilnnnoooooooorssstuuuuuuuyyzzz';
-
-function normalizeSearchQuery(searchQuery: string): string {
-	return searchQuery
-		.normalize('NFD')
-		.replace(/\p{Diacritic}/gu, '')
-		.toLocaleLowerCase();
-}
+import { GameVersion } from '../../game/model/game.version.entity';
+import {
+	ASCII_CHARACTER_LIST,
+	DIACRITIC_CHARACTER_LIST,
+	loadGamePrice,
+	normalizeCatalogSearchQuery
+} from './catalog.search';
 
 export class GetCatalogGameListFilterByDto extends GetListFilterByDto {
 
@@ -54,6 +51,8 @@ export class GetCatalogGameListQuery {
 	constructor(
 		@InjectRepository(Game)
 		private readonly gameRepository: EntityRepository<Game>,
+		@InjectRepository(GameVersion)
+		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 	) {}
 
 	async execute(
@@ -78,10 +77,11 @@ export class GetCatalogGameListQuery {
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
+
 		if (searchQuery) {
 			queryBuilder.andWhere({
 				[raw((alias) => `translate(lower(${alias}.title), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}')`)]: {
-					$like: `%${normalizeSearchQuery(searchQuery)}%`,
+					$like: `%${normalizeCatalogSearchQuery(searchQuery)}%`,
 				},
 			});
 		}
@@ -90,6 +90,9 @@ export class GetCatalogGameListQuery {
 		addOrderBy(queryBuilder, data.orderBy, 'game.title', 'ASC');
 
 		const [gameList, totalItemCount] = await queryBuilder.getResultAndCount();
+
+		await loadGamePrice(gameList, this.gameVersionRepository);
+
 		return { gameList, totalItemCount };
 	}
 

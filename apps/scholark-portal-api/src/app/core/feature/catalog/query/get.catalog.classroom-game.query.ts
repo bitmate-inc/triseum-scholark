@@ -10,9 +10,11 @@ import { GetOneQueryData } from '../../../../../lib/entity/query/get.one.query';
 import { GetListFilterByDto } from '../../../../../lib/entity/query/query.dto';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { ClassroomGame } from '../../education/model/classroom.game.entity';
+import { GameVersion } from '../../game/model/game.version.entity';
 import {
 	ASCII_CHARACTER_LIST,
 	DIACRITIC_CHARACTER_LIST,
+	loadGamePrice,
 	normalizeCatalogSearchQuery,
 } from './catalog.search';
 
@@ -65,11 +67,15 @@ export class GetCatalogClassroomGameListQuery {
 	constructor(
 		@InjectRepository(ClassroomGame)
 		private readonly classroomGameRepository: EntityRepository<ClassroomGame>,
+		@InjectRepository(GameVersion)
+		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 	) {}
 
 	async execute(data: GetCatalogClassroomGameListQueryData): Promise<GetCatalogClassroomGameListQueryResult> {
 		const queryBuilder = this.classroomGameRepository.createQueryBuilder('classroomGame');
+
 		addClassroomGameRelations(queryBuilder);
+
 		queryBuilder.distinct().andWhere({ gameVersion: { game: { publishedAt: { $lte: new Date() } } } });
 
 		if (data.filterBy?.id) {
@@ -93,6 +99,7 @@ export class GetCatalogClassroomGameListQuery {
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
+
 		if (searchQuery) {
 			const searchPattern = `%${normalizeCatalogSearchQuery(searchQuery)}%`;
 			queryBuilder.andWhere({
@@ -112,6 +119,10 @@ export class GetCatalogClassroomGameListQuery {
 		addOrderBy(queryBuilder, data.orderBy, 'game.title', 'ASC');
 
 		const [classroomGameList, totalItemCount] = await queryBuilder.getResultAndCount();
+
+		const gameList = classroomGameList.map(i => i.gameVersion.game);
+		await loadGamePrice(gameList, this.gameVersionRepository);
+
 		return { classroomGameList, totalItemCount };
 	}
 
@@ -131,7 +142,9 @@ export class GetCatalogClassroomGameQuery {
 		}
 
 		const queryBuilder = this.classroomGameRepository.createQueryBuilder('classroomGame');
+
 		addClassroomGameRelations(queryBuilder);
+		
 		queryBuilder.where({
 			gameVersion: { game: { publishedAt: { $lte: new Date() } } },
 			id: data.filterBy.id,

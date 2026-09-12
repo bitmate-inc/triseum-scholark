@@ -10,6 +10,7 @@ export type UserLibraryItem = {
 	gameVersion: {
 		id: string;
 		publisherVersion: string;
+		runUrl: string;
 	};
 	customizationId?: string;
 	classroom?: {
@@ -27,6 +28,7 @@ export type UserLibraryResponse = { itemList: UserLibraryItem[] };
 const libraryApi = api.injectEndpoints({
 	endpoints: (build) => ({
 		getUserLibrary: build.query<UserLibraryResponse, void>({
+			providesTags: ["Library"],
 			query: () => "/api/v1/user/me/library",
 		}),
 	}),

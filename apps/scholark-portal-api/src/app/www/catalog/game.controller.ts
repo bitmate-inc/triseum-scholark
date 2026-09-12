@@ -1,11 +1,17 @@
 import {
+	Body,
 	Controller,
 	Get,
+	HttpCode,
 	NotFoundException,
 	Param,
+	Post,
 	Query,
+	UnprocessableEntityException,
+	UseGuards,
 } from '@nestjs/common';
 import {
+	ApiCookieAuth,
 	ApiNotFoundResponse,
 	ApiOkResponse,
 	ApiOperation,
@@ -16,7 +22,12 @@ import {
 import { GetCatalogGameListQuery } from '../../core/feature/catalog/query/get.catalog.game.list.query';
 import { GetFeaturedGameListQuery } from '../../core/feature/catalog/query/get.featured.game.list.query';
 import { GetGameQuery } from '../../core/feature/catalog/query/get.game.query';
+import { AcquireGameCommand, AcquireGameCommandData } from '../../core/feature/game/command/acquire.game.command';
+import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
+import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
+import { SessionAuthGuard } from '../auth/session.auth.guard';
 import {
+	GameAcquisitionRequestDto,
 	GetGameListQueryDto,
 	GetGameListResponseDto,
 	GetGameResponseDto,
@@ -27,10 +38,32 @@ import {
 export class GameController {
 
 	constructor(
+		private readonly acquireGameCommand: AcquireGameCommand,
 		private readonly getCatalogGameListQuery: GetCatalogGameListQuery,
 		private readonly getFeaturedGameListQuery: GetFeaturedGameListQuery,
 		private readonly getGameQuery: GetGameQuery,
 	) {}
+
+	@Post('acquisition')
+	@HttpCode(200)
+	@UseGuards(SessionAuthGuard)
+	@ApiCookieAuth()
+	@ApiOperation({ summary: 'Acquire a game without payment' })
+	@ApiOkResponse({ type: GetGameResponseDto })
+	async acquireGame(
+		@AuthSession() session: AuthSessionData,
+		@Body() body: GameAcquisitionRequestDto,
+	): Promise<GetGameResponseDto> {
+		const result = await this.acquireGameCommand.execute(
+			AcquireGameCommandData.create({ gameId: body.gameId, userId: session.user.id }),
+		);
+
+		if (!!result.validationResult) {
+			throw new UnprocessableEntityException(result.validationResult);
+		}
+
+		return this.getGame(result.game!.slug);
+	}
 
 	@Get()
 	@ApiOperation({ summary: 'List games' })

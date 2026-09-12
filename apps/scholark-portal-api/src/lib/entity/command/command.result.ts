@@ -1,4 +1,4 @@
-import { createInstance } from '../../factory/static.factory';
+import { createShallowInstance } from '../../factory/static.factory';
 import { PartialInstanceType } from '../../mixin/type';
 import { ValidationResult } from '../../validator/model/validation.result';
 
@@ -12,13 +12,13 @@ export abstract class CommandResult {
 		this: Type,
 		data?: Omit<InstanceType<Type>, keyof CommandResult>,
 	): InstanceType<Type> {
-		return createInstance(this, (data || {}) as PartialInstanceType<Type>);
+		return createShallowInstance(this, (data || {}) as PartialInstanceType<Type>);
 	}
 
 	static fail(
 		data: { validationResult: ValidationResult } | { isNotFound: true },
 	) {
-		return createInstance(this, data);
+		return createShallowInstance(this, data);
 	}
 
 	isSuccess() {

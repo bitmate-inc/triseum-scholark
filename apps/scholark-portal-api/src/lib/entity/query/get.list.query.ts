@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 
-import { StaticFactory } from '../../factory/static.factory';
+import { DeepStaticFactory, StaticFactory } from '../../factory/static.factory';
 import {
 	GetListFilterByDto,
 	IncludeDto,
@@ -8,7 +8,7 @@ import {
 	PaginationDto,
 } from './query.dto';
 
-export class GetListQueryData extends StaticFactory {
+export class GetListQueryData extends DeepStaticFactory {
 
 	@Type(() => GetListFilterByDto)
 	filterBy?: GetListFilterByDto;

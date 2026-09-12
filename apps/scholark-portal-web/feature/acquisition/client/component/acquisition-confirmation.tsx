@@ -1,0 +1,61 @@
+"use client";
+
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle
+} from "@repo/ui/alert";
+import { Button } from "@repo/ui/button";
+import { CheckCircle2, LoaderCircle } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import styles from "../../../../asset/style/acquisition.module.css";
+import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
+import { getApiErrorMessage } from "../../../auth/client/lib/api-error";
+import type { Game } from "../../../catalog/shared/model/game";
+import { useAcquireGameMutation } from "../api/acquisition-api";
+
+export function AcquisitionConfirmation({ game }: { game: Game }) {
+	const router = useRouter();
+	const session = useAuthGetSessionQuery();
+	const [acquire, acquisition] = useAcquireGameMutation();
+
+	useEffect(() => {
+		if (!session.isLoading && (!session.data || session.isError)) {
+			router.replace("/auth/login");
+		}
+	}, [router, session.data, session.isError, session.isLoading]);
+
+	async function confirm() {
+		const response = await acquire(game.id);
+		if ("data" in response) {
+			router.replace(`/game/${game.slug}/acquire/success`);
+		}
+	}
+
+	if (session.isLoading || !session.data) {
+		return <main className={styles.page}><p>Checking your account...</p></main>;
+	}
+
+	return (
+		<main className={styles.page}>
+			<p className={styles.kicker}>Acquire game</p>
+			<h1>Ready to add this game to your library?</h1>
+			<section className={styles.summary}>
+				{game.cover ? <div className={styles.cover}><Image alt="" fill sizes="180px" src={game.cover.src}/></div> : null}
+				<div><p className={styles.kicker}>Selected game</p><h2>{game.title}</h2><p>{game.summary}</p></div>
+			</section>
+			<p className={styles.detail}>There is no charge for this acquisition. Your access will be added immediately after confirmation.</p>
+			{acquisition.error ? <Alert variant="destructive"><AlertTitle>Unable to acquire game</AlertTitle><AlertDescription>{getApiErrorMessage(acquisition.error)}</AlertDescription></Alert> : null}
+			<div className={styles.actions}>
+				<Button disabled={acquisition.isLoading} onClick={confirm} size="lg" type="button">
+					{acquisition.isLoading ? <LoaderCircle className="animate-spin" data-icon="inline-start"/> : <CheckCircle2 data-icon="inline-start"/>}
+					Confirm acquisition
+				</Button>
+				<Button onClick={() => router.back()} type="button" variant="outline">Cancel</Button>
+			</div>
+		</main>
+	);
+}

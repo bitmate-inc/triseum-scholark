@@ -7,6 +7,8 @@ import { GetOneQueryData } from '../../../../../lib/entity/query/get.one.query';
 import { GetOneFilterByDto, IncludeDto } from '../../../../../lib/entity/query/query.dto';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Game } from '../../game/model/game.entity';
+import { GameVersion } from '../../game/model/game.version.entity';
+import { loadGamePrice } from './catalog.search';
 
 export class GetGameFilterByDto extends GetOneFilterByDto {
 
@@ -44,6 +46,8 @@ export class GetGameQuery {
 	constructor(
 		@InjectRepository(Game)
 		private readonly gameRepository: EntityRepository<Game>,
+		@InjectRepository(GameVersion)
+		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 	) {}
 
 	async execute(data: GetGameQueryData): Promise<GetGameQueryResult> {
@@ -76,7 +80,14 @@ export class GetGameQuery {
 		}
 
 		const game = await queryBuilder.getSingleResult();
-		return { game: game ?? undefined };
+
+		if (!game){
+			return GetGameQueryResult.create({});
+		}
+
+		await loadGamePrice([game], this.gameVersionRepository);
+
+		return GetGameQueryResult.create({ game: game ?? undefined });
 	}
 
 }

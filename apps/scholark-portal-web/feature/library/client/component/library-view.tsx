@@ -5,6 +5,7 @@ import {
 	ArrowUpRight,
 	BookOpen,
 	Gamepad2,
+	Play,
 	RefreshCw
 } from "lucide-react";
 import Link from "next/link";
@@ -49,7 +50,10 @@ function LibraryView() {
 							{item.classroom ? <div><dt>Classroom</dt><dd>{item.classroom.name}</dd></div> : null}
 						</dl>
 					</div>
-					<Link aria-label={`Open ${item.game.title}`} className={styles.openLink} href={`/game/${item.game.slug}`}><ArrowUpRight aria-hidden="true"/></Link>
+					<div className={styles.actions}>
+						{item.isActive ? <Link className={styles.runLink} href={`/library/${item.id}/run`}><Play aria-hidden="true"/>Run game</Link> : null}
+						<Link aria-label={`Open ${item.game.title}`} className={styles.openLink} href={`/game/${item.game.slug}`}><ArrowUpRight aria-hidden="true"/></Link>
+					</div>
 				</article>
 			))}
 		</div>

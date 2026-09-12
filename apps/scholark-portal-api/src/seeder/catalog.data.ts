@@ -6,6 +6,8 @@ import {
 } from '../app/core/feature/education/model/institution.contract.entity';
 import type { Media } from '../app/core/feature/media/model/media';
 import { TaxonomyType } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
+import { Currency } from '../app/core/shared/commerce/model/currency';
+import { randomInRange } from '../lib/util/random';
 
 export interface TaxonomyTermSeed {
 	id: string;
@@ -39,11 +41,18 @@ export interface GameSeed {
 	mediaList: Media[];
 }
 
+export interface MoneySeed {
+	minorUnitAmount: number;
+	currency: Currency;
+}
+
 export interface GameVersionSeed {
 	id: string;
 	gameSlug: string;
 	publisherVersion: string;
 	publishedAt: Date;
+	runUrl: string;
+	price: MoneySeed;
 }
 
 export interface GameCustomizationSeed {
@@ -142,6 +151,10 @@ function createTaxonomyList(
 		sortOrder: index,
 		...taxonomyTerm,
 	}));
+}
+
+function createGameVersionMoneyAmount() {
+	return randomInRange(500, 5000, 100)
 }
 
 export const publisherSeedList: PublisherSeed[] = [
@@ -357,6 +370,11 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		id: `00000000-0000-4000-8000-${String(301 + index).padStart(12, '0')}`,
 		publishedAt: game.publishedAt,
 		publisherVersion: '1.0.0',
+		runUrl: `https://play.triseum.com/${game.slug}`,
+		price: {
+			minorUnitAmount: createGameVersionMoneyAmount(),
+			currency: Currency.USD
+		}
 	},
 	...(game.slug === 'arte-mecenas' ? [
 		{
@@ -364,12 +382,22 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 			id: '00000000-0000-4000-8000-000000000311',
 			publishedAt: new Date('2026-03-01T00:00:00.000Z'),
 			publisherVersion: '1.4.0',
+			runUrl: 'https://play.triseum.com/arte-mecenas',
+			price: {
+				minorUnitAmount: createGameVersionMoneyAmount(),
+				currency: Currency.USD
+			}
 		},
 		{
 			gameSlug: game.slug,
 			id: '00000000-0000-4000-8000-000000000312',
 			publishedAt: new Date('2026-05-15T00:00:00.000Z'),
 			publisherVersion: 'v1.4.1-demo',
+			runUrl: 'https://play.triseum.com/arte-mecenas/demo',
+			price: {
+				minorUnitAmount: createGameVersionMoneyAmount(),
+				currency: Currency.USD
+			}
 		},
 	] : []),
 	...(game.slug === 'variant-limits' ? [{
@@ -377,6 +405,11 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		id: '00000000-0000-4000-8000-000000000313',
 		publishedAt: new Date('2026-04-10T00:00:00.000Z'),
 		publisherVersion: '1.1.0',
+		runUrl: 'https://play.triseum.com/variant-limits',
+		price: {
+			minorUnitAmount: createGameVersionMoneyAmount(),
+			currency: Currency.USD
+		}
 	}] : []),
 ]);
 

@@ -32,6 +32,8 @@ export abstract class MikroOrmEntityRepository<Entity extends object> implements
 	}
 
 	async findOneBy(query: FindOneQuery, options?: FindOptions<Entity>): Promise<Entity | undefined> {
+		console.log('FIND EM', this.repository.getEntityManager().id);
+
 		const result = await this.repository.findOne(this.buildWhere(query), {
 			filters: options?.withDeleted ? { softDelete: false } : {},
 			populate: this.toPopulate(options?.relations) as never,
@@ -41,6 +43,8 @@ export abstract class MikroOrmEntityRepository<Entity extends object> implements
 	}
 
 	findBy(query: FindListQuery, options?: FindOptions<Entity>): Promise<Entity[]> {
+		console.log('FIND EM', this.repository.getEntityManager().id); 
+		
 		return this.repository.find(this.buildWhere(query), {
 			filters: options?.withDeleted ? { softDelete: false } : {},
 			limit: options?.take,
@@ -126,6 +130,7 @@ export abstract class MikroOrmEntityRepository<Entity extends object> implements
 	}
 
 	private async persistThenFlush(entityOrEntityList: Entity | Entity[]): Promise<void> {
+		console.log('SAVE EM', this.repository.getEntityManager().id);
 		const entityManager = this.repository.getEntityManager();
 		entityManager.persist(entityOrEntityList);
 		await entityManager.flush();

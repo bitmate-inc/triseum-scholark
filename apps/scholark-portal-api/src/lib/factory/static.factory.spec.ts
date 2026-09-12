@@ -8,7 +8,7 @@ import {
 	PaginationDto,
 } from '../entity/query/query.dto';
 import {
-	createInstance,
+	createShallowInstance,
 	StaticFactory,
 	withStaticFactory,
 } from './static.factory';
@@ -36,7 +36,7 @@ describe('StaticFactory', () => {
 	});
 
 	it('creates an instance directly from a constructor', () => {
-		const example = createInstance(Example, { name: 'Mecenas' });
+		const example = createShallowInstance(Example, { name: 'Mecenas' });
 
 		expect(example).toBeInstanceOf(Example);
 		expect(example.name).toBe('Mecenas');

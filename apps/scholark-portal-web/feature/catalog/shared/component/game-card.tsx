@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import styles from "../../../../asset/style/site.module.css";
+import { formatMoney } from '../../../commerce/shared/model/money';
 import {
 	formatEstimatedLength,
 	type Game,
@@ -42,6 +43,11 @@ export function GameCard({ game }: { game: Game }) {
 							{tag}
 						</Badge>
 					))}
+					{game.price && (
+						<Badge key="price" variant="default">
+							{formatMoney(game.price)}
+						</Badge>
+					)}
 				</CardContent>
 				<CardFooter className={styles.cardMeta}>
 					<Clock3 aria-hidden="true"/>

@@ -8,7 +8,7 @@ import {
 	ValidateNested,
 } from 'class-validator';
 
-import { StaticFactory } from '../../../../lib/factory/static.factory';
+import { DeepStaticFactory, StaticFactory } from '../../../../lib/factory/static.factory';
 
 export class AuthJwtConfig extends StaticFactory {
 
@@ -48,7 +48,7 @@ export class AuthMicrosoftConfig extends StaticFactory {
 
 }
 
-export class AuthModuleConfig extends StaticFactory {
+export class AuthModuleConfig extends DeepStaticFactory {
 
 	@IsObject()
 	@ValidateNested()

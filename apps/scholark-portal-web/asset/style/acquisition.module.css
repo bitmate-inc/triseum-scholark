@@ -1,0 +1,14 @@
+.page { display: flex; flex-direction: column; align-items: flex-start; width: min(760px, 100%); min-height: 70vh; margin: 0 auto; padding: 90px clamp(20px, 5vw, 76px); }
+.page > h1 { max-width: 700px; margin: 10px 0 20px; font-family: var(--font-display); font-size: clamp(46px, 7vw, 76px); font-weight: 400; line-height: .95; }
+.kicker { color: #147a74; font-family: var(--font-geist-mono); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.summary { display: grid; grid-template-columns: 180px 1fr; gap: 24px; width: 100%; margin: 18px 0 24px; padding: 18px; border: 1px solid var(--border); background: var(--card); }
+.cover { position: relative; min-height: 120px; overflow: hidden; background: #d7d0c0; }
+.cover img { object-fit: cover; }
+.summary h2 { margin: 5px 0 9px; font-family: var(--font-display); font-size: 32px; font-weight: 400; }
+.summary p:last-child, .detail { color: var(--muted-foreground); line-height: 1.6; }
+.detail { max-width: 620px; font-size: 17px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.successIcon { width: 46px; height: 46px; color: #147a74; }
+.url { display: block; width: 100%; margin: 14px 0; padding: 16px; overflow-wrap: anywhere; border: 1px solid var(--border); background: var(--card); color: #164945; font-size: 14px; }
+.note { color: var(--muted-foreground); font-size: 14px; }
+@media (max-width: 560px) { .summary { grid-template-columns: 1fr; } .cover { min-height: 180px; } }

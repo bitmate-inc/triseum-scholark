@@ -1,5 +1,5 @@
 .list { display: grid; gap: 14px; }
-.item { display: grid; grid-template-columns: 54px minmax(0, 1fr) 42px; gap: 22px; align-items: center; padding: 22px; border: 1px solid var(--border); background: var(--card); box-shadow: 5px 5px 0 var(--accent); }
+.item { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 22px; border: 1px solid var(--border); background: var(--card); box-shadow: 5px 5px 0 var(--accent); }
 .itemIcon { display: grid; place-items: center; width: 54px; aspect-ratio: 1; color: #147a74; background: #e6f0e8; }
 .itemIcon svg { width: 24px; height: 24px; }
 .itemMain { min-width: 0; }
@@ -15,6 +15,10 @@
 .openLink { display: grid; place-items: center; width: 38px; aspect-ratio: 1; border: 1px solid var(--border); color: var(--foreground); }
 .openLink:hover { color: #fffdf7; background: #147a74; }
 .openLink svg { width: 18px; height: 18px; }
+.actions { display: flex; align-items: center; gap: 8px; }
+.runLink { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; color: #fffdf7; background: #147a74; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.runLink:hover { background: #0f625d; }
+.runLink svg { width: 15px; height: 15px; }
 .state, .empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 90px 20px; border: 1px dashed var(--border); text-align: center; }
 .state svg, .empty > svg { width: 32px; height: 32px; color: #147a74; }
 .state h2, .empty h2 { font-family: var(--font-display); font-size: 30px; font-weight: 400; }
@@ -23,4 +27,4 @@
 .empty a svg { width: 16px; height: 16px; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 680px) { .item { grid-template-columns: 42px minmax(0, 1fr) 32px; gap: 12px; padding: 16px; } .itemIcon { width: 42px; } .item h2 { font-size: 25px; } .itemHeading { display: block; } .active, .expired { display: inline-block; margin-top: 10px; } .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .facts dd { overflow-wrap: anywhere; } }
+@media (max-width: 680px) { .item { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 16px; } .itemIcon { width: 42px; } .item h2 { font-size: 25px; } .itemHeading { display: block; } .active, .expired { display: inline-block; margin-top: 10px; } .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .facts dd { overflow-wrap: anywhere; } .actions { grid-column: 2; } }

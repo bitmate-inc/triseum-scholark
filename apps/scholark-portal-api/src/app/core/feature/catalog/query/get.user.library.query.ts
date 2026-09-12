@@ -2,7 +2,7 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 
 import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
-import { GameLicense } from '../model/game.license.entity';
+import { GameLicense } from '../../game/model/game.license.entity';
 
 export type UserLibraryItem = {
 	license: GameLicense;
@@ -30,7 +30,7 @@ export class GetUserLibraryQuery {
 		);
 
 		return licenseList.map((license) => ({
-			enrollmentList: license.enrollmentList.getItems(),
+			enrollmentList: license.enrollmentList?.getItems() ?? [],
 			license,
 		}));
 	}

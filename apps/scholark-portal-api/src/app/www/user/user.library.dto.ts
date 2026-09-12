@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-import { UserLibraryItem } from '../../core/feature/game/query/get.user.library.query';
+import { UserLibraryItem } from '../../core/feature/catalog/query/get.user.library.query';
 
 class UserLibraryGameResponseDto {
 
@@ -22,6 +22,9 @@ class UserLibraryVersionResponseDto {
 
 	@ApiProperty()
 	publisherVersion!: string;
+
+	@ApiProperty({ format: 'uri' })
+	runUrl!: string;
 
 }
 
@@ -94,6 +97,7 @@ export class UserLibraryResponseDto {
 						gameVersion: {
 							id: license.gameVersion.id!,
 							publisherVersion: license.gameVersion.publisherVersion,
+							runUrl: license.gameVersion.runUrl,
 						},
 						id: enrollment ? `${license.id}:${enrollment.classroomGame.id}` : license.id!,
 						isActive: license.startAt <= new Date() && license.endAt >= new Date(),

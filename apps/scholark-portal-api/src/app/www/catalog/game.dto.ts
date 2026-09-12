@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsUUID } from 'class-validator';
 
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import { GetCatalogGameListQueryResult } from '../../core/feature/catalog/query/get.catalog.game.list.query';
@@ -6,9 +7,19 @@ import { GetFeaturedGameListQueryResult } from '../../core/feature/catalog/query
 import { Game } from '../../core/feature/game/model/game.entity';
 import { Publisher } from '../../core/feature/publisher/model/publisher.entity';
 import { TaxonomyType } from '../../core/feature/taxonomy/model/taxonomy.term.entity';
+import { Currency } from '../../core/shared/commerce/model/currency';
+import { Money } from '../../core/shared/commerce/model/money.entity';
 import { MediaResponseDto } from '../media/media.dto';
 
 export class GetGameListQueryDto extends GetListRequestQueryParamsDto {}
+
+export class GameAcquisitionRequestDto {
+
+	@ApiProperty({ format: 'uuid' })
+	@IsUUID()
+	gameId!: string;
+
+}
 
 class TaxonomyTermResponseDto {
 
@@ -55,6 +66,16 @@ class PublisherResponseDto implements Pick<Publisher, 'id' | 'name' | 'slug' | '
 
 }
 
+export class MoneyDto implements Money {
+
+	@ApiProperty()
+	minorUnitAmount!: number;
+
+	@ApiProperty()
+	currency!: Currency;
+
+}
+
 export class GameResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
@@ -93,6 +114,9 @@ export class GameResponseDto {
 	@ApiPropertyOptional({ type: [MediaResponseDto] })
 	mediaList?: MediaResponseDto[];
 
+	@ApiPropertyOptional({ type: MoneyDto })
+	price?: MoneyDto;
+
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;
 
@@ -125,6 +149,7 @@ export class GameResponseDto {
 				},
 			})),
 			title: game.title,
+			price: game.price,
 		};
 	}
 
