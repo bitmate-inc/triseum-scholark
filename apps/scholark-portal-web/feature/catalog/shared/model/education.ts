@@ -51,6 +51,9 @@ export type ClassroomGame = {
 	id: string;
 	classroom: Pick<Classroom, "id" | "name" | "slug" | "institution">;
 	game: Game;
+	startAt: string;
+	endAt: string;
+	licenseDurationDays: number;
 	createdAt: string;
 	updatedAt: string;
 };
@@ -73,6 +76,10 @@ export type ClassroomListResponse = {
 export type ClassroomGameListResponse = {
 	classroomGameList: ClassroomGame[];
 	totalItemCount: number;
+};
+
+export type ClassroomGameResponse = {
+	classroomGame: ClassroomGame;
 };
 
 export type EducationListQuery = {

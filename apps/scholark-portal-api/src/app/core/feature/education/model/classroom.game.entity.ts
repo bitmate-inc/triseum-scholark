@@ -36,6 +36,22 @@ export class ClassroomGame {
 	@Property({ nullable: true })
 	publishedAt?: Date;
 
+	isPublished(referenceDate: Date = new Date()): boolean {
+		return this.publishedAt != null && this.publishedAt <= referenceDate;
+	}
+
+	isExpired(referenceDate: Date = new Date()): boolean {
+		return this.endAt < referenceDate;
+	}
+
+	isActive(referenceDate: Date = new Date()): boolean {
+		return this.startAt <= referenceDate && !this.isExpired(referenceDate);
+	}
+
+	isAvailable(referenceDate: Date = new Date()): boolean {
+		return this.isPublished(referenceDate) && this.isActive(referenceDate);
+	}
+
 	@Property({ onCreate: () => new Date() })
 	createdAt?: Date;
 

@@ -1,12 +1,17 @@
 import {
 	Controller,
 	Get,
+	HttpCode,
 	NotFoundException,
 	Param,
 	ParseUUIDPipe,
+	Post,
 	Query,
+	UnprocessableEntityException,
+	UseGuards,
 } from '@nestjs/common';
 import {
+	ApiCookieAuth,
 	ApiNotFoundResponse,
 	ApiOkResponse,
 	ApiOperation,
@@ -15,6 +20,10 @@ import {
 } from '@nestjs/swagger';
 
 import { GetCatalogClassroomGameListQuery, GetCatalogClassroomGameQuery } from '../../core/feature/catalog/query/get.catalog.classroom-game.query';
+import { AcquireClassroomGameCommand, AcquireClassroomGameCommandData } from '../../core/feature/game/command/acquire.classroom.game.command';
+import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
+import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
+import { SessionAuthGuard } from '../auth/session.auth.guard';
 import {
 	GetClassroomGameListQueryDto,
 	GetClassroomGameListResponseDto,
@@ -26,9 +35,32 @@ import {
 export class ClassroomGameController {
 
 	constructor(
+		private readonly acquireClassroomGameCommand: AcquireClassroomGameCommand,
 		private readonly getClassroomGameListQuery: GetCatalogClassroomGameListQuery,
 		private readonly getClassroomGameQuery: GetCatalogClassroomGameQuery,
 	) {}
+
+	@Post(':id/acquisition')
+	@HttpCode(200)
+	@UseGuards(SessionAuthGuard)
+	@ApiCookieAuth()
+	@ApiOperation({ summary: 'Acquire a classroom game without payment' })
+	@ApiParam({ format: 'uuid', name: 'id' })
+	@ApiOkResponse({ type: GetClassroomGameResponseDto })
+	async acquireClassroomGame(
+		@Param('id', ParseUUIDPipe) id: string,
+		@AuthSession() session: AuthSessionData,
+	): Promise<GetClassroomGameResponseDto> {
+		const result = await this.acquireClassroomGameCommand.execute(
+			AcquireClassroomGameCommandData.create({ classroomGameId: id, userId: session.user.id }),
+		);
+
+		if (result.validationResult) {
+			throw new UnprocessableEntityException(result.validationResult);
+		}
+
+		return GetClassroomGameResponseDto.fromEntity(result.classroomGame!);
+	}
 
 	@Get()
 	@ApiOperation({ summary: 'List classroom game assignments' })

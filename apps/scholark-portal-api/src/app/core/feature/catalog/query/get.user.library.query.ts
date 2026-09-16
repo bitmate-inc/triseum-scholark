@@ -22,15 +22,31 @@ export class GetUserLibraryQuery {
 				populate: [
 					'gameVersion.game',
 					'customization',
-					'enrollmentList.classroomGame.classroom',
-					'enrollmentList.classroomGame.customization',
 				],
 				orderBy: { endAt: 'desc' },
 			},
 		);
+		const enrollmentList = licenseList.length
+			? await this.entityManager.find(
+				ClassroomGameLicence,
+				{ gameLicense: { $in: licenseList.map((license) => license.id!) } },
+				{
+					populate: [
+						'classroomGame.classroom',
+						'classroomGame.customization',
+					],
+				},
+			)
+			: [];
+		const enrollmentListByLicenseId = new Map<string, ClassroomGameLicence[]>();
+		for (const enrollment of enrollmentList) {
+			const enrollmentListForLicense = enrollmentListByLicenseId.get(enrollment.gameLicense.id!) ?? [];
+			enrollmentListForLicense.push(enrollment);
+			enrollmentListByLicenseId.set(enrollment.gameLicense.id!, enrollmentListForLicense);
+		}
 
 		return licenseList.map((license) => ({
-			enrollmentList: license.enrollmentList?.getItems() ?? [],
+			enrollmentList: enrollmentListByLicenseId.get(license.id!) ?? [],
 			license,
 		}));
 	}

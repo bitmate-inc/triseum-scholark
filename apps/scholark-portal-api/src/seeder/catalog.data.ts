@@ -49,6 +49,7 @@ export interface MoneySeed {
 export interface GameVersionSeed {
 	id: string;
 	gameSlug: string;
+	description?: string;
 	publisherVersion: string;
 	publishedAt: Date;
 	runUrl: string;
@@ -369,6 +370,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		gameSlug: game.slug,
 		id: `00000000-0000-4000-8000-${String(301 + index).padStart(12, '0')}`,
 		publishedAt: game.publishedAt,
+		description: 'The initial published build of this learning experience.',
 		publisherVersion: '1.0.0',
 		runUrl: `https://play.triseum.com/${game.slug}`,
 		price: {
@@ -381,6 +383,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 			gameSlug: game.slug,
 			id: '00000000-0000-4000-8000-000000000311',
 			publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+			description: 'Expanded content and updated classroom activities.',
 			publisherVersion: '1.4.0',
 			runUrl: 'https://play.triseum.com/arte-mecenas',
 			price: {
@@ -392,6 +395,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 			gameSlug: game.slug,
 			id: '00000000-0000-4000-8000-000000000312',
 			publishedAt: new Date('2026-05-15T00:00:00.000Z'),
+			description: 'A shorter demo build for introductory exploration.',
 			publisherVersion: 'v1.4.1-demo',
 			runUrl: 'https://play.triseum.com/arte-mecenas/demo',
 			price: {
@@ -404,6 +408,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		gameSlug: game.slug,
 		id: '00000000-0000-4000-8000-000000000313',
 		publishedAt: new Date('2026-04-10T00:00:00.000Z'),
+		description: 'Refined scenarios focused on interpreting variation.',
 		publisherVersion: '1.1.0',
 		runUrl: 'https://play.triseum.com/variant-limits',
 		price: {

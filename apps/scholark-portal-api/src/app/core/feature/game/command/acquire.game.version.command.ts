@@ -10,31 +10,25 @@ import { UserEntityRepository } from '../../user/repository/user.entity.reposito
 import { Game } from '../model/game.entity';
 import { GameLicense } from '../model/game.license.entity';
 import { GameLicenseRepository } from '../repository/game.license.repository';
-import { GameRepository } from '../repository/game.repository';
 import { GameVersionRepository } from '../repository/game.version.repository';
 
 
-export class AcquireGameCommandData extends StaticFactory {
+export class AcquireGameVersionCommandData extends StaticFactory {
 
 	@IsUUID()
 	userId!: string;
 
 	@IsUUID()
-	gameId!: string;
+	gameVersionId!: string;
 
 }
 
-export class AcquireGameCommandResult extends CommandResult {
+export class AcquireGameVersionCommandResult extends CommandResult {
 
 	game?: Game;
+	
 	@Exclude()
 	license?: GameLicense;
-
-	static gameNotFoundFail() {
-		return this.fail({
-			validationResult: ValidationResult.createFromErrorMessage('Game not found'),
-		});
-	}
 
 	static gameVersionNotFoundFail() {
 		return this.fail({
@@ -42,9 +36,9 @@ export class AcquireGameCommandResult extends CommandResult {
 		});
 	}
 
-	static gameAlreadyAcquired() {
+	static alreadyAcquiredFail() {
 		return this.fail({
-			validationResult: ValidationResult.createFromErrorMessage('Game already acquired'),
+			validationResult: ValidationResult.createFromErrorMessage('Game version already acquired'),
 		});
 	}
 
@@ -57,45 +51,43 @@ export class AcquireGameCommandResult extends CommandResult {
 }
 
 @Injectable()
-export class AcquireGameCommand {
+export class AcquireGameVersionCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly gameRepository: GameRepository,
 		private readonly gameVersionRepository: GameVersionRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
 		private readonly userRepository: UserEntityRepository,
 	) {}
 
-	async execute(data: AcquireGameCommandData): Promise<AcquireGameCommandResult> {
+	async execute(data: AcquireGameVersionCommandData): Promise<AcquireGameVersionCommandResult> {
 		const validationResult = await this.validator.validate(data);
 
 		if (!!validationResult) {
-			return AcquireGameCommandResult.fail({ validationResult });
+			return AcquireGameVersionCommandResult.fail({ validationResult });
 		}
 
-		const game = await this.gameRepository.findOneBy({ id: data.gameId });
+		const gameVersion = await this.gameVersionRepository.findForAcquisition(
+			data.gameVersionId,
+			{ relations: { game: true } }
+		);
 
-		if (!game) {
-			return AcquireGameCommandResult.gameNotFoundFail();
+		if (!gameVersion || !gameVersion.isPublished() || !gameVersion.game?.isPublished()) {
+			return AcquireGameVersionCommandResult.gameVersionNotFoundFail();
 		}
 
-		const gameVersion = await this.gameVersionRepository.findLatestPublishedByGame(game);
-
-		if (!gameVersion) {
-			return AcquireGameCommandResult.gameVersionNotFoundFail();
-		}
+		const game = gameVersion.game;
 
 		const user = await this.userRepository.findOneBy({ id: data.userId });
 
 		if (!user) {
-			return AcquireGameCommandResult.userNotFoundFail();
+			return AcquireGameVersionCommandResult.userNotFoundFail();
 		}
 
-		const currentLicense = await this.gameLicenseRepository.findActiveByUserAndGame(data.userId, game);
+		const currentLicense = await this.gameLicenseRepository.findActiveByUserAndGameVersion(data.userId, gameVersion);
 
 		if (currentLicense) {
-			return AcquireGameCommandResult.gameAlreadyAcquired();
+			return AcquireGameVersionCommandResult.alreadyAcquiredFail();
 		}
 
 		const licenseDuration = 6 * 30 // 6 months
@@ -107,7 +99,7 @@ export class AcquireGameCommand {
 		
 		license = await this.gameLicenseRepository.save(license);
 
-		return AcquireGameCommandResult.success({ game, license });
+		return AcquireGameVersionCommandResult.success({ game, license });
 	}
 
 }

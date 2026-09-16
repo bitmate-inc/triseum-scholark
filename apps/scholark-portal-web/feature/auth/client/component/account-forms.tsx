@@ -106,7 +106,7 @@ function isUnauthorized(error: unknown): boolean {
 	return typeof error === "object" && error !== null && "status" in error && error.status === 401;
 }
 
-export function LoginForm() {
+export function LoginForm({ backTo }: { backTo?: string }) {
 	const [login, result] = useAuthLoginMutation();
 
 	async function submit(event: FormEvent<HTMLFormElement>) {
@@ -118,7 +118,7 @@ export function LoginForm() {
 				password: String(data.get("password")),
 			} 
 		});
-		if ("data" in response) window.location.assign("/profile");
+		if ("data" in response) window.location.assign(backTo ?? "/library");
 	}
 
 	return (

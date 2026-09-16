@@ -1,11 +1,9 @@
 import { Badge } from "@repo/ui/badge";
-import { buttonVariants } from "@repo/ui/button";
 import { Separator } from "@repo/ui/separator";
 import {
 	ArrowLeft,
 	Building2,
-	Clock3,
-	MonitorPlay
+	Clock3
 } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -14,6 +12,7 @@ import { notFound } from "next/navigation";
 import { Fragment } from "react";
 
 import styles from "../../../asset/style/site.module.css";
+import { GameVersionList } from "../../../feature/catalog/client/component/game-version-list";
 import { getGameRequest } from "../../../feature/catalog/server/request/get-game.request";
 import { getGameListRequest } from "../../../feature/catalog/server/request/get-game-list.request";
 import {
@@ -81,11 +80,9 @@ export default async function GamePage({ params }: GamePageProps) {
 							</div>
 						) : null}
 					</dl>
-					<Link className={buttonVariants({ size: "lg" })} href={`/game/${game.slug}/acquire`}>
-						<MonitorPlay data-icon="inline-start"/>Get access
-					</Link>
 				</div>
 			</section>
+			<GameVersionList game={game}/>
 			<section className={styles.aboutGame}>
 				<p className={styles.kicker}>About this game</p>
 				<p>{game.description ?? "More information about this game is coming soon."}</p>

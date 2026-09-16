@@ -40,6 +40,17 @@ export type Game = {
 	price?: Money;
 };
 
+export type GameDetails = Game & { gameVersionList: GameVersion[] };
+
+export type GameVersion = {
+	id: string;
+	description?: string;
+	publisherVersion: string;
+	runUrl: string;
+	price: Money;
+	publishedAt?: string;
+};
+
 export type GetGameListResponse = {
 	gameList: Game[];
 	totalItemCount: number;
@@ -53,6 +64,7 @@ export type GetGameListQuery = {
 
 export type GetGameResponse = {
 	game: Game;
+	gameVersionList: GameVersion[];
 };
 
 export function getGameTagList(game: Game): string[] {

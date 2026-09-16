@@ -4,6 +4,7 @@ import { apiFetch, ApiRequestError } from "../../../api/server/request/api-fetch
 import type {
 	Classroom,
 	ClassroomGameListResponse,
+	ClassroomGameResponse,
 	ClassroomListResponse,
 	Course,
 	CourseListResponse,
@@ -61,4 +62,14 @@ export function getClassroomRequest(slug: string) {
 
 export function getClassroomGameListRequest(query: EducationListQuery = {}) {
 	return apiFetch<ClassroomGameListResponse>(`/api/v1/catalog/classroom-game${createQueryString(query)}`);
+}
+
+export async function getClassroomGameRequest(id: string) {
+	try {
+		const response = await apiFetch<ClassroomGameResponse>(`/api/v1/catalog/classroom-game/${encodeURIComponent(id)}`);
+		return response.classroomGame;
+	} catch (error) {
+		if (error instanceof ApiRequestError && error.status === 404) return undefined;
+		throw error;
+	}
 }

@@ -100,7 +100,7 @@ export class UserLibraryResponseDto {
 							runUrl: license.gameVersion.runUrl,
 						},
 						id: enrollment ? `${license.id}:${enrollment.classroomGame.id}` : license.id!,
-						isActive: license.startAt <= new Date() && license.endAt >= new Date(),
+						isActive: license.isActive(),
 						startAt: license.startAt,
 					};
 				});

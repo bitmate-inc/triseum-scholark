@@ -37,6 +37,7 @@ export class GetGameQueryData extends GetOneQueryData {
 export class GetGameQueryResult extends StaticFactory {
 
 	game?: Game;
+	gameVersionList: GameVersion[] = [];
 
 }
 
@@ -56,7 +57,7 @@ export class GetGameQuery {
 		const gameSlug = data.filterBy?.slug;
 
 		if (!gameId && !gameSlug) {
-			return { game: undefined };
+			return { game: undefined, gameVersionList: [] };
 		}
 
 		if (data.include?.taxonomyList) {
@@ -86,8 +87,12 @@ export class GetGameQuery {
 		}
 
 		await loadGamePrice([game], this.gameVersionRepository);
+		const gameVersionList = await this.gameVersionRepository.find(
+			{ game, publishedAt: { $lte: new Date() } },
+			{ orderBy: { publishedAt: 'desc' } },
+		);
 
-		return GetGameQueryResult.create({ game: game ?? undefined });
+		return GetGameQueryResult.create({ game: game ?? undefined, gameVersionList });
 	}
 
 }

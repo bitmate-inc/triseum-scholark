@@ -6,12 +6,13 @@ import {
 	Unique,
 } from '@mikro-orm/decorators/legacy';
 
+import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { GameLicense } from '../../game/model/game.license.entity';
 import { ClassroomGame } from './classroom.game.entity';
 
 @Entity({ tableName: 'classroom_game_enrollment' })
 @Unique({ properties: ['classroomGame', 'gameLicense'] })
-export class ClassroomGameLicence {
+export class ClassroomGameLicence extends StaticFactory {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;

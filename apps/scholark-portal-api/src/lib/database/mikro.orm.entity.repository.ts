@@ -103,7 +103,7 @@ export abstract class MikroOrmEntityRepository<Entity extends object> implements
 		await this.persistThenFlush(entityList);
 	}
 
-	private buildWhere(query: FindOneQuery | FindListQuery): FilterQuery<Entity> {
+	protected buildWhere(query: FindOneQuery | FindListQuery): FilterQuery<Entity> {
 		const where: Record<string, unknown> = {};
 
 		for (const property of Object.keys(query)) {
@@ -116,7 +116,7 @@ export abstract class MikroOrmEntityRepository<Entity extends object> implements
 		return where as FilterQuery<Entity>;
 	}
 
-	private normalizeBulkQuery(query: FindBulkQuery): FindListQuery {
+	protected normalizeBulkQuery(query: FindBulkQuery): FindListQuery {
 		const { id, selectAll, ...rest } = query;
 
 		if (id) {
@@ -129,20 +129,20 @@ export abstract class MikroOrmEntityRepository<Entity extends object> implements
 		return { ...rest, id: [] };
 	}
 
-	private async persistThenFlush(entityOrEntityList: Entity | Entity[]): Promise<void> {
+	protected async persistThenFlush(entityOrEntityList: Entity | Entity[]): Promise<void> {
 		console.log('SAVE EM', this.repository.getEntityManager().id);
 		const entityManager = this.repository.getEntityManager();
 		entityManager.persist(entityOrEntityList);
 		await entityManager.flush();
 	}
 
-	private async removeThenFlush(entityOrEntityList: Entity | Entity[]): Promise<void> {
+	protected async removeThenFlush(entityOrEntityList: Entity | Entity[]): Promise<void> {
 		const entityManager = this.repository.getEntityManager();
 		entityManager.remove(entityOrEntityList);
 		await entityManager.flush();
 	}
 
-	private toPopulate(relations: Record<string, unknown> | undefined): string[] {
+	protected toPopulate(relations: Record<string, unknown> | undefined): string[] {
 		if (!relations) {
 			return [];
 		}

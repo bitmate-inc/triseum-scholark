@@ -20,9 +20,9 @@ import {
 	getGameTagList,
 } from "../model/game";
 
-export function GameCard({ game }: { game: Game }) {
+export function GameCard({ game, href = `/game/${game.slug}` }: { game: Game; href?: string }) {
 	return (
-		<Link className={styles.cardLink} href={`/game/${game.slug}`}>
+		<Link className={styles.cardLink} href={href}>
 			<Card className={styles.gameCard}>
 				<div className={styles.cardImage}>
 					{game.cover ? <Image src={game.cover.src} alt="" fill sizes="(max-width: 760px) 100vw, 33vw"/> : null}

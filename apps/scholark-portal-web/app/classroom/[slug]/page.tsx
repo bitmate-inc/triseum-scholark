@@ -39,7 +39,7 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
 					<span>{classroomGameList.length.toString().padStart(2, "0")} games</span>
 				</div>
 				{classroomGameList.length ? (
-					<div className={styles.gameGrid}>{classroomGameList.map(({ game }) => <GameCard game={game} key={game.id}/>)}</div>
+					<div className={styles.gameGrid}>{classroomGameList.map((classroomGame) => <GameCard game={classroomGame.game} href={`/classroom-game/${classroomGame.id}/acquire`} key={classroomGame.id}/>)}</div>
 				) : (
 					<div className={styles.emptyState}><h3>No games assigned</h3><p>This classroom does not have any published games yet.</p></div>
 				)}

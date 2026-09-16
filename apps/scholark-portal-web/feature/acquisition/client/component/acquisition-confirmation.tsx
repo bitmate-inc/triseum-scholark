@@ -14,22 +14,25 @@ import { useEffect } from "react";
 import styles from "../../../../asset/style/acquisition.module.css";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { getApiErrorMessage } from "../../../auth/client/lib/api-error";
-import type { Game } from "../../../catalog/shared/model/game";
+import type { Game, GameVersion } from "../../../catalog/shared/model/game";
 import { useAcquireGameMutation } from "../api/acquisition-api";
 
-export function AcquisitionConfirmation({ game }: { game: Game }) {
+export function AcquisitionConfirmation({ game, gameVersion }: { game: Game; gameVersion: GameVersion }) {
 	const router = useRouter();
 	const session = useAuthGetSessionQuery();
 	const [acquire, acquisition] = useAcquireGameMutation();
 
 	useEffect(() => {
 		if (!session.isLoading && (!session.data || session.isError)) {
-			router.replace("/auth/login");
+			const backTo = `/game/${game.slug}/acquire?version=${gameVersion.id}`;
+			const query = new URLSearchParams({ backTo });
+			router.replace(`/auth/login?${query.toString()}`);
 		}
-	}, [router, session.data, session.isError, session.isLoading]);
+	}, [game.slug, gameVersion.id, router, session.data, session.isError, session.isLoading]);
 
 	async function confirm() {
-		const response = await acquire(game.id);
+		const response = await acquire(gameVersion.id);
+
 		if ("data" in response) {
 			router.replace(`/game/${game.slug}/acquire/success`);
 		}
@@ -45,7 +48,7 @@ export function AcquisitionConfirmation({ game }: { game: Game }) {
 			<h1>Ready to add this game to your library?</h1>
 			<section className={styles.summary}>
 				{game.cover ? <div className={styles.cover}><Image alt="" fill sizes="180px" src={game.cover.src}/></div> : null}
-				<div><p className={styles.kicker}>Selected game</p><h2>{game.title}</h2><p>{game.summary}</p></div>
+				<div><p className={styles.kicker}>Selected game</p><h2>{game.title}</h2><p>{game.summary}</p><p>Version {gameVersion.publisherVersion}</p></div>
 			</section>
 			<p className={styles.detail}>There is no charge for this acquisition. Your access will be added immediately after confirmation.</p>
 			{acquisition.error ? <Alert variant="destructive"><AlertTitle>Unable to acquire game</AlertTitle><AlertDescription>{getApiErrorMessage(acquisition.error)}</AlertDescription></Alert> : null}
@@ -54,7 +57,7 @@ export function AcquisitionConfirmation({ game }: { game: Game }) {
 					{acquisition.isLoading ? <LoaderCircle className="animate-spin" data-icon="inline-start"/> : <CheckCircle2 data-icon="inline-start"/>}
 					Confirm acquisition
 				</Button>
-				<Button onClick={() => router.back()} type="button" variant="outline">Cancel</Button>
+				<Button onClick={() => router.replace(`/game/${game.slug}`)} type="button" variant="outline">Cancel</Button>
 			</div>
 		</main>
 	);

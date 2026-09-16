@@ -1,14 +1,11 @@
-import { Collection } from '@mikro-orm/core';
 import {
 	Entity,
 	ManyToOne,
-	OneToMany,
 	PrimaryKey,
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
-import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
 import { GameVersion } from './game.version.entity';
@@ -28,9 +25,6 @@ export class GameLicense extends StaticFactory {
 	@ManyToOne(() => GameCustomization, { nullable: true, deleteRule: 'restrict' })
 	customization?: GameCustomization;
 
-	@OneToMany(() => ClassroomGameLicence, (enrollment) => enrollment.gameLicense)
-	enrollmentList? = new Collection<ClassroomGameLicence>(this);
-
 	@Property()
 	startAt!: Date;
 
@@ -39,6 +33,14 @@ export class GameLicense extends StaticFactory {
 
 	@Property({ onCreate: () => new Date() })
 	createdAt?: Date;
+
+	isExpired(referenceDate: Date = new Date()): boolean {
+		return this.endAt < referenceDate;
+	}
+
+	isActive(referenceDate: Date = new Date()): boolean {
+		return this.startAt <= referenceDate && !this.isExpired(referenceDate);
+	}
 
 	static createForDuration(durationDays: number, data: Partial<GameLicense> = {}): GameLicense {
 		const startAt = new Date();

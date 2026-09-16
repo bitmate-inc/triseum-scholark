@@ -4,13 +4,20 @@ const acquisitionApi = api.injectEndpoints({
 	endpoints: (build) => ({
 		acquireGame: build.mutation<void, string>({
 			invalidatesTags: ["Library"],
-			query: (gameId) => ({
-				body: { gameId },
+			query: (gameVersionId) => ({
+				body: { gameVersionId },
 				method: "POST",
 				url: "/api/v1/catalog/game/acquisition",
+			}),
+		}),
+		acquireClassroomGame: build.mutation<void, string>({
+			invalidatesTags: ["Library"],
+			query: (classroomGameId) => ({
+				method: "POST",
+				url: `/api/v1/catalog/classroom-game/${classroomGameId}/acquisition`,
 			}),
 		}),
 	}),
 });
 
-export const { useAcquireGameMutation } = acquisitionApi;
+export const { useAcquireClassroomGameMutation, useAcquireGameMutation } = acquisitionApi;

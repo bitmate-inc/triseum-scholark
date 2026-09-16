@@ -222,6 +222,7 @@ export class DatabaseSeeder extends Seeder {
 					gameVersion = transactionalEm.create(GameVersion, {
 						id: gameVersionSeed.id,
 						game,
+						description: gameVersionSeed.description,
 						publishedAt: gameVersionSeed.publishedAt,
 						publisherVersion: gameVersionSeed.publisherVersion,
 						runUrl: gameVersionSeed.runUrl,
@@ -229,6 +230,7 @@ export class DatabaseSeeder extends Seeder {
 					});
 				} else {
 					transactionalEm.assign(gameVersion, {
+						description: gameVersionSeed.description,
 						publishedAt: gameVersionSeed.publishedAt,
 						runUrl: gameVersionSeed.runUrl,
 					});

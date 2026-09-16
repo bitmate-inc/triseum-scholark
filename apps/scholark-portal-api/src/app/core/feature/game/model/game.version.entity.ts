@@ -20,6 +20,9 @@ export class GameVersion {
 	@ManyToOne(() => Game, { deleteRule: 'cascade' })
 	game!: Game;
 
+	@Property({ nullable: true, type: 'text' })
+	description?: string;
+
 	@Property()
 	publisherVersion!: string;
 
@@ -34,5 +37,9 @@ export class GameVersion {
 
 	@Property({ nullable: true })
 	publishedAt?: Date;
+
+	isPublished(referenceDate: Date = new Date()): boolean {
+		return this.publishedAt != null && this.publishedAt <= referenceDate;
+	}
 
 }

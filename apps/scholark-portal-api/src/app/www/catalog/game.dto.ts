@@ -5,6 +5,7 @@ import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dt
 import { GetCatalogGameListQueryResult } from '../../core/feature/catalog/query/get.catalog.game.list.query';
 import { GetFeaturedGameListQueryResult } from '../../core/feature/catalog/query/get.featured.game.list.query';
 import { Game } from '../../core/feature/game/model/game.entity';
+import { GameVersion } from '../../core/feature/game/model/game.version.entity';
 import { Publisher } from '../../core/feature/publisher/model/publisher.entity';
 import { TaxonomyType } from '../../core/feature/taxonomy/model/taxonomy.term.entity';
 import { Currency } from '../../core/shared/commerce/model/currency';
@@ -17,7 +18,7 @@ export class GameAcquisitionRequestDto {
 
 	@ApiProperty({ format: 'uuid' })
 	@IsUUID()
-	gameId!: string;
+	gameVersionId!: string;
 
 }
 
@@ -155,13 +156,48 @@ export class GameResponseDto {
 
 }
 
+class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' | 'publisherVersion' | 'runUrl' | 'price' | 'publishedAt'> {
+
+	@ApiProperty({ format: 'uuid' })
+	id!: string;
+
+	@ApiPropertyOptional()
+	description?: string;
+
+	@ApiProperty()
+	publisherVersion!: string;
+
+	@ApiProperty({ format: 'uri' })
+	runUrl!: string;
+
+	@ApiProperty({ type: MoneyDto })
+	price!: MoneyDto;
+
+	@ApiPropertyOptional({ format: 'date-time', type: String })
+	publishedAt?: Date;
+
+}
+
 export class GetGameResponseDto {
 
 	@ApiProperty({ type: GameResponseDto })
 	game!: GameResponseDto;
 
-	static fromEntity(game: Game): GetGameResponseDto {
-		return { game: GameResponseDto.fromEntity(game) };
+	@ApiProperty({ type: [GameVersionResponseDto] })
+	gameVersionList!: GameVersionResponseDto[];
+
+	static fromEntity(game: Game, gameVersionList: GameVersion[] = []): GetGameResponseDto {
+		return {
+			game: GameResponseDto.fromEntity(game),
+			gameVersionList: gameVersionList.map((gameVersion) => ({
+				description: gameVersion.description,
+				id: gameVersion.id!,
+				price: gameVersion.price,
+				publishedAt: gameVersion.publishedAt,
+				publisherVersion: gameVersion.publisherVersion,
+				runUrl: gameVersion.runUrl,
+			})),
+		};
 	}
 
 }

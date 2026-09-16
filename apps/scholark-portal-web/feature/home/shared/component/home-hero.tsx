@@ -51,7 +51,7 @@ export function HomeHero({ featuredGame }: { featuredGame?: Game }) {
 					<Link className={buttonVariants({ size: "lg" })} href={hero.primaryHref}>
 						{hero.primaryLabel} <ArrowRight data-icon="inline-end"/>
 					</Link>
-					<a className={buttonVariants({ variant: "outline", size: "lg" })} href={hero.secondaryHref}>
+					<a className={buttonVariants({ size: "lg" })} href={hero.secondaryHref}>
 						<Play data-icon="inline-start"/> {hero.secondaryLabel}
 					</a>
 				</div>

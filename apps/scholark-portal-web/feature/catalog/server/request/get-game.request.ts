@@ -1,14 +1,14 @@
 import "server-only";
 
 import { apiFetch,ApiRequestError } from "../../../api/server/request/api-fetch";
-import type { Game, GetGameResponse } from "../../shared/model/game";
+import type { GameDetails, GetGameResponse } from "../../shared/model/game";
 
-export async function getGameRequest(slug: string): Promise<Game | undefined> {
+export async function getGameRequest(slug: string): Promise<GameDetails | undefined> {
 	try {
-		const { game } = await apiFetch<GetGameResponse>(
+		const response = await apiFetch<GetGameResponse>(
 			`/api/v1/catalog/game/${encodeURIComponent(slug)}`,
 		);
-		return game;
+		return { ...response.game, gameVersionList: response.gameVersionList ?? [] };
 	} catch (error) {
 		if (error instanceof ApiRequestError && error.status === 404) return undefined;
 		throw error;
