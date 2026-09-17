@@ -1,4 +1,3 @@
-import { raw } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
@@ -10,13 +9,7 @@ import { GetOneQueryData } from '../../../../../lib/entity/query/get.one.query';
 import { GetListFilterByDto } from '../../../../../lib/entity/query/query.dto';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { ClassroomGame } from '../../education/model/classroom.game.entity';
-import { GameVersion } from '../../game/model/game.version.entity';
-import {
-	ASCII_CHARACTER_LIST,
-	DIACRITIC_CHARACTER_LIST,
-	loadGamePrice,
-	normalizeCatalogSearchQuery,
-} from './catalog.search';
+import { normalizeCatalogSearchQuery } from './catalog.search';
 
 export class GetCatalogClassroomGameListFilterByDto extends GetListFilterByDto {
 
@@ -54,8 +47,10 @@ function addClassroomGameRelations(
 	queryBuilder
 		.leftJoinAndSelect('classroomGame.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
-		.leftJoinAndSelect('classroomGame.contractGameVersion', 'contractGameVersion')
-		.leftJoinAndSelect('contractGameVersion.gameVersion', 'gameVersion')
+		.leftJoinAndSelect('classroomGame.contractGameProduct', 'contractGameProduct')
+		.leftJoinAndSelect('contractGameProduct.gameProduct', 'gameProduct')
+		.leftJoinAndSelect('gameProduct.gameVariant', 'gameVariant')
+		.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
 		.leftJoinAndSelect('gameVersion.game', 'game')
 		.leftJoinAndSelect('game.publisherList', 'publisher')
 		.leftJoinAndSelect('game.taxonomyList', 'gameTaxonomy')
@@ -68,8 +63,6 @@ export class GetCatalogClassroomGameListQuery {
 	constructor(
 		@InjectRepository(ClassroomGame)
 		private readonly classroomGameRepository: EntityRepository<ClassroomGame>,
-		@InjectRepository(GameVersion)
-		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 	) {}
 
 	async execute(data: GetCatalogClassroomGameListQueryData): Promise<GetCatalogClassroomGameListQueryResult> {
@@ -77,7 +70,7 @@ export class GetCatalogClassroomGameListQuery {
 
 		addClassroomGameRelations(queryBuilder);
 
-		queryBuilder.distinct().andWhere({ contractGameVersion: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } });
+		queryBuilder.distinct().andWhere({ contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } } } });
 
 		if (data.filterBy?.id) {
 			queryBuilder.andWhere({ id: { $in: data.filterBy.id } });
@@ -92,39 +85,24 @@ export class GetCatalogClassroomGameListQuery {
 		}
 
 		if (data.filterBy?.gameId) {
-			queryBuilder.andWhere({ contractGameVersion: { gameVersion: { game: data.filterBy.gameId } } });
+			queryBuilder.andWhere({ contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: data.filterBy.gameId } } } } });
 		}
 
 		if (data.filterBy?.taxonomyTermId) {
-			queryBuilder.andWhere({ contractGameVersion: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } });
+			queryBuilder.andWhere({ contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } } } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
 
 		if (searchQuery) {
 			const searchPattern = `%${normalizeCatalogSearchQuery(searchQuery)}%`;
-			queryBuilder.andWhere({
-				$or: ['title', 'slug'].map((property) => ({
-					contractGameVersion: {
-						gameVersion: {
-							game: {
-								[raw((alias) => `translate(lower(${alias}.${property}), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}')`)]: {
-									$like: searchPattern,
-								},
-							},
-						},
-					},
-				})),
-			});
+			queryBuilder.andWhere('(lower(game.title) like ? or lower(game.slug) like ?)', [searchPattern, searchPattern]);
 		}
 
 		addPagination(queryBuilder, data.pagination);
 		addOrderBy(queryBuilder, data.orderBy, 'game.title', 'ASC');
 
 		const [classroomGameList, totalItemCount] = await queryBuilder.getResultAndCount();
-
-		const gameList = classroomGameList.map(i => i.contractGameVersion.gameVersion.game);
-		await loadGamePrice(gameList, this.gameVersionRepository);
 
 		return { classroomGameList, totalItemCount };
 	}
@@ -149,7 +127,7 @@ export class GetCatalogClassroomGameQuery {
 		addClassroomGameRelations(queryBuilder);
 		
 		queryBuilder.where({
-			contractGameVersion: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } },
+			contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } } },
 			id: data.filterBy.id,
 		});
 

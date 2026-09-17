@@ -6,13 +6,16 @@ import { ClassroomGame } from '../app/core/feature/education/model/classroom.gam
 import { ClassroomGameLicence } from '../app/core/feature/education/model/classroom.game.licence.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
 import { InstitutionContract } from '../app/core/feature/education/model/institution.contract.entity';
-import { InstitutionContractGameVersion } from '../app/core/feature/education/model/institution.contract.game.version.entity';
+import { InstitutionContractGameProduct } from '../app/core/feature/education/model/institution.contract.game.version.entity';
 import { Institution } from '../app/core/feature/education/model/institution.entity';
 import { Instructor } from '../app/core/feature/education/model/instructor.entity';
+import { GameAcquisition, GameAcquisitionMechanism } from '../app/core/feature/game/model/game.acquisition.entity';
 import { GameCustomization } from '../app/core/feature/game/model/game.customization.entity';
 import { Game } from '../app/core/feature/game/model/game.entity';
 import { GameLicense } from '../app/core/feature/game/model/game.license.entity';
+import { GameProduct } from '../app/core/feature/game/model/game.product.entity';
 import { GameTaxonomyTerm } from '../app/core/feature/game/model/game.taxonomy.term.entity';
+import { GameVariant, GameVariantMode } from '../app/core/feature/game/model/game.variant.entity';
 import { GameVersion } from '../app/core/feature/game/model/game.version.entity';
 import { Publisher } from '../app/core/feature/publisher/model/publisher.entity';
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
@@ -22,6 +25,7 @@ import {
 	classroomSeedList,
 	courseSeedList,
 	gameCustomizationSeedList,
+	gameProductSeedList,
 	gameSeedList,
 	gameVersionSeedList,
 	institutionContractSeedList,
@@ -46,9 +50,11 @@ export class DatabaseSeeder extends Seeder {
 			const institutionMap = new Map<string, Institution>();
 			const instructorMap = new Map<string, Instructor>();
 			const gameVersionSeedMap = new Map<string, GameVersion>();
+			const gameVariantSeedMap = new Map<string, GameVariant>();
+			const gameProductSeedMap = new Map<string, GameProduct>();
 			const gameCustomizationMap = new Map<string, GameCustomization>();
 			const classroomGameSeedMap = new Map<string, ClassroomGame>();
-			const contractGameVersionMap = new Map<string, InstitutionContractGameVersion>();
+			const contractGameProductMap = new Map<string, InstitutionContractGameProduct>();
 			const contractMap = new Map<string, InstitutionContract>();
 
 			for (const publisherSeed of publisherSeedList) {
@@ -228,7 +234,6 @@ export class DatabaseSeeder extends Seeder {
 						publishedAt: gameVersionSeed.publishedAt,
 						publisherVersion: gameVersionSeed.publisherVersion,
 						runUrl: gameVersionSeed.runUrl,
-						price: gameVersionSeed.price,
 					});
 				} else {
 					transactionalEm.assign(gameVersion, {
@@ -239,6 +244,44 @@ export class DatabaseSeeder extends Seeder {
 				}
 
 				gameVersionSeedMap.set(gameVersionSeed.id, gameVersion);
+			}
+
+			await transactionalEm.flush();
+
+			for (const gameVersionSeed of gameVersionSeedList) {
+				const gameVersion = gameVersionSeedMap.get(gameVersionSeed.id)!;
+				const gameProductSeed = gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeed.id)!;
+				let gameVariant = await transactionalEm.findOne(GameVariant, {
+					gameVersion,
+					language: 'en',
+					mode: GameVariantMode.DEFAULT,
+				});
+				if (!gameVariant) {
+					gameVariant = transactionalEm.create(GameVariant, {
+						gameVersion,
+						language: 'en',
+						mode: GameVariantMode.DEFAULT,
+					});
+				}
+				gameVariantSeedMap.set(gameVersionSeed.id, gameVariant);
+
+				let gameProduct = await transactionalEm.findOne(GameProduct, { gameVariant });
+				if (!gameProduct) {
+					gameProduct = transactionalEm.create(GameProduct, {
+						id: gameProductSeed.id,
+						gameVariant,
+						isAvailable: true,
+						price: gameProductSeed.price,
+						publishedAt: gameVersionSeed.publishedAt,
+					});
+				} else {
+					transactionalEm.assign(gameProduct, {
+						isAvailable: true,
+						price: gameProductSeed.price,
+						publishedAt: gameVersionSeed.publishedAt,
+					});
+				}
+				gameProductSeedMap.set(gameProductSeed.id, gameProduct);
 			}
 
 			await transactionalEm.flush();
@@ -302,23 +345,21 @@ export class DatabaseSeeder extends Seeder {
 
 				await transactionalEm.flush();
 
-				for (const gameVersionSeed of contractSeed.gameVersionList) {
-					const gameVersion = gameVersionSeedMap.get(gameVersionSeed.gameVersionSeedId)!;
-					let contractGameVersion = await transactionalEm.findOne(InstitutionContractGameVersion, { contract, gameVersion });
-					if (!contractGameVersion) {
-						contractGameVersion = transactionalEm.create(InstitutionContractGameVersion, {
+				for (const gameProductSeed of contractSeed.gameProductList) {
+					const gameProduct = gameProductSeedMap.get(gameProductSeed.gameProductSeedId)!;
+					let contractGameProduct = await transactionalEm.findOne(InstitutionContractGameProduct, { contract, gameProduct });
+					if (!contractGameProduct) {
+						contractGameProduct = transactionalEm.create(InstitutionContractGameProduct, {
 							contract,
-							gameVersion,
-							licenseDurationDays: gameVersionSeed.licenseDurationDays,
-							price: gameVersionSeed.price,
+							gameProduct,
+							licenseDurationDays: gameProductSeed.licenseDurationDays,
 						});
 					} else {
-						transactionalEm.assign(contractGameVersion, {
-							licenseDurationDays: gameVersionSeed.licenseDurationDays,
-							price: gameVersionSeed.price,
+						transactionalEm.assign(contractGameProduct, {
+							licenseDurationDays: gameProductSeed.licenseDurationDays,
 						});
 					}
-					contractGameVersionMap.set(`${institution.slug}:${gameVersionSeed.gameVersionSeedId}`, contractGameVersion);
+					contractGameProductMap.set(`${institution.slug}:${gameProductSeed.gameProductSeedId}`, contractGameProduct);
 				}
 			}
 
@@ -326,33 +367,32 @@ export class DatabaseSeeder extends Seeder {
 
 			for (const classroomGameSeed of classroomGameSeedList) {
 				const classroom = classroomMap.get(classroomGameSeed.classroomSlug)!;
-				const gameVersion = gameVersionSeedMap.get(classroomGameSeed.gameVersionSeedId)!;
-				let contractGameVersion = contractGameVersionMap.get(`${classroom.institution.slug}:${classroomGameSeed.gameVersionSeedId}`);
-				if (!contractGameVersion) {
+				let contractGameProduct = contractGameProductMap.get(`${classroom.institution.slug}:${classroomGameSeed.gameProductSeedId}`);
+				if (!contractGameProduct) {
 					const contract = contractMap.get(classroom.institution.slug);
 					if (!contract) {
 						throw new Error(`Missing institution contract for classroom ${classroomGameSeed.id}: ${classroom.institution.slug}`);
 					}
 
-					contractGameVersion = await transactionalEm.findOne(InstitutionContractGameVersion, { contract, gameVersion })
-						?? transactionalEm.create(InstitutionContractGameVersion, {
+					const gameProduct = gameProductSeedMap.get(classroomGameSeed.gameProductSeedId)!;
+					contractGameProduct = await transactionalEm.findOne(InstitutionContractGameProduct, { contract, gameProduct })
+						?? transactionalEm.create(InstitutionContractGameProduct, {
 							contract,
-							gameVersion,
+							gameProduct,
 							licenseDurationDays: 120,
-							price: gameVersion.price,
 						});
-					contractGameVersionMap.set(`${classroom.institution.slug}:${classroomGameSeed.gameVersionSeedId}`, contractGameVersion);
+					contractGameProductMap.set(`${classroom.institution.slug}:${classroomGameSeed.gameProductSeedId}`, contractGameProduct);
 				}
 				const customization = classroomGameSeed.customizationSeedId
 					? gameCustomizationMap.get(classroomGameSeed.customizationSeedId)
 					: undefined;
 				const classroomGame = await transactionalEm.findOne(ClassroomGame, { id: classroomGameSeed.id })
-					?? await transactionalEm.findOne(ClassroomGame, { classroom, contractGameVersion });
+					?? await transactionalEm.findOne(ClassroomGame, { classroom, contractGameProduct });
 
 				if (!classroomGame) {
 					const createdClassroomGame = transactionalEm.create(ClassroomGame, {
 						classroom,
-						contractGameVersion,
+						contractGameProduct,
 						customization,
 						startAt: new Date('2026-01-01T00:00:00.000Z'),
 						endAt: new Date('2026-12-31T23:59:59.999Z'),
@@ -362,7 +402,7 @@ export class DatabaseSeeder extends Seeder {
 					classroomGameSeedMap.set(classroomGameSeed.id, createdClassroomGame);
 				} else {
 					transactionalEm.assign(classroomGame, {
-						contractGameVersion,
+						contractGameProduct,
 						customization,
 						startAt: new Date('2026-01-01T00:00:00.000Z'),
 						endAt: new Date('2026-12-31T23:59:59.999Z'),
@@ -375,7 +415,11 @@ export class DatabaseSeeder extends Seeder {
 
 			for (const licenseSeed of userGameLicenseSeedList) {
 				const user = await transactionalEm.findOne(User, { email: licenseSeed.email });
-				const gameVersion = gameVersionSeedMap.get(licenseSeed.gameVersionSeedId);
+				const gameProductSeed = gameProductSeedList.find((seed) => seed.id === licenseSeed.gameProductSeedId);
+				const gameVariant = gameProductSeed
+					? gameVariantSeedMap.get(gameProductSeed.gameVersionSeedId)
+					: undefined;
+				const gameProduct = gameProductSeedMap.get(licenseSeed.gameProductSeedId);
 				const customization = licenseSeed.customizationSeedId
 					? gameCustomizationMap.get(licenseSeed.customizationSeedId)
 					: undefined;
@@ -383,8 +427,8 @@ export class DatabaseSeeder extends Seeder {
 					? classroomGameSeedMap.get(licenseSeed.classroomGameSeedId)
 					: undefined;
 
-				if (!user || !gameVersion) {
-					throw new Error(`Missing seeded user or game version for license: ${licenseSeed.id}`);
+				if (!user || !gameVariant || !gameProduct) {
+					throw new Error(`Missing seeded user or game product for license: ${licenseSeed.id}`);
 				}
 
 				let gameLicense = await transactionalEm.findOne(GameLicense, { id: licenseSeed.id });
@@ -392,7 +436,7 @@ export class DatabaseSeeder extends Seeder {
 					gameLicense = transactionalEm.create(GameLicense, {
 						customization,
 						endAt: licenseSeed.endAt,
-						gameVersion,
+						gameVariant,
 						id: licenseSeed.id,
 						startAt: licenseSeed.startAt,
 						user,
@@ -401,13 +445,24 @@ export class DatabaseSeeder extends Seeder {
 					transactionalEm.assign(gameLicense, {
 						customization,
 						endAt: licenseSeed.endAt,
-						gameVersion,
+						gameVariant,
 						startAt: licenseSeed.startAt,
 						user,
 					});
 				}
 
 				await transactionalEm.flush();
+
+				const existingAcquisition = await transactionalEm.findOne(GameAcquisition, { license: gameLicense });
+				if (!existingAcquisition) {
+					transactionalEm.create(GameAcquisition, {
+						license: gameLicense,
+						mechanism: GameAcquisitionMechanism.COMPLIMENTARY,
+						price: gameProduct.price,
+						product: gameProduct,
+						user,
+					});
+				}
 
 				if (classroomGame) {
 					const enrollment = await transactionalEm.findOne(ClassroomGameLicence, {

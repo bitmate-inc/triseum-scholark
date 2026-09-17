@@ -11,7 +11,6 @@ import Link from "next/link";
 
 import styles from "../../../../asset/style/site.module.css";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
-import { formatMoney } from "../../../commerce/shared/model/money";
 import { useGetUserLibraryQuery } from "../../../library/client/api/library-api";
 import type { ClassroomGame } from "../../shared/model/education";
 import { formatEstimatedLength, getGameTagList } from "../../shared/model/game";
@@ -32,7 +31,6 @@ export function ClassroomGameList({ classroomGameList }: { classroomGameList: Cl
 					(item) => item.game.id === classroomGame.game.id && item.gameVersion.id === classroomGame.gameVersionId && item.classroom?.id === classroomGame.classroom.id,
 				);
 				const activeLicense = licenseList.find((item) => item.isActive);
-
 				return (
 					<article className={styles.classroomGameItem} key={classroomGame.id}>
 						<div className={styles.classroomGameMain}>
@@ -45,7 +43,6 @@ export function ClassroomGameList({ classroomGameList }: { classroomGameList: Cl
 							<p className={styles.classroomGameDescription}>{classroomGame.game.description ?? classroomGame.game.summary}</p>
 							<div className={styles.classroomGameTags}>
 								{getGameTagList(classroomGame.game).map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-								<Badge variant="default">{formatMoney(classroomGame.price)}</Badge>
 							</div>
 							<div className={styles.classroomGameFacts}>
 								<span><Clock3 aria-hidden="true"/>{formatEstimatedLength(classroomGame.game)}</span>

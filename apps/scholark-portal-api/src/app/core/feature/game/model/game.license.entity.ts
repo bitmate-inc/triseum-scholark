@@ -8,7 +8,7 @@ import {
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
-import { GameVersion } from './game.version.entity';
+import { GameVariant } from './game.variant.entity';
 
 @Entity({ tableName: 'game_license' })
 export class GameLicense extends StaticFactory {
@@ -19,8 +19,8 @@ export class GameLicense extends StaticFactory {
 	@ManyToOne(() => User, { deleteRule: 'cascade' })
 	user!: User;
 
-	@ManyToOne(() => GameVersion, { deleteRule: 'restrict' })
-	gameVersion!: GameVersion;
+	@ManyToOne(() => GameVariant, { deleteRule: 'restrict' })
+	gameVariant!: GameVariant;
 
 	@ManyToOne(() => GameCustomization, { nullable: true, deleteRule: 'restrict' })
 	customization?: GameCustomization;

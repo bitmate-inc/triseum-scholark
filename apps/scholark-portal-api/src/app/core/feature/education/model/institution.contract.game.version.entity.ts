@@ -1,5 +1,4 @@
 import {
-	Embedded,
 	Entity,
 	ManyToOne,
 	PrimaryKey,
@@ -7,13 +6,12 @@ import {
 	Unique,
 } from '@mikro-orm/decorators/legacy';
 
-import { Money } from '../../../shared/commerce/model/money.entity';
-import { GameVersion } from '../../game/model/game.version.entity';
+import { GameProduct } from '../../game/model/game.product.entity';
 import { InstitutionContract } from './institution.contract.entity';
 
-@Entity({ tableName: 'institution_contract_game_version' })
-@Unique({ properties: ['contract', 'gameVersion'] })
-export class InstitutionContractGameVersion {
+@Entity({ tableName: 'institution_contract_game_product' })
+@Unique({ properties: ['contract', 'gameProduct'] })
+export class InstitutionContractGameProduct {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
@@ -21,11 +19,11 @@ export class InstitutionContractGameVersion {
 	@ManyToOne(() => InstitutionContract, { deleteRule: 'cascade' })
 	contract!: InstitutionContract;
 
-	@ManyToOne(() => GameVersion, { deleteRule: 'cascade' })
-	gameVersion!: GameVersion;
+	@ManyToOne(() => GameProduct, { deleteRule: 'restrict' })
+	gameProduct!: GameProduct;
 
-	@Embedded(() => Money, { prefix: 'price_' })
-	price!: Money;
+	@Property({ nullable: true })
+	allocatedLicenseQuantity?: number;
 
 	@Property()
 	licenseDurationDays!: number;

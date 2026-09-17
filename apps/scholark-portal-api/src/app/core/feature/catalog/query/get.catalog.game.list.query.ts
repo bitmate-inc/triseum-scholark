@@ -8,11 +8,9 @@ import { addOrderBy, addPagination } from '../../../../../lib/database/mikro.orm
 import { GetListQueryData, GetListQueryResult } from '../../../../../lib/entity/query/get.list.query';
 import { GetListFilterByDto, IncludeDto } from '../../../../../lib/entity/query/query.dto';
 import { Game } from '../../game/model/game.entity';
-import { GameVersion } from '../../game/model/game.version.entity';
 import {
 	ASCII_CHARACTER_LIST,
 	DIACRITIC_CHARACTER_LIST,
-	loadGamePrice,
 	normalizeCatalogSearchQuery
 } from './catalog.search';
 
@@ -51,8 +49,6 @@ export class GetCatalogGameListQuery {
 	constructor(
 		@InjectRepository(Game)
 		private readonly gameRepository: EntityRepository<Game>,
-		@InjectRepository(GameVersion)
-		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 	) {}
 
 	async execute(
@@ -90,8 +86,6 @@ export class GetCatalogGameListQuery {
 		addOrderBy(queryBuilder, data.orderBy, 'game.title', 'ASC');
 
 		const [gameList, totalItemCount] = await queryBuilder.getResultAndCount();
-
-		await loadGamePrice(gameList, this.gameVersionRepository);
 
 		return { gameList, totalItemCount };
 	}

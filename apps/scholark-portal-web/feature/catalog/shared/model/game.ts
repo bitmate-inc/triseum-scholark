@@ -1,4 +1,3 @@
-import { Money } from '../../../commerce/shared/model/money';
 import type { Media } from "../../../media/shared/model/media";
 
 export type TaxonomyType = "category" | "genre" | "skill" | "subject" | "theme";
@@ -37,17 +36,16 @@ export type Game = {
 	featured?: boolean;
 	mediaList?: Media[];
 	publishedAt?: string;
-	price?: Money;
 };
 
 export type GameDetails = Game & { gameVersionList: GameVersion[] };
 
 export type GameVersion = {
 	id: string;
+	productId: string;
 	description?: string;
 	publisherVersion: string;
 	runUrl: string;
-	price: Money;
 	publishedAt?: string;
 };
 

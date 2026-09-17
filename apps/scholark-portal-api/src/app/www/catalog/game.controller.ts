@@ -22,7 +22,7 @@ import {
 import { GetCatalogGameListQuery } from '../../core/feature/catalog/query/get.catalog.game.list.query';
 import { GetFeaturedGameListQuery } from '../../core/feature/catalog/query/get.featured.game.list.query';
 import { GetGameQuery } from '../../core/feature/catalog/query/get.game.query';
-import { AcquireGameVersionCommand, AcquireGameVersionCommandData } from '../../core/feature/game/command/acquire.game.version.command';
+import { AcquireGameProductCommand, AcquireGameProductCommandData } from '../../core/feature/game/command/acquire.game.version.command';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
 import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import { SessionAuthGuard } from '../auth/session.auth.guard';
@@ -38,7 +38,7 @@ import {
 export class GameController {
 
 	constructor(
-		private readonly acquireGameVersionCommand: AcquireGameVersionCommand,
+		private readonly acquireGameProductCommand: AcquireGameProductCommand,
 		private readonly getCatalogGameListQuery: GetCatalogGameListQuery,
 		private readonly getFeaturedGameListQuery: GetFeaturedGameListQuery,
 		private readonly getGameQuery: GetGameQuery,
@@ -54,8 +54,8 @@ export class GameController {
 		@AuthSession() session: AuthSessionData,
 		@Body() body: GameAcquisitionRequestDto,
 	): Promise<GetGameResponseDto> {
-		const result = await this.acquireGameVersionCommand.execute(
-			AcquireGameVersionCommandData.create({ gameVersionId: body.gameVersionId, userId: session.user.id }),
+		const result = await this.acquireGameProductCommand.execute(
+			AcquireGameProductCommandData.create({ gameProductId: body.gameProductId, userId: session.user.id }),
 		);
 
 		if (!!result.validationResult) {
@@ -104,7 +104,7 @@ export class GameController {
 			throw new NotFoundException('Game not found');
 		}
 
-		return GetGameResponseDto.fromEntity(result.game, result.gameVersionList);
+		return GetGameResponseDto.fromEntity(result.game, result.gameVersionList, result.gameProductList);
 	}
 
 }

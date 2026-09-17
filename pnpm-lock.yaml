@@ -30,6 +30,9 @@ importers:
       '@mikro-orm/decorators':
         specifier: ^7.1.14
         version: 7.1.14(@mikro-orm/core@7.1.14)(reflect-metadata@0.2.2)
+      '@mikro-orm/migrations':
+        specifier: ^7.1.14
+        version: 7.1.14(@mikro-orm/core@7.1.14)
       '@mikro-orm/nestjs':
         specifier: 7.1.0
         version: 7.1.0(@mikro-orm/core@7.1.14)(@nestjs/common@12.0.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@12.0.1)(reflect-metadata@0.2.2)
@@ -1327,6 +1330,12 @@ packages:
     peerDependenciesMeta:
       reflect-metadata:
         optional: true
+
+  '@mikro-orm/migrations@7.1.14':
+    resolution: {integrity: sha512-9+N1t11hOwalyCb/bSkAkCNKCXrT9MXmmoftu+oqLFLBEGkWsjH4/mvm53I0UGX1uBemYmtY1pWMnyP5iBW/xA==}
+    engines: {node: '>= 22.17.0'}
+    peerDependencies:
+      '@mikro-orm/core': 7.1.14
 
   '@mikro-orm/nestjs@7.1.0':
     resolution: {integrity: sha512-S7UXOR4jYtl+lSl23GxQNoWaI3naf5WGUaWMjqZ1o+xcp+fha8une9Yu3qEizZNA+iulE4qA+yaB6sKnA67fbw==}
@@ -6946,6 +6955,11 @@ snapshots:
       '@mikro-orm/core': 7.1.14
     optionalDependencies:
       reflect-metadata: 0.2.2
+
+  '@mikro-orm/migrations@7.1.14(@mikro-orm/core@7.1.14)':
+    dependencies:
+      '@mikro-orm/core': 7.1.14
+      '@mikro-orm/sql': 7.1.14(@mikro-orm/core@7.1.14)
 
   '@mikro-orm/nestjs@7.1.0(@mikro-orm/core@7.1.14)(@nestjs/common@12.0.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@12.0.1)(reflect-metadata@0.2.2)':
     dependencies:

@@ -7,8 +7,8 @@ import { GetOneQueryData } from '../../../../../lib/entity/query/get.one.query';
 import { GetOneFilterByDto, IncludeDto } from '../../../../../lib/entity/query/query.dto';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Game } from '../../game/model/game.entity';
+import { GameProduct } from '../../game/model/game.product.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
-import { loadGamePrice } from './catalog.search';
 
 export class GetGameFilterByDto extends GetOneFilterByDto {
 
@@ -38,6 +38,7 @@ export class GetGameQueryResult extends StaticFactory {
 
 	game?: Game;
 	gameVersionList: GameVersion[] = [];
+	gameProductList: GameProduct[] = [];
 
 }
 
@@ -49,6 +50,8 @@ export class GetGameQuery {
 		private readonly gameRepository: EntityRepository<Game>,
 		@InjectRepository(GameVersion)
 		private readonly gameVersionRepository: EntityRepository<GameVersion>,
+		@InjectRepository(GameProduct)
+		private readonly gameProductRepository: EntityRepository<GameProduct>,
 	) {}
 
 	async execute(data: GetGameQueryData): Promise<GetGameQueryResult> {
@@ -57,7 +60,7 @@ export class GetGameQuery {
 		const gameSlug = data.filterBy?.slug;
 
 		if (!gameId && !gameSlug) {
-			return { game: undefined, gameVersionList: [] };
+			return { game: undefined, gameProductList: [], gameVersionList: [] };
 		}
 
 		if (data.include?.taxonomyList) {
@@ -86,13 +89,16 @@ export class GetGameQuery {
 			return GetGameQueryResult.create({});
 		}
 
-		await loadGamePrice([game], this.gameVersionRepository);
 		const gameVersionList = await this.gameVersionRepository.find(
 			{ game, publishedAt: { $lte: new Date() } },
 			{ orderBy: { publishedAt: 'desc' } },
 		);
+		const gameProductList = await this.gameProductRepository.find(
+			{ gameVariant: { gameVersion: { $in: gameVersionList } }, isAvailable: true },
+			{ populate: ['gameVariant'] },
+		);
 
-		return GetGameQueryResult.create({ game: game ?? undefined, gameVersionList });
+		return GetGameQueryResult.create({ game: game ?? undefined, gameVersionList, gameProductList });
 	}
 
 }

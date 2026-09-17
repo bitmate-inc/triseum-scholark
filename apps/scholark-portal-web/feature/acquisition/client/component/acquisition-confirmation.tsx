@@ -31,7 +31,7 @@ export function AcquisitionConfirmation({ game, gameVersion }: { game: Game; gam
 	}, [game.slug, gameVersion.id, router, session.data, session.isError, session.isLoading]);
 
 	async function confirm() {
-		const response = await acquire(gameVersion.id);
+		const response = await acquire(gameVersion.productId);
 
 		if ("data" in response) {
 			router.replace(`/game/${game.slug}/acquire/success`);

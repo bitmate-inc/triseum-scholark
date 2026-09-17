@@ -11,9 +11,11 @@ import { ClassroomGame } from '../../education/model/classroom.game.entity';
 import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
 import { ClassroomGameLicenceRepository } from '../../education/repository/classroom.game.licence.repository';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
-import { InstitutionContractGameVersionRepository } from '../../education/repository/institution.contract.game.version.repository';
+import { InstitutionContractGameProductRepository } from '../../education/repository/institution.contract.game.version.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
+import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
 import { GameLicense } from '../model/game.license.entity';
+import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
 
 export class AcquireClassroomGameCommandData extends StaticFactory {
@@ -70,7 +72,8 @@ export class AcquireClassroomGameCommand {
 		private readonly classroomGameRepository: ClassroomGameRepository,
 		private readonly classroomGameLicenceRepository: ClassroomGameLicenceRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
-		private readonly contractGameRepository: InstitutionContractGameVersionRepository,
+		private readonly gameAcquisitionRepository: GameAcquisitionRepository,
+		private readonly contractGameRepository: InstitutionContractGameProductRepository,
 		private readonly unitOfWork: MikroOrmUnitOfWork,
 		private readonly userRepository: UserEntityRepository,
 	) {}
@@ -102,12 +105,17 @@ export class AcquireClassroomGameCommand {
 			return AcquireClassroomGameCommandResult.userNotFoundFail();
 		}
 
-		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGameVersion(
+		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGameProduct(
 			classroomGame.classroom.institution,
-			classroomGame.contractGameVersion,
+			classroomGame.contractGameProduct,
 		);
 
 		if (!activeContractGame) {
+			return AcquireClassroomGameCommandResult.classroomGameUnavailableFail();
+		}
+
+		if (classroomGame.customization
+			&& classroomGame.customization.gameVersion !== classroomGame.contractGameProduct.gameProduct.gameVariant.gameVersion) {
 			return AcquireClassroomGameCommandResult.classroomGameUnavailableFail();
 		}
 
@@ -123,20 +131,28 @@ export class AcquireClassroomGameCommand {
 		let license: GameLicense | undefined;
 		
 		if (!classroomGame.customization) {
-			license = await this.gameLicenseRepository.findActiveByUserAndGameVersion(
+			license = await this.gameLicenseRepository.findActiveByUserAndGameVariant(
 				user.id!,
-				classroomGame.contractGameVersion.gameVersion,
+				classroomGame.contractGameProduct.gameProduct.gameVariant,
 			);
 		}
 
 		if (!license) {
-			license = GameLicense.createForDuration(classroomGame.contractGameVersion.licenseDurationDays, {
+			license = GameLicense.createForDuration(classroomGame.contractGameProduct.licenseDurationDays, {
 				customization: classroomGame.customization,
-				gameVersion: classroomGame.contractGameVersion.gameVersion,
+				gameVariant: classroomGame.contractGameProduct.gameProduct.gameVariant,
 				user,
 			});
 			license = await this.gameLicenseRepository.save(license);
 		}
+
+		await this.gameAcquisitionRepository.save(GameAcquisition.create({
+			license,
+			mechanism: GameAcquisitionMechanism.USER_PAID,
+			price: classroomGame.contractGameProduct.gameProduct.price,
+			product: classroomGame.contractGameProduct.gameProduct,
+			user,
+		}));
 
 		const enrollment = await this.classroomGameLicenceRepository.save(ClassroomGameLicence.create({
 			classroomGame,

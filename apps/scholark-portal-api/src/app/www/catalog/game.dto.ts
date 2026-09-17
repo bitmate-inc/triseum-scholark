@@ -5,6 +5,7 @@ import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dt
 import { GetCatalogGameListQueryResult } from '../../core/feature/catalog/query/get.catalog.game.list.query';
 import { GetFeaturedGameListQueryResult } from '../../core/feature/catalog/query/get.featured.game.list.query';
 import { Game } from '../../core/feature/game/model/game.entity';
+import { GameProduct } from '../../core/feature/game/model/game.product.entity';
 import { GameVersion } from '../../core/feature/game/model/game.version.entity';
 import { Publisher } from '../../core/feature/publisher/model/publisher.entity';
 import { TaxonomyType } from '../../core/feature/taxonomy/model/taxonomy.term.entity';
@@ -18,7 +19,7 @@ export class GameAcquisitionRequestDto {
 
 	@ApiProperty({ format: 'uuid' })
 	@IsUUID()
-	gameVersionId!: string;
+	gameProductId!: string;
 
 }
 
@@ -115,9 +116,6 @@ export class GameResponseDto {
 	@ApiPropertyOptional({ type: [MediaResponseDto] })
 	mediaList?: MediaResponseDto[];
 
-	@ApiPropertyOptional({ type: MoneyDto })
-	price?: MoneyDto;
-
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;
 
@@ -150,16 +148,18 @@ export class GameResponseDto {
 				},
 			})),
 			title: game.title,
-			price: game.price,
 		};
 	}
 
 }
 
-class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' | 'publisherVersion' | 'runUrl' | 'price' | 'publishedAt'> {
+class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' | 'publisherVersion' | 'runUrl' | 'publishedAt'> {
 
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
+
+	@ApiProperty({ format: 'uuid' })
+	productId!: string;
 
 	@ApiPropertyOptional()
 	description?: string;
@@ -169,9 +169,6 @@ class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' |
 
 	@ApiProperty({ format: 'uri' })
 	runUrl!: string;
-
-	@ApiProperty({ type: MoneyDto })
-	price!: MoneyDto;
 
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;
@@ -186,13 +183,17 @@ export class GetGameResponseDto {
 	@ApiProperty({ type: [GameVersionResponseDto] })
 	gameVersionList!: GameVersionResponseDto[];
 
-	static fromEntity(game: Game, gameVersionList: GameVersion[] = []): GetGameResponseDto {
+	static fromEntity(game: Game, gameVersionList: GameVersion[] = [], gameProductList: GameProduct[] = []): GetGameResponseDto {
+		const productIdByVersionId = new Map(
+			gameProductList.map((product) => [product.gameVariant.gameVersion.id, product.id!]),
+		);
+
 		return {
 			game: GameResponseDto.fromEntity(game),
 			gameVersionList: gameVersionList.map((gameVersion) => ({
 				description: gameVersion.description,
 				id: gameVersion.id!,
-				price: gameVersion.price,
+				productId: productIdByVersionId.get(gameVersion.id!)!,
 				publishedAt: gameVersion.publishedAt,
 				publisherVersion: gameVersion.publisherVersion,
 				runUrl: gameVersion.runUrl,

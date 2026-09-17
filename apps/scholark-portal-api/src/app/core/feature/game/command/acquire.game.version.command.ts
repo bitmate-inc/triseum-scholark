@@ -7,30 +7,32 @@ import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { ValidationResult } from '../../../../../lib/validator/model/validation.result';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
+import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
 import { Game } from '../model/game.entity';
 import { GameLicense } from '../model/game.license.entity';
+import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
-import { GameVersionRepository } from '../repository/game.version.repository';
+import { GameProductRepository } from '../repository/game.product.repository';
 
 
-export class AcquireGameVersionCommandData extends StaticFactory {
+export class AcquireGameProductCommandData extends StaticFactory {
 
 	@IsUUID()
 	userId!: string;
 
 	@IsUUID()
-	gameVersionId!: string;
+	gameProductId!: string;
 
 }
 
-export class AcquireGameVersionCommandResult extends CommandResult {
+export class AcquireGameProductCommandResult extends CommandResult {
 
 	game?: Game;
 	
 	@Exclude()
 	license?: GameLicense;
 
-	static gameVersionNotFoundFail() {
+	static gameProductNotFoundFail() {
 		return this.fail({
 			validationResult: ValidationResult.createFromErrorMessage('Game version not found'),
 		});
@@ -51,55 +53,65 @@ export class AcquireGameVersionCommandResult extends CommandResult {
 }
 
 @Injectable()
-export class AcquireGameVersionCommand {
+export class AcquireGameProductCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly gameVersionRepository: GameVersionRepository,
+		private readonly gameProductRepository: GameProductRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
+		private readonly gameAcquisitionRepository: GameAcquisitionRepository,
 		private readonly userRepository: UserEntityRepository,
 	) {}
 
-	async execute(data: AcquireGameVersionCommandData): Promise<AcquireGameVersionCommandResult> {
+	async execute(data: AcquireGameProductCommandData): Promise<AcquireGameProductCommandResult> {
 		const validationResult = await this.validator.validate(data);
 
 		if (!!validationResult) {
-			return AcquireGameVersionCommandResult.fail({ validationResult });
+			return AcquireGameProductCommandResult.fail({ validationResult });
 		}
 
-		const gameVersion = await this.gameVersionRepository.findForAcquisition(
-			data.gameVersionId,
-			{ relations: { game: true } }
-		);
+		const gameProduct = await this.gameProductRepository.findForAcquisition(data.gameProductId);
 
-		if (!gameVersion || !gameVersion.isPublished() || !gameVersion.game?.isPublished()) {
-			return AcquireGameVersionCommandResult.gameVersionNotFoundFail();
+		if (!gameProduct || !gameProduct.publishedAt || gameProduct.publishedAt > new Date()
+			|| !gameProduct.gameVariant.gameVersion.isPublished()
+			|| !gameProduct.gameVariant.gameVersion.game.isPublished()) {
+			return AcquireGameProductCommandResult.gameProductNotFoundFail();
 		}
 
-		const game = gameVersion.game;
+		const game = gameProduct.gameVariant.gameVersion.game;
 
 		const user = await this.userRepository.findOneBy({ id: data.userId });
 
 		if (!user) {
-			return AcquireGameVersionCommandResult.userNotFoundFail();
+			return AcquireGameProductCommandResult.userNotFoundFail();
 		}
 
-		const currentLicense = await this.gameLicenseRepository.findActiveByUserAndGameVersion(data.userId, gameVersion);
+		const currentLicense = await this.gameLicenseRepository.findActiveByUserAndGameVariant(
+			data.userId,
+			gameProduct.gameVariant,
+		);
 
 		if (currentLicense) {
-			return AcquireGameVersionCommandResult.alreadyAcquiredFail();
+			return AcquireGameProductCommandResult.alreadyAcquiredFail();
 		}
 
 		const licenseDuration = 6 * 30 // 6 months
 
 		let license = GameLicense.createForDuration(licenseDuration, {
-			gameVersion,
+			gameVariant: gameProduct.gameVariant,
 			user
 		});
 		
 		license = await this.gameLicenseRepository.save(license);
+		await this.gameAcquisitionRepository.save(GameAcquisition.create({
+			license,
+			mechanism: GameAcquisitionMechanism.USER_PAID,
+			price: gameProduct.price,
+			product: gameProduct,
+			user,
+		}));
 
-		return AcquireGameVersionCommandResult.success({ game, license });
+		return AcquireGameProductCommandResult.success({ game, license });
 	}
 
 }

@@ -4,8 +4,8 @@ const acquisitionApi = api.injectEndpoints({
 	endpoints: (build) => ({
 		acquireGame: build.mutation<void, string>({
 			invalidatesTags: ["Library"],
-			query: (gameVersionId) => ({
-				body: { gameVersionId },
+			query: (gameProductId) => ({
+				body: { gameProductId },
 				method: "POST",
 				url: "/api/v1/catalog/game/acquisition",
 			}),

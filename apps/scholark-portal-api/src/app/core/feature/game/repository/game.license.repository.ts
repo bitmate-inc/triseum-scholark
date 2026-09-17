@@ -6,7 +6,7 @@ import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
 import { Game } from '../model/game.entity';
 import { GameLicense } from '../model/game.license.entity';
-import { GameVersion } from '../model/game.version.entity';
+import { GameVariant } from '../model/game.variant.entity';
 
 @Injectable()
 export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense> {
@@ -23,7 +23,7 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		return (await this.repository.findOne(
 			{
 				endAt: { $gte: now },
-				gameVersion: { game },
+				gameVariant: { gameVersion: { game } },
 				startAt: { $lte: now },
 				user: userId,
 			},
@@ -31,12 +31,12 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		)) ?? undefined;
 	}
 
-	async findActiveByUserAndGameVersion(userId: string, gameVersion: GameVersion): Promise<GameLicense | undefined> {
+	async findActiveByUserAndGameVariant(userId: string, gameVariant: GameVariant): Promise<GameLicense | undefined> {
 		const now = new Date();
 		return (await this.repository.findOne(
 			{
 				endAt: { $gte: now },
-				gameVersion,
+				gameVariant,
 				startAt: { $lte: now },
 				user: userId,
 			},

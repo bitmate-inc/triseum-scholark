@@ -7,14 +7,14 @@ import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { Classroom } from './model/classroom.entity';
 import { ClassroomGame } from './model/classroom.game.entity';
 import { ClassroomGameLicence } from './model/classroom.game.licence.entity';
-import { InstitutionContractGameVersion } from './model/institution.contract.game.version.entity';
 import { Course } from './model/course.entity';
-import { Institution } from './model/institution.entity';
 import { InstitutionContract } from './model/institution.contract.entity';
+import { InstitutionContractGameProduct } from './model/institution.contract.game.version.entity';
+import { Institution } from './model/institution.entity';
 import { Instructor } from './model/instructor.entity';
 import { ClassroomGameLicenceRepository } from './repository/classroom.game.licence.repository';
 import { ClassroomGameRepository } from './repository/classroom.game.repository';
-import { InstitutionContractGameVersionRepository } from './repository/institution.contract.game.version.repository';
+import { InstitutionContractGameProductRepository } from './repository/institution.contract.game.version.repository';
 
 @Global()
 @Module({
@@ -22,7 +22,7 @@ import { InstitutionContractGameVersionRepository } from './repository/instituti
 		AcquireClassroomGameCommand,
 		ClassroomGameLicenceRepository,
 		ClassroomGameRepository,
-		InstitutionContractGameVersionRepository,
+		InstitutionContractGameProductRepository,
 		MikroOrmModule,
 	],
 	imports: [
@@ -32,7 +32,7 @@ import { InstitutionContractGameVersionRepository } from './repository/instituti
 			Classroom,
 			ClassroomGame,
 			ClassroomGameLicence,
-			InstitutionContractGameVersion,
+			InstitutionContractGameProduct,
 			Instructor,
 			InstitutionContract,
 		]),
@@ -43,7 +43,7 @@ import { InstitutionContractGameVersionRepository } from './repository/instituti
 		AcquireClassroomGameCommand,
 		ClassroomGameLicenceRepository,
 		ClassroomGameRepository,
-		InstitutionContractGameVersionRepository,
+		InstitutionContractGameProductRepository,
 	],
 })
 export class EducationModule {}

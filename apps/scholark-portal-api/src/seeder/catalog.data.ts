@@ -53,6 +53,11 @@ export interface GameVersionSeed {
 	publisherVersion: string;
 	publishedAt: Date;
 	runUrl: string;
+}
+
+export interface GameProductSeed {
+	id: string;
+	gameVersionSeedId: string;
 	price: MoneySeed;
 }
 
@@ -63,10 +68,9 @@ export interface GameCustomizationSeed {
 	publishedAt?: Date;
 }
 
-export interface InstitutionContractGameVersionSeed {
-	gameVersionSeedId: string;
+export interface InstitutionContractGameProductSeed {
+	gameProductSeedId: string;
 	licenseDurationDays: number;
-	price: MoneySeed;
 }
 
 export interface InstitutionContractSeed {
@@ -77,7 +81,7 @@ export interface InstitutionContractSeed {
 	status: InstitutionContractStatus;
 	startAt: Date;
 	endAt: Date;
-	gameVersionList: InstitutionContractGameVersionSeed[];
+	gameProductList: InstitutionContractGameProductSeed[];
 }
 
 export interface InstitutionSeed {
@@ -129,14 +133,14 @@ export interface ClassroomGameSeed {
 	id: string;
 	classroomSlug: string;
 	gameSlug: string;
-	gameVersionSeedId: string;
+	gameProductSeedId: string;
 	customizationSeedId?: string;
 }
 
 export interface UserGameLicenseSeed {
 	id: string;
 	email: string;
-	gameVersionSeedId: string;
+	gameProductSeedId: string;
 	customizationSeedId?: string;
 	classroomGameSeedId?: string;
 	startAt: Date;
@@ -160,7 +164,7 @@ function createTaxonomyList(
 	}));
 }
 
-function createGameVersionMoneyAmount() {
+function createGameProductMoneyAmount() {
 	return randomInRange(500, 5000, 100)
 }
 
@@ -379,10 +383,6 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		description: 'The initial published build of this learning experience.',
 		publisherVersion: '1.0.0',
 		runUrl: `https://play.triseum.com/${game.slug}`,
-		price: {
-			minorUnitAmount: createGameVersionMoneyAmount(),
-			currency: Currency.USD
-		}
 	},
 	...(game.slug === 'arte-mecenas' ? [
 		{
@@ -392,10 +392,6 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 			description: 'Expanded content and updated classroom activities.',
 			publisherVersion: '1.4.0',
 			runUrl: 'https://play.triseum.com/arte-mecenas',
-			price: {
-				minorUnitAmount: createGameVersionMoneyAmount(),
-				currency: Currency.USD
-			}
 		},
 		{
 			gameSlug: game.slug,
@@ -404,10 +400,6 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 			description: 'A shorter demo build for introductory exploration.',
 			publisherVersion: 'v1.4.1-demo',
 			runUrl: 'https://play.triseum.com/arte-mecenas/demo',
-			price: {
-				minorUnitAmount: createGameVersionMoneyAmount(),
-				currency: Currency.USD
-			}
 		},
 	] : []),
 	...(game.slug === 'variant-limits' ? [{
@@ -417,12 +409,17 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		description: 'Refined scenarios focused on interpreting variation.',
 		publisherVersion: '1.1.0',
 		runUrl: 'https://play.triseum.com/variant-limits',
-		price: {
-			minorUnitAmount: createGameVersionMoneyAmount(),
-			currency: Currency.USD
-		}
 	}] : []),
 ]);
+
+export const gameProductSeedList: GameProductSeed[] = gameVersionSeedList.map((gameVersionSeed, index) => ({
+	id: `00000000-0000-4000-8000-${String(601 + index).padStart(12, '0')}`,
+	gameVersionSeedId: gameVersionSeed.id,
+	price: {
+		minorUnitAmount: createGameProductMoneyAmount(),
+		currency: Currency.USD,
+	},
+}));
 
 export const gameCustomizationSeedList: GameCustomizationSeed[] = [
 	{
@@ -552,7 +549,7 @@ export const institutionContractSeedList: InstitutionContractSeed[] = [
 	{
 		designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
 		endAt: new Date('2026-12-31T23:59:59.999Z'),
-		gameVersionList: createInstitutionContractGameVersionList([
+		gameProductList: createInstitutionContractGameProductList([
 			'00000000-0000-4000-8000-000000000312',
 			'shadow-of-the-plague',
 		]),
@@ -565,7 +562,7 @@ export const institutionContractSeedList: InstitutionContractSeed[] = [
 	{
 		designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
 		endAt: new Date('2026-12-31T23:59:59.999Z'),
-		gameVersionList: createInstitutionContractGameVersionList(['variant-limits']),
+		gameProductList: createInstitutionContractGameProductList(['variant-limits']),
 		id: '00000000-0000-4000-8000-000000000332',
 		institutionSlug: 'riverside-college',
 		startAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -583,7 +580,7 @@ function createAdditionalInstitutionContractSeedList(): InstitutionContractSeed[
 			? InstitutionContractDesignatedPayor.INSTITUTION
 			: InstitutionContractDesignatedPayor.STUDENT,
 		endAt: new Date('2027-12-31T23:59:59.999Z'),
-		gameVersionList: createInstitutionContractGameVersionList(contractGameSlugList),
+		gameProductList: createInstitutionContractGameProductList(contractGameSlugList),
 		id: `00000000-0000-4000-8000-${String(700 + institutionIndex).padStart(12, '0')}`,
 		institutionSlug: institution.slug,
 		startAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -594,16 +591,17 @@ function createAdditionalInstitutionContractSeedList(): InstitutionContractSeed[
 	}));
 }
 
-function createInstitutionContractGameVersionList(gameSlugList: string[]): InstitutionContractGameVersionSeed[] {
+
+function createInstitutionContractGameProductList(gameSlugList: string[]): InstitutionContractGameProductSeed[] {
 	return gameSlugList.map((gameSlugOrVersionId) => {
 		const gameVersion = gameVersionSeedList.find((seed) =>
 			seed.id === gameSlugOrVersionId || seed.gameSlug === gameSlugOrVersionId,
 		)!;
+		const gameProduct = gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersion.id)!;
 
 		return {
-			gameVersionSeedId: gameVersion.id,
+			gameProductSeedId: gameProduct.id,
 			licenseDurationDays: 120,
-			price: { ...gameVersion.price },
 		};
 	});
 }
@@ -739,20 +737,20 @@ export const classroomGameSeedList: ClassroomGameSeed[] = [
 	{
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'arte-mecenas',
-		gameVersionSeedId: '00000000-0000-4000-8000-000000000312',
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000312')!.id,
 		customizationSeedId: '00000000-0000-4000-8000-000000000322',
 		id: '00000000-0000-4000-8000-000000000231',
 	},
 	{
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'shadow-of-the-plague',
-		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'shadow-of-the-plague')!.id,
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'shadow-of-the-plague')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000232',
 	},
 	{
 		classroomSlug: 'limits-lab-fall-2026',
 		gameSlug: 'variant-limits',
-		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'variant-limits')!.id,
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'variant-limits')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000233',
 	},
 	...createAdditionalClassroomGameSeedList(),
@@ -769,11 +767,12 @@ function createAdditionalClassroomGameSeedList(): ClassroomGameSeed[] {
 
 		return gameSlugList.map((gameSlug, gameIndex) => {
 			const gameVersion = gameVersionSeedList.find((seed) => seed.gameSlug === gameSlug)!;
+			const gameProduct = gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersion.id)!;
 
 			return {
 				classroomSlug: classroom.slug,
 				gameSlug,
-				gameVersionSeedId: gameVersion.id,
+				gameProductSeedId: gameProduct.id,
 				id: `00000000-0000-4000-8000-${String(800 + classroomIndex * 10 + gameIndex).padStart(12, '0')}`,
 			};
 		});
@@ -786,7 +785,7 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		customizationSeedId: '00000000-0000-4000-8000-000000000322',
 		email: 'user1@scholark.com',
 		endAt: new Date('2026-10-30T23:59:59.999Z'),
-		gameVersionSeedId: '00000000-0000-4000-8000-000000000312',
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000312')!.id,
 		id: '00000000-0000-4000-8000-000000000341',
 		startAt: new Date('2026-06-01T00:00:00.000Z'),
 	},
@@ -794,21 +793,21 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		classroomGameSeedId: '00000000-0000-4000-8000-000000000232',
 		email: 'user1@scholark.com',
 		endAt: new Date('2026-12-15T23:59:59.999Z'),
-		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'shadow-of-the-plague')!.id,
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'shadow-of-the-plague')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000342',
 		startAt: new Date('2026-08-20T00:00:00.000Z'),
 	},
 	{
 		email: 'user1@scholark.com',
 		endAt: new Date('2026-05-01T23:59:59.999Z'),
-		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'variant-limits')!.id,
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'variant-limits')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000343',
 		startAt: new Date('2026-01-20T00:00:00.000Z'),
 	},
 	{
 		email: 'student2@scholark.com',
 		endAt: new Date('2027-01-31T23:59:59.999Z'),
-		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'econland')!.id,
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'econland')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000344',
 		startAt: new Date('2026-09-01T00:00:00.000Z'),
 	},
@@ -816,7 +815,7 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		classroomGameSeedId: '00000000-0000-4000-8000-000000000233',
 		email: 'student2@scholark.com',
 		endAt: new Date('2026-12-20T23:59:59.999Z'),
-		gameVersionSeedId: '00000000-0000-4000-8000-000000000313',
+		gameProductSeedId: gameProductSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000313')!.id,
 		id: '00000000-0000-4000-8000-000000000345',
 		startAt: new Date('2026-09-01T00:00:00.000Z'),
 	},

@@ -1,5 +1,6 @@
 import { defineConfig } from '@mikro-orm/core';
 import { ReflectMetadataProvider } from '@mikro-orm/decorators/legacy';
+import { Migrator } from '@mikro-orm/migrations';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { registerAs } from '@nestjs/config';
 import Joi from 'joi';
@@ -46,6 +47,7 @@ export function createConfig() {
 		entities: ['./dist/app/core/**/*.entity.js'],
 		entitiesTs: ['./src/app/core/**/*.entity.ts'],
 		metadataProvider: ReflectMetadataProvider,
+		extensions: [Migrator],
 		migrations: {
 			path: './dist/migration',
 			pathTs: './src/migration',

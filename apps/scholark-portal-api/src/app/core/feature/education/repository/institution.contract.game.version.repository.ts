@@ -5,26 +5,26 @@ import { Injectable } from '@nestjs/common';
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
 import { InstitutionContractDesignatedPayor, InstitutionContractStatus } from '../model/institution.contract.entity';
-import { InstitutionContractGameVersion } from '../model/institution.contract.game.version.entity';
+import { InstitutionContractGameProduct } from '../model/institution.contract.game.version.entity';
 import { Institution } from '../model/institution.entity';
 
 @Injectable()
-export class InstitutionContractGameVersionRepository extends MikroOrmEntityRepository<InstitutionContractGameVersion> {
+export class InstitutionContractGameProductRepository extends MikroOrmEntityRepository<InstitutionContractGameProduct> {
 
 	constructor(
-		@InjectRepository(InstitutionContractGameVersion) repository: EntityRepository<InstitutionContractGameVersion>,
+		@InjectRepository(InstitutionContractGameProduct) repository: EntityRepository<InstitutionContractGameProduct>,
 		transactionContext: MikroOrmTransactionContext,
 	) {
-		super(InstitutionContractGameVersion, repository, transactionContext);
+		super(InstitutionContractGameProduct, repository, transactionContext);
 	}
 
-	async findActiveStudentPayorByInstitutionAndGameVersion(
+	async findActiveStudentPayorByInstitutionAndGameProduct(
 		institution: Institution,
-		contractGameVersion: InstitutionContractGameVersion,
-	): Promise<InstitutionContractGameVersion | undefined> {
+		contractGameProduct: InstitutionContractGameProduct,
+	): Promise<InstitutionContractGameProduct | undefined> {
 		const now = new Date();
 		return (await this.repository.findOne({
-			id: contractGameVersion.id,
+			id: contractGameProduct.id,
 			contract: {
 				designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
 				endAt: { $gte: now },

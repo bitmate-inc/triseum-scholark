@@ -20,7 +20,7 @@ export class GetUserLibraryQuery {
 			{ user: userId },
 			{
 				populate: [
-					'gameVersion.game',
+					'gameVariant.gameVersion.game',
 					'customization',
 				],
 				orderBy: { endAt: 'desc' },
