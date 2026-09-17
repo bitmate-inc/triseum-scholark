@@ -51,6 +51,7 @@ export type ClassroomGame = {
 	id: string;
 	classroom: Pick<Classroom, "id" | "name" | "slug" | "institution">;
 	game: Game;
+	gameVersionId: string;
 	startAt: string;
 	endAt: string;
 	licenseDurationDays: number;

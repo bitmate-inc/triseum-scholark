@@ -17,16 +17,18 @@ export class ClassroomGameRepository extends MikroOrmEntityRepository<ClassroomG
 	}
 
 	async findForAcquisition(id: string): Promise<ClassroomGame | undefined> {
-		return this.findOneBy(
+		return (await this.repository.findOne(
 			{ id, publishedAt: { $lte: new Date() } },
 			{
-				relations: {
-					classroom: { institution: true },
-					customization: true,
-					gameVersion: { game: true },
-				},
+				populate: [
+					'classroom.institution',
+					'customization',
+					'gameVersion.game',
+					'gameVersion.game.publisherList',
+					'gameVersion.game.taxonomyList.taxonomyTerm',
+				] as never,
 			},
-		);
+		)) ?? undefined;
 	}
 
 }

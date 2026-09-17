@@ -56,8 +56,16 @@ export function getClassroomListRequest(query: EducationListQuery = {}) {
 	return apiFetch<ClassroomListResponse>(`/api/v1/catalog/classroom${createQueryString(query)}`);
 }
 
-export function getClassroomRequest(slug: string) {
-	return getBySlug<Classroom>("classroom", slug, "classroom");
+export async function getClassroomRequest(slug: string) {
+	const classroom = await getBySlug<Classroom>("classroom", slug, "classroom");
+	if (!classroom) return undefined;
+
+	return {
+		...classroom,
+		courseList: classroom.courseList ?? [],
+		instructorList: classroom.instructorList ?? [],
+		taxonomyTermList: classroom.taxonomyTermList ?? [],
+	};
 }
 
 export function getClassroomGameListRequest(query: EducationListQuery = {}) {

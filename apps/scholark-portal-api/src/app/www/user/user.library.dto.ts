@@ -65,6 +65,9 @@ class UserLibraryItemResponseDto {
 	endAt!: Date;
 
 	@ApiProperty()
+	createdAt!: Date;
+
+	@ApiProperty()
 	isActive!: boolean;
 
 }
@@ -89,6 +92,7 @@ export class UserLibraryResponseDto {
 						} : undefined,
 						customizationId,
 						endAt: license.endAt,
+						createdAt: license.createdAt!,
 						game: {
 							id: license.gameVersion.game.id!,
 							slug: license.gameVersion.game.slug,

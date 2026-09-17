@@ -71,6 +71,9 @@ export class ClassroomGameResponseDto {
 	@ApiProperty({ type: GameResponseDto })
 	game!: GameResponseDto;
 
+	@ApiProperty({ format: 'uuid' })
+	gameVersionId!: string;
+
 	@ApiProperty({ format: 'date-time', type: String })
 	startAt!: Date;
 
@@ -96,6 +99,7 @@ export class ClassroomGameResponseDto {
 			},
 			createdAt: classroomGame.createdAt!,
 			game: GameResponseDto.fromEntity(classroomGame.gameVersion.game),
+			gameVersionId: classroomGame.gameVersion.id!,
 			id: classroomGame.id!,
 			endAt: classroomGame.endAt,
 			licenseDurationDays: classroomGame.licenseDurationDays,

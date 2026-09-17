@@ -20,6 +20,7 @@ export type UserLibraryItem = {
 	};
 	startAt: string;
 	endAt: string;
+	createdAt: string;
 	isActive: boolean;
 };
 

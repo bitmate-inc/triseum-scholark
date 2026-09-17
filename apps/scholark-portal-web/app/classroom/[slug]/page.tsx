@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import styles from "../../../asset/style/site.module.css";
+import { ClassroomGameList } from "../../../feature/catalog/client/component/classroom-game-list";
 import { getClassroomGameListRequest, getClassroomRequest } from "../../../feature/catalog/server/request/education.request";
 import { AcademicMasthead } from "../../../feature/catalog/shared/component/academic-masthead";
-import { GameCard } from "../../../feature/catalog/shared/component/game-card";
 
 type ClassroomPageProps = { params: Promise<{ slug: string }> };
 
@@ -17,17 +17,18 @@ export async function generateMetadata({ params }: ClassroomPageProps): Promise<
 export default async function ClassroomPage({ params }: ClassroomPageProps) {
 	const classroom = await getClassroomRequest((await params).slug);
 	if (!classroom) notFound();
+	const instructorList = classroom.instructorList ?? [];
 
 	const { classroomGameList } = await getClassroomGameListRequest({ classroomId: classroom.id });
 
 	return (
 		<main className={styles.gamePage}>
 			<AcademicMasthead item={classroom} resource="classroom" backHref={`/institution/${classroom.institution.slug}`} backLabel={classroom.institution.name}/>
-			{classroom.instructorList.length ? (
+			{instructorList.length ? (
 				<section className={styles.instructorSection}>
 					<div><p className={styles.kicker}>Teaching team</p><h2>Instructors</h2></div>
 					<ul className={styles.instructorList}>
-						{classroom.instructorList.slice(0, 4).map((instructor) => (
+						{instructorList.slice(0, 4).map((instructor) => (
 							<li key={instructor.id}><UserRound aria-hidden="true"/><span>{instructor.name}</span></li>
 						))}
 					</ul>
@@ -39,7 +40,7 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
 					<span>{classroomGameList.length.toString().padStart(2, "0")} games</span>
 				</div>
 				{classroomGameList.length ? (
-					<div className={styles.gameGrid}>{classroomGameList.map((classroomGame) => <GameCard game={classroomGame.game} href={`/classroom-game/${classroomGame.id}/acquire`} key={classroomGame.id}/>)}</div>
+					<ClassroomGameList classroomGameList={classroomGameList}/>
 				) : (
 					<div className={styles.emptyState}><h3>No games assigned</h3><p>This classroom does not have any published games yet.</p></div>
 				)}
