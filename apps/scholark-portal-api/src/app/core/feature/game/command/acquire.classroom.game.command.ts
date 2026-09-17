@@ -11,7 +11,7 @@ import { ClassroomGame } from '../../education/model/classroom.game.entity';
 import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
 import { ClassroomGameLicenceRepository } from '../../education/repository/classroom.game.licence.repository';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
-import { ContractGameRepository } from '../../education/repository/contract.game.repository';
+import { InstitutionContractGameVersionRepository } from '../../education/repository/institution.contract.game.version.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameLicense } from '../model/game.license.entity';
 import { GameLicenseRepository } from '../repository/game.license.repository';
@@ -70,7 +70,7 @@ export class AcquireClassroomGameCommand {
 		private readonly classroomGameRepository: ClassroomGameRepository,
 		private readonly classroomGameLicenceRepository: ClassroomGameLicenceRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
-		private readonly contractGameRepository: ContractGameRepository,
+		private readonly contractGameRepository: InstitutionContractGameVersionRepository,
 		private readonly unitOfWork: MikroOrmUnitOfWork,
 		private readonly userRepository: UserEntityRepository,
 	) {}
@@ -102,9 +102,9 @@ export class AcquireClassroomGameCommand {
 			return AcquireClassroomGameCommandResult.userNotFoundFail();
 		}
 
-		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGame(
+		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGameVersion(
 			classroomGame.classroom.institution,
-			classroomGame.gameVersion.game,
+			classroomGame.contractGameVersion,
 		);
 
 		if (!activeContractGame) {
@@ -123,13 +123,16 @@ export class AcquireClassroomGameCommand {
 		let license: GameLicense | undefined;
 		
 		if (!classroomGame.customization) {
-			license = await this.gameLicenseRepository.findActiveByUserAndGameVersion(user.id!, classroomGame.gameVersion);
+			license = await this.gameLicenseRepository.findActiveByUserAndGameVersion(
+				user.id!,
+				classroomGame.contractGameVersion.gameVersion,
+			);
 		}
 
 		if (!license) {
-			license = GameLicense.createForDuration(classroomGame.licenseDurationDays, {
+			license = GameLicense.createForDuration(classroomGame.contractGameVersion.licenseDurationDays, {
 				customization: classroomGame.customization,
-				gameVersion: classroomGame.gameVersion,
+				gameVersion: classroomGame.contractGameVersion.gameVersion,
 				user,
 			});
 			license = await this.gameLicenseRepository.save(license);

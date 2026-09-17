@@ -63,6 +63,12 @@ export interface GameCustomizationSeed {
 	publishedAt?: Date;
 }
 
+export interface InstitutionContractGameVersionSeed {
+	gameVersionSeedId: string;
+	licenseDurationDays: number;
+	price: MoneySeed;
+}
+
 export interface InstitutionContractSeed {
 	id: string;
 	institutionSlug: string;
@@ -71,10 +77,10 @@ export interface InstitutionContractSeed {
 	status: InstitutionContractStatus;
 	startAt: Date;
 	endAt: Date;
-	gameSlugList: string[];
+	gameVersionList: InstitutionContractGameVersionSeed[];
 }
 
-export interface EducationalInstitutionSeed {
+export interface InstitutionSeed {
 	id: string;
 	name: string;
 	slug: string;
@@ -452,7 +458,37 @@ export const gameCustomizationSeedList: GameCustomizationSeed[] = [
 	},
 ];
 
-export const educationalInstitutionSeedList: EducationalInstitutionSeed[] = [
+const additionalInstitutionProfileList = [
+	['Lakeshore State University', 'lakeshore-state-university', ['elena-rossi', 'priya-shah'], 'A public university combining applied research with broad undergraduate study.'],
+	['Cedar Valley Institute', 'cedar-valley-institute', ['marcus-chen', 'priya-shah'], 'A regional institute known for practical technology and design programs.'],
+	['Summit Polytechnic', 'summit-polytechnic', ['elena-rossi'], 'A hands-on polytechnic focused on engineering, computing, and sustainable systems.'],
+	['Harborview University', 'harborview-university', ['marcus-chen', 'elena-rossi'], 'A coastal university with strong programs in business, policy, and environmental studies.'],
+	['Westfield College', 'westfield-college', ['priya-shah'], 'A liberal arts college centered on writing, civic engagement, and creative practice.'],
+	['Pinecrest Community College', 'pinecrest-community-college', ['elena-rossi', 'priya-shah'], 'An accessible community college serving a diverse metropolitan region.'],
+	['Redwood School of Design', 'redwood-school-of-design', ['marcus-chen'], 'A specialist school for digital media, communication, and experience design.'],
+	['Eastgate University', 'eastgate-university', ['elena-rossi', 'marcus-chen'], 'A comprehensive university with a strong tradition of interdisciplinary teaching.'],
+	['Meadowbrook Teachers College', 'meadowbrook-teachers-college', ['priya-shah'], 'A teacher preparation college emphasizing evidence-based learning and inclusion.'],
+	['Stonebridge Conservatory', 'stonebridge-conservatory', ['elena-rossi'], 'A conservatory connecting performance, music technology, and cultural scholarship.'],
+	['Brighton School of Public Affairs', 'brighton-school-public-affairs', ['marcus-chen', 'priya-shah'], 'A graduate-focused school preparing leaders for public and nonprofit service.'],
+	['Oakridge University', 'oakridge-university', ['elena-rossi', 'marcus-chen'], 'A research university with programs spanning health, science, and the humanities.'],
+	['Maple City College', 'maple-city-college', ['priya-shah', 'marcus-chen'], 'A practical urban college offering flexible pathways into professional study.'],
+	['Bluewater Marine Institute', 'bluewater-marine-institute', ['elena-rossi'], 'A specialist institute dedicated to marine science and coastal resilience.'],
+] as const;
+
+function createAdditionalInstitutionSeedList(): InstitutionSeed[] {
+	return additionalInstitutionProfileList.map(([name, slug, instructorSlugList, description], index) => ({
+		description,
+		id: `00000000-0000-4000-8000-${String(400 + index).padStart(12, '0')}`,
+		instructorSlugList: [...instructorSlugList],
+		name,
+		slug,
+		status: EducationCatalogStatus.ACTIVE,
+		summary: `${name} offers career-ready learning and collaborative academic study.`,
+		websiteUrl: `https://${slug}.example.edu`,
+	}));
+}
+
+export const institutionSeedList: InstitutionSeed[] = [
 	{
 		cover: {
 			alt: 'Northbridge University campus library',
@@ -483,13 +519,43 @@ export const educationalInstitutionSeedList: EducationalInstitutionSeed[] = [
 		summary: 'A close-knit college for arts, history, and civic inquiry.',
 		websiteUrl: 'https://riverside.example.edu',
 	},
+	...createAdditionalInstitutionSeedList(),
 ];
+
+const additionalCourseNameList = [
+	['Introduction to Data Science', 'DATA'],
+	['Environmental Systems', 'ENVS'],
+	['Digital Communication', 'COMM'],
+	['Research Methods', 'RES'],
+	['Applied Statistics', 'STAT'],
+	['Ethics and Public Life', 'ETH'],
+] as const;
+
+function createAdditionalCourseSeedList(): CourseSeed[] {
+	return institutionSeedList.slice(2).flatMap((institution, institutionIndex) => {
+		const courseCount = 3 + (institutionIndex % 4);
+
+		return additionalCourseNameList.slice(0, courseCount).map(([name, codePrefix], courseIndex) => ({
+			code: `${codePrefix}-${100 + institutionIndex * 10 + courseIndex}`,
+			description: `${name} in the context of ${institution.name}.`,
+			id: `00000000-0000-4000-8000-${String(450 + institutionIndex * 10 + courseIndex).padStart(12, '0')}`,
+			institutionSlug: institution.slug,
+			name,
+			slug: `${institution.slug}-${name.toLowerCase().replaceAll(' ', '-')}`,
+			status: EducationCatalogStatus.ACTIVE,
+			summary: `An undergraduate course in ${name.toLowerCase()}.`,
+		}));
+	});
+}
 
 export const institutionContractSeedList: InstitutionContractSeed[] = [
 	{
 		designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
 		endAt: new Date('2026-12-31T23:59:59.999Z'),
-		gameSlugList: ['arte-mecenas', 'shadow-of-the-plague'],
+		gameVersionList: createInstitutionContractGameVersionList([
+			'00000000-0000-4000-8000-000000000312',
+			'shadow-of-the-plague',
+		]),
 		id: '00000000-0000-4000-8000-000000000331',
 		institutionSlug: 'northbridge-university',
 		startAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -499,14 +565,48 @@ export const institutionContractSeedList: InstitutionContractSeed[] = [
 	{
 		designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
 		endAt: new Date('2026-12-31T23:59:59.999Z'),
-		gameSlugList: ['variant-limits'],
+		gameVersionList: createInstitutionContractGameVersionList(['variant-limits']),
 		id: '00000000-0000-4000-8000-000000000332',
 		institutionSlug: 'riverside-college',
 		startAt: new Date('2026-01-01T00:00:00.000Z'),
 		status: InstitutionContractStatus.ACTIVE,
 		type: InstitutionContractType.PILOT,
 	},
+	...createAdditionalInstitutionContractSeedList(),
 ];
+
+function createAdditionalInstitutionContractSeedList(): InstitutionContractSeed[] {
+	const contractGameSlugList = ['arte-mecenas', 'variant-limits', 'econland'];
+
+	return institutionSeedList.slice(2).map((institution, institutionIndex) => ({
+		designatedPayor: institutionIndex % 3 === 0
+			? InstitutionContractDesignatedPayor.INSTITUTION
+			: InstitutionContractDesignatedPayor.STUDENT,
+		endAt: new Date('2027-12-31T23:59:59.999Z'),
+		gameVersionList: createInstitutionContractGameVersionList(contractGameSlugList),
+		id: `00000000-0000-4000-8000-${String(700 + institutionIndex).padStart(12, '0')}`,
+		institutionSlug: institution.slug,
+		startAt: new Date('2026-01-01T00:00:00.000Z'),
+		status: InstitutionContractStatus.ACTIVE,
+		type: institutionIndex % 2 === 0
+			? InstitutionContractType.ADOPTION
+			: InstitutionContractType.PILOT,
+	}));
+}
+
+function createInstitutionContractGameVersionList(gameSlugList: string[]): InstitutionContractGameVersionSeed[] {
+	return gameSlugList.map((gameSlugOrVersionId) => {
+		const gameVersion = gameVersionSeedList.find((seed) =>
+			seed.id === gameSlugOrVersionId || seed.gameSlug === gameSlugOrVersionId,
+		)!;
+
+		return {
+			gameVersionSeedId: gameVersion.id,
+			licenseDurationDays: 120,
+			price: { ...gameVersion.price },
+		};
+	});
+}
 
 export const courseSeedList: CourseSeed[] = [
 	{
@@ -554,7 +654,43 @@ export const courseSeedList: CourseSeed[] = [
 		status: EducationCatalogStatus.ACTIVE,
 		summary: 'Build an intuitive foundation for limits, continuity, and calculus.',
 	},
+	...createAdditionalCourseSeedList(),
 ];
+
+function createAdditionalClassroomSeedList(): ClassroomSeed[] {
+	const taxonomyTermKeyList = [
+		`${TaxonomyType.Subject}:data-science`,
+		`${TaxonomyType.Subject}:history`,
+		`${TaxonomyType.Subject}:civics`,
+		`${TaxonomyType.Category}:stem`,
+	];
+
+	return institutionSeedList.slice(2).flatMap((institution, institutionIndex) => {
+		const institutionCourseList = courseSeedList.filter(
+			(course) => course.institutionSlug === institution.slug,
+		);
+		const classroomCount = 2 + (institutionIndex % 3);
+
+		return Array.from({ length: classroomCount }, (_, classroomIndex) => ({
+			code: `${institution.slug.slice(0, 8).toUpperCase()}-${classroomIndex + 1}`,
+			courseSlugList: [
+				institutionCourseList[classroomIndex % institutionCourseList.length].slug,
+				...(classroomIndex % 2 === 0 && institutionCourseList.length > 1
+					? [institutionCourseList[(classroomIndex + 1) % institutionCourseList.length].slug]
+					: []),
+			],
+			description: `An active ${institution.name} classroom for collaborative applied learning.`,
+			id: `00000000-0000-4000-8000-${String(550 + institutionIndex * 10 + classroomIndex).padStart(12, '0')}`,
+			institutionSlug: institution.slug,
+			instructorSlugList: [...institution.instructorSlugList],
+			name: `${institution.name} ${classroomIndex + 1}`,
+			slug: `${institution.slug}-classroom-${classroomIndex + 1}`,
+			status: EducationCatalogStatus.ACTIVE,
+			summary: `A course section hosted by ${institution.name}.`,
+			taxonomyTermKeyList: [taxonomyTermKeyList[institutionIndex % taxonomyTermKeyList.length]],
+		}));
+	});
+}
 
 export const classroomSeedList: ClassroomSeed[] = [
 	{
@@ -596,6 +732,7 @@ export const classroomSeedList: ClassroomSeed[] = [
 		summary: 'A hands-on calculus lab for exploring limits through models and play.',
 		taxonomyTermKeyList: [`${TaxonomyType.Subject}:calculus`],
 	},
+	...createAdditionalClassroomSeedList(),
 ];
 
 export const classroomGameSeedList: ClassroomGameSeed[] = [
@@ -618,7 +755,30 @@ export const classroomGameSeedList: ClassroomGameSeed[] = [
 		gameVersionSeedId: gameVersionSeedList.find((seed) => seed.gameSlug === 'variant-limits')!.id,
 		id: '00000000-0000-4000-8000-000000000233',
 	},
+	...createAdditionalClassroomGameSeedList(),
 ];
+
+function createAdditionalClassroomGameSeedList(): ClassroomGameSeed[] {
+	const contractGameSlugList = ['arte-mecenas', 'variant-limits', 'econland'];
+
+	return classroomSeedList.slice(2).flatMap((classroom, classroomIndex) => {
+		const firstGameSlug = contractGameSlugList[classroomIndex % contractGameSlugList.length];
+		const gameSlugList = classroomIndex % 2 === 0
+			? [firstGameSlug, contractGameSlugList[(classroomIndex + 1) % contractGameSlugList.length]]
+			: [firstGameSlug];
+
+		return gameSlugList.map((gameSlug, gameIndex) => {
+			const gameVersion = gameVersionSeedList.find((seed) => seed.gameSlug === gameSlug)!;
+
+			return {
+				classroomSlug: classroom.slug,
+				gameSlug,
+				gameVersionSeedId: gameVersion.id,
+				id: `00000000-0000-4000-8000-${String(800 + classroomIndex * 10 + gameIndex).padStart(12, '0')}`,
+			};
+		});
+	});
+}
 
 export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 	{

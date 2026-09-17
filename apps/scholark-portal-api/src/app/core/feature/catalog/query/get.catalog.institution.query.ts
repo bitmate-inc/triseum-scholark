@@ -10,7 +10,7 @@ import { GetOneQueryData } from '../../../../../lib/entity/query/get.one.query';
 import { GetListFilterByDto, GetOneFilterByDto } from '../../../../../lib/entity/query/query.dto';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { EducationCatalogStatus } from '../../education/model/education.catalog.status';
-import { EducationalInstitution } from '../../education/model/educational.institution.entity';
+import { Institution } from '../../education/model/institution.entity';
 import {
 	ASCII_CHARACTER_LIST,
 	DIACRITIC_CHARACTER_LIST,
@@ -32,7 +32,7 @@ export class GetCatalogInstitutionListQueryData extends GetListQueryData {
 
 export class GetCatalogInstitutionListQueryResult extends GetListQueryResult {
 
-	institutionList!: EducationalInstitution[];
+	institutionList!: Institution[];
 
 }
 
@@ -51,7 +51,7 @@ export class GetCatalogInstitutionQueryData extends GetOneQueryData {
 
 export class GetCatalogInstitutionQueryResult extends StaticFactory {
 
-	institution?: EducationalInstitution;
+	institution?: Institution;
 
 }
 
@@ -59,8 +59,8 @@ export class GetCatalogInstitutionQueryResult extends StaticFactory {
 export class GetCatalogInstitutionListQuery {
 
 	constructor(
-		@InjectRepository(EducationalInstitution)
-		private readonly institutionRepository: EntityRepository<EducationalInstitution>,
+		@InjectRepository(Institution)
+		private readonly institutionRepository: EntityRepository<Institution>,
 	) {}
 
 	async execute(data: GetCatalogInstitutionListQueryData): Promise<GetCatalogInstitutionListQueryResult> {
@@ -99,8 +99,8 @@ export class GetCatalogInstitutionListQuery {
 export class GetCatalogInstitutionQuery {
 
 	constructor(
-		@InjectRepository(EducationalInstitution)
-		private readonly institutionRepository: EntityRepository<EducationalInstitution>,
+		@InjectRepository(Institution)
+		private readonly institutionRepository: EntityRepository<Institution>,
 	) {}
 
 	async execute(data: GetCatalogInstitutionQueryData): Promise<GetCatalogInstitutionQueryResult> {

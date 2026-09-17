@@ -31,7 +31,7 @@ export function AcademicMasthead({ item, resource, backHref, backLabel }: Academ
 					{item.cover ? <Image src={item.cover.src} alt={item.cover.alt} fill priority sizes="(max-width: 800px) 100vw, 56vw"/> : null}
 				</div>
 				<div className={styles.gameSummary}>
-					<p className={styles.eyebrow}>{resource === "institution" ? "Educational institution" : resource}</p>
+					<p className={styles.eyebrow}>{resource === "institution" ? "Institution" : resource}</p>
 					<h1>{item.name}</h1>
 					<p className={styles.gameLead}>{item.summary}</p>
 					<div className={styles.tagRow}>

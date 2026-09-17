@@ -54,7 +54,8 @@ function addClassroomGameRelations(
 	queryBuilder
 		.leftJoinAndSelect('classroomGame.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
-		.leftJoinAndSelect('classroomGame.gameVersion', 'gameVersion')
+		.leftJoinAndSelect('classroomGame.contractGameVersion', 'contractGameVersion')
+		.leftJoinAndSelect('contractGameVersion.gameVersion', 'gameVersion')
 		.leftJoinAndSelect('gameVersion.game', 'game')
 		.leftJoinAndSelect('game.publisherList', 'publisher')
 		.leftJoinAndSelect('game.taxonomyList', 'gameTaxonomy')
@@ -76,7 +77,7 @@ export class GetCatalogClassroomGameListQuery {
 
 		addClassroomGameRelations(queryBuilder);
 
-		queryBuilder.distinct().andWhere({ gameVersion: { game: { publishedAt: { $lte: new Date() } } } });
+		queryBuilder.distinct().andWhere({ contractGameVersion: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } });
 
 		if (data.filterBy?.id) {
 			queryBuilder.andWhere({ id: { $in: data.filterBy.id } });
@@ -91,11 +92,11 @@ export class GetCatalogClassroomGameListQuery {
 		}
 
 		if (data.filterBy?.gameId) {
-			queryBuilder.andWhere({ gameVersion: { game: data.filterBy.gameId } });
+			queryBuilder.andWhere({ contractGameVersion: { gameVersion: { game: data.filterBy.gameId } } });
 		}
 
 		if (data.filterBy?.taxonomyTermId) {
-			queryBuilder.andWhere({ gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } });
+			queryBuilder.andWhere({ contractGameVersion: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
@@ -104,10 +105,12 @@ export class GetCatalogClassroomGameListQuery {
 			const searchPattern = `%${normalizeCatalogSearchQuery(searchQuery)}%`;
 			queryBuilder.andWhere({
 				$or: ['title', 'slug'].map((property) => ({
-					gameVersion: {
-						game: {
-							[raw((alias) => `translate(lower(${alias}.${property}), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}')`)]: {
-								$like: searchPattern,
+					contractGameVersion: {
+						gameVersion: {
+							game: {
+								[raw((alias) => `translate(lower(${alias}.${property}), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}')`)]: {
+									$like: searchPattern,
+								},
 							},
 						},
 					},
@@ -120,7 +123,7 @@ export class GetCatalogClassroomGameListQuery {
 
 		const [classroomGameList, totalItemCount] = await queryBuilder.getResultAndCount();
 
-		const gameList = classroomGameList.map(i => i.gameVersion.game);
+		const gameList = classroomGameList.map(i => i.contractGameVersion.gameVersion.game);
 		await loadGamePrice(gameList, this.gameVersionRepository);
 
 		return { classroomGameList, totalItemCount };
@@ -146,7 +149,7 @@ export class GetCatalogClassroomGameQuery {
 		addClassroomGameRelations(queryBuilder);
 		
 		queryBuilder.where({
-			gameVersion: { game: { publishedAt: { $lte: new Date() } } },
+			contractGameVersion: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } },
 			id: data.filterBy.id,
 		});
 

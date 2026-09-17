@@ -6,7 +6,7 @@ import { getInstitutionListRequest } from "../../feature/catalog/server/request/
 
 export const metadata: Metadata = {
 	title: "Institutions · ScholArk",
-	description: "Browse educational institutions, courses, and classrooms on ScholArk.",
+	description: "Browse institutions, courses, and classrooms on ScholArk.",
 };
 
 export default async function InstitutionCatalogPage() {
@@ -15,7 +15,7 @@ export default async function InstitutionCatalogPage() {
 	return (
 		<main className={styles.catalogPage}>
 			<header className={styles.catalogIntro}>
-				<p className={styles.kicker}>Educational institutions</p>
+				<p className={styles.kicker}>Institutions</p>
 				<h1>Find where learning happens.</h1>
 				<p>Browse institutions and explore the courses, classrooms, and educational games they bring together.</p>
 			</header>

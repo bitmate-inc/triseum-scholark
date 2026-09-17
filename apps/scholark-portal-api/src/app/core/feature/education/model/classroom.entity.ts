@@ -12,7 +12,7 @@ import type { Media } from '../../media/model/media';
 import { TaxonomyTerm } from '../../taxonomy/model/taxonomy.term.entity';
 import { Course } from './course.entity';
 import { EducationCatalogStatus } from './education.catalog.status';
-import { EducationalInstitution } from './educational.institution.entity';
+import { Institution } from './institution.entity';
 import { Instructor } from './instructor.entity';
 
 @Entity({ tableName: 'classroom' })
@@ -22,8 +22,8 @@ export class Classroom {
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
 
-	@ManyToOne(() => EducationalInstitution, { deleteRule: 'cascade' })
-	institution!: EducationalInstitution;
+	@ManyToOne(() => Institution, { deleteRule: 'cascade' })
+	institution!: Institution;
 
 	@Property()
 	name!: string;

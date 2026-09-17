@@ -20,8 +20,6 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk node_modules/jest/bin/jest.js --runInBand",
     "cli": "node --require @swc-node/register src/app/cli.ts",
-    "migration:create": "mikro-orm migration:create",
-    "migration:down": "mikro-orm migration:down",
     "env:export:stage": "NODE_ENV=stage pnpm --silent cli env:export",
     "mikro-orm": "mikro-orm",
     "seed": "mikro-orm seeder:run",

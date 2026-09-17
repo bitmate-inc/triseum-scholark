@@ -6,8 +6,8 @@ import {
 } from '@mikro-orm/decorators/legacy';
 
 import { GameCustomization } from '../../game/model/game.customization.entity';
-import { GameVersion } from '../../game/model/game.version.entity';
 import { Classroom } from './classroom.entity';
+import { InstitutionContractGameVersion } from './institution.contract.game.version.entity';
 
 @Entity({ tableName: 'classroom_game' })
 export class ClassroomGame {
@@ -18,8 +18,8 @@ export class ClassroomGame {
 	@ManyToOne(() => Classroom, { deleteRule: 'cascade' })
 	classroom!: Classroom;
 
-	@ManyToOne(() => GameVersion, { deleteRule: 'restrict' })
-	gameVersion!: GameVersion;
+	@ManyToOne(() => InstitutionContractGameVersion, { deleteRule: 'restrict' })
+	contractGameVersion!: InstitutionContractGameVersion;
 
 	@ManyToOne(() => GameCustomization, { nullable: true, deleteRule: 'restrict' })
 	customization?: GameCustomization;
@@ -29,9 +29,6 @@ export class ClassroomGame {
 
 	@Property()
 	endAt!: Date;
-
-	@Property()
-	licenseDurationDays!: number;
 
 	@Property({ nullable: true })
 	publishedAt?: Date;

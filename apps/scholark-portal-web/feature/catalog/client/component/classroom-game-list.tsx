@@ -45,7 +45,7 @@ export function ClassroomGameList({ classroomGameList }: { classroomGameList: Cl
 							<p className={styles.classroomGameDescription}>{classroomGame.game.description ?? classroomGame.game.summary}</p>
 							<div className={styles.classroomGameTags}>
 								{getGameTagList(classroomGame.game).map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-								{classroomGame.game.price ? <Badge variant="default">{formatMoney(classroomGame.game.price)}</Badge> : null}
+								<Badge variant="default">{formatMoney(classroomGame.price)}</Badge>
 							</div>
 							<div className={styles.classroomGameFacts}>
 								<span><Clock3 aria-hidden="true"/>{formatEstimatedLength(classroomGame.game)}</span>

@@ -4,7 +4,7 @@ import { IsEnum, IsOptional } from 'class-validator';
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import { GetCatalogInstitutionListFilterByDto, GetCatalogInstitutionListQueryResult } from '../../core/feature/catalog/query/get.catalog.institution.query';
 import { EducationCatalogStatus } from '../../core/feature/education/model/education.catalog.status';
-import { EducationalInstitution } from '../../core/feature/education/model/educational.institution.entity';
+import { Institution } from '../../core/feature/education/model/institution.entity';
 import { MediaResponseDto } from '../media/media.dto';
 
 export class GetInstitutionListQueryDto extends GetListRequestQueryParamsDto {
@@ -49,7 +49,7 @@ export class InstitutionResponseDto {
 	@ApiProperty({ enum: EducationCatalogStatus, enumName: 'EducationCatalogStatus' })
 	status!: EducationCatalogStatus;
 
-	static fromEntity(institution: EducationalInstitution): InstitutionResponseDto {
+	static fromEntity(institution: Institution): InstitutionResponseDto {
 		return {
 			cover: institution.cover,
 			description: institution.description,
@@ -69,7 +69,7 @@ export class GetInstitutionResponseDto {
 	@ApiProperty({ type: InstitutionResponseDto })
 	institution!: InstitutionResponseDto;
 
-	static fromEntity(institution: EducationalInstitution): GetInstitutionResponseDto {
+	static fromEntity(institution: Institution): GetInstitutionResponseDto {
 		return { institution: InstitutionResponseDto.fromEntity(institution) };
 	}
 

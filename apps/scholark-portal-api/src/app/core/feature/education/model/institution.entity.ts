@@ -10,8 +10,8 @@ import type { Media } from '../../media/model/media';
 import { EducationCatalogStatus } from './education.catalog.status';
 import { Instructor } from './instructor.entity';
 
-@Entity({ tableName: 'educational_institution' })
-export class EducationalInstitution {
+@Entity({ tableName: 'institution' })
+export class Institution {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;

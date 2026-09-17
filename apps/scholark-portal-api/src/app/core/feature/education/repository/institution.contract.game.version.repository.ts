@@ -4,27 +4,27 @@ import { Injectable } from '@nestjs/common';
 
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
-import { Game } from '../../game/model/game.entity';
-import { ContractGame } from '../model/contract.game.entity';
-import { EducationalInstitution } from '../model/educational.institution.entity';
 import { InstitutionContractDesignatedPayor, InstitutionContractStatus } from '../model/institution.contract.entity';
+import { InstitutionContractGameVersion } from '../model/institution.contract.game.version.entity';
+import { Institution } from '../model/institution.entity';
 
 @Injectable()
-export class ContractGameRepository extends MikroOrmEntityRepository<ContractGame> {
+export class InstitutionContractGameVersionRepository extends MikroOrmEntityRepository<InstitutionContractGameVersion> {
 
 	constructor(
-		@InjectRepository(ContractGame) repository: EntityRepository<ContractGame>,
+		@InjectRepository(InstitutionContractGameVersion) repository: EntityRepository<InstitutionContractGameVersion>,
 		transactionContext: MikroOrmTransactionContext,
 	) {
-		super(ContractGame, repository, transactionContext);
+		super(InstitutionContractGameVersion, repository, transactionContext);
 	}
 
-	async findActiveStudentPayorByInstitutionAndGame(
-		institution: EducationalInstitution,
-		game: Game,
-	): Promise<ContractGame | undefined> {
+	async findActiveStudentPayorByInstitutionAndGameVersion(
+		institution: Institution,
+		contractGameVersion: InstitutionContractGameVersion,
+	): Promise<InstitutionContractGameVersion | undefined> {
 		const now = new Date();
 		return (await this.repository.findOne({
+			id: contractGameVersion.id,
 			contract: {
 				designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
 				endAt: { $gte: now },
@@ -32,7 +32,6 @@ export class ContractGameRepository extends MikroOrmEntityRepository<ContractGam
 				startAt: { $lte: now },
 				status: InstitutionContractStatus.ACTIVE,
 			},
-			game,
 		})) ?? undefined;
 	}
 

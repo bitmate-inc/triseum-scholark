@@ -73,15 +73,7 @@ pnpm --filter scholark-portal-api build
 
 ## Database
 
-Migrations are generated in `src/migration`:
-
-```bash
-pnpm --filter scholark-portal-api migration:create
-pnpm --filter scholark-portal-api migration:up
-pnpm --filter scholark-portal-api migration:down
-```
-
-Populate or refresh the local catalog with the game and taxonomy fixture data:
+Populate or refresh the local catalog with the game, contract game-version, and taxonomy fixture data:
 
 ```bash
 pnpm --filter scholark-portal-api seed

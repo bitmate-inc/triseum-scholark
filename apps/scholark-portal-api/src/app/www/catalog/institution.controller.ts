@@ -31,7 +31,7 @@ export class InstitutionController {
 	) {}
 
 	@Get()
-	@ApiOperation({ summary: 'List educational institutions' })
+	@ApiOperation({ summary: 'List institutions' })
 	@ApiOkResponse({ type: GetInstitutionListResponseDto })
 	async getInstitutionList(
 		@Query() query: GetInstitutionListQueryDto,
@@ -44,19 +44,19 @@ export class InstitutionController {
 	}
 
 	@Get('by-slug/:slug')
-	@ApiOperation({ summary: 'Get an educational institution by slug' })
+	@ApiOperation({ summary: 'Get an institution by slug' })
 	@ApiParam({ name: 'slug' })
 	@ApiOkResponse({ type: GetInstitutionResponseDto })
-	@ApiNotFoundResponse({ description: 'Educational institution not found' })
+	@ApiNotFoundResponse({ description: 'Institution not found' })
 	async getInstitutionBySlug(@Param('slug') slug: string): Promise<GetInstitutionResponseDto> {
 		return this.getInstitution({ slug });
 	}
 
 	@Get(':id')
-	@ApiOperation({ summary: 'Get an educational institution by ID' })
+	@ApiOperation({ summary: 'Get an institution by ID' })
 	@ApiParam({ format: 'uuid', name: 'id' })
 	@ApiOkResponse({ type: GetInstitutionResponseDto })
-	@ApiNotFoundResponse({ description: 'Educational institution not found' })
+	@ApiNotFoundResponse({ description: 'Institution not found' })
 	async getInstitutionById(
 		@Param('id', ParseUUIDPipe) id: string,
 	): Promise<GetInstitutionResponseDto> {
@@ -66,7 +66,7 @@ export class InstitutionController {
 	private async getInstitution(filterBy: { id?: string; slug?: string }): Promise<GetInstitutionResponseDto> {
 		const result = await this.getInstitutionQuery.execute({ filterBy });
 		if (!result.institution) {
-			throw new NotFoundException('Educational institution not found');
+			throw new NotFoundException('Institution not found');
 		}
 
 		return GetInstitutionResponseDto.fromEntity(result.institution);

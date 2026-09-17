@@ -1,4 +1,5 @@
 import type { Media } from "../../../media/shared/model/media";
+import type { Money } from "../../../commerce/shared/model/money";
 import type { Game, TaxonomyTerm } from "./game";
 
 export type EducationCatalogStatus = "active" | "inactive";
@@ -51,7 +52,9 @@ export type ClassroomGame = {
 	id: string;
 	classroom: Pick<Classroom, "id" | "name" | "slug" | "institution">;
 	game: Game;
+	contractGameVersionId: string;
 	gameVersionId: string;
+	price: Money;
 	startAt: string;
 	endAt: string;
 	licenseDurationDays: number;

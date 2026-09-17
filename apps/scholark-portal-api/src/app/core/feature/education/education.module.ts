@@ -7,14 +7,14 @@ import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { Classroom } from './model/classroom.entity';
 import { ClassroomGame } from './model/classroom.game.entity';
 import { ClassroomGameLicence } from './model/classroom.game.licence.entity';
-import { ContractGame } from './model/contract.game.entity';
+import { InstitutionContractGameVersion } from './model/institution.contract.game.version.entity';
 import { Course } from './model/course.entity';
-import { EducationalInstitution } from './model/educational.institution.entity';
+import { Institution } from './model/institution.entity';
 import { InstitutionContract } from './model/institution.contract.entity';
 import { Instructor } from './model/instructor.entity';
 import { ClassroomGameLicenceRepository } from './repository/classroom.game.licence.repository';
 import { ClassroomGameRepository } from './repository/classroom.game.repository';
-import { ContractGameRepository } from './repository/contract.game.repository';
+import { InstitutionContractGameVersionRepository } from './repository/institution.contract.game.version.repository';
 
 @Global()
 @Module({
@@ -22,17 +22,17 @@ import { ContractGameRepository } from './repository/contract.game.repository';
 		AcquireClassroomGameCommand,
 		ClassroomGameLicenceRepository,
 		ClassroomGameRepository,
-		ContractGameRepository,
+		InstitutionContractGameVersionRepository,
 		MikroOrmModule,
 	],
 	imports: [
 		MikroOrmModule.forFeature([
-			EducationalInstitution,
+			Institution,
 			Course,
 			Classroom,
 			ClassroomGame,
 			ClassroomGameLicence,
-			ContractGame,
+			InstitutionContractGameVersion,
 			Instructor,
 			InstitutionContract,
 		]),
@@ -43,7 +43,7 @@ import { ContractGameRepository } from './repository/contract.game.repository';
 		AcquireClassroomGameCommand,
 		ClassroomGameLicenceRepository,
 		ClassroomGameRepository,
-		ContractGameRepository,
+		InstitutionContractGameVersionRepository,
 	],
 })
 export class EducationModule {}

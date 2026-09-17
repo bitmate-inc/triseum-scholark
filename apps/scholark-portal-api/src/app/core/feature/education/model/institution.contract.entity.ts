@@ -5,7 +5,7 @@ import {
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
-import { EducationalInstitution } from './educational.institution.entity';
+import { Institution } from './institution.entity';
 
 export enum InstitutionContractType {
 	ADOPTION = 'adoption',
@@ -36,8 +36,8 @@ export class InstitutionContract {
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
 
-	@ManyToOne(() => EducationalInstitution, { deleteRule: 'cascade' })
-	institution!: EducationalInstitution;
+	@ManyToOne(() => Institution, { deleteRule: 'cascade' })
+	institution!: Institution;
 
 	@Property({ type: 'string' })
 	type!: InstitutionContractType;

@@ -33,7 +33,7 @@ export function AcademicCard({ item, resource }: AcademicCardProps) {
 	const classroom = resource === "classroom" ? item as Classroom : undefined;
 	const eyebrow = course?.code
 		?? classroom?.code
-		?? (resource === "institution" ? "Educational institution" : resource);
+		?? (resource === "institution" ? "Institution" : resource);
 	const meta = course?.institution.name
 		?? classroom?.institution.name
 		?? "Explore courses and classrooms";

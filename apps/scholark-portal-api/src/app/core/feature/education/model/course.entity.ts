@@ -8,7 +8,7 @@ import {
 
 import type { Media } from '../../media/model/media';
 import { EducationCatalogStatus } from './education.catalog.status';
-import { EducationalInstitution } from './educational.institution.entity';
+import { Institution } from './institution.entity';
 
 @Entity({ tableName: 'course' })
 @Unique({ properties: ['institution', 'code'] })
@@ -17,8 +17,8 @@ export class Course {
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
 
-	@ManyToOne(() => EducationalInstitution, { deleteRule: 'cascade' })
-	institution!: EducationalInstitution;
+	@ManyToOne(() => Institution, { deleteRule: 'cascade' })
+	institution!: Institution;
 
 	@Property()
 	name!: string;

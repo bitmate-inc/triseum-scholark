@@ -7,7 +7,7 @@ import {
 	GetCatalogClassroomGameListQueryResult,
 } from '../../core/feature/catalog/query/get.catalog.classroom-game.query';
 import { ClassroomGame } from '../../core/feature/education/model/classroom.game.entity';
-import { GameResponseDto } from './game.dto';
+import { GameResponseDto, MoneyDto } from './game.dto';
 import { InstitutionResponseDto } from './institution.dto';
 
 export class GetClassroomGameListQueryDto extends GetListRequestQueryParamsDto {
@@ -72,6 +72,9 @@ export class ClassroomGameResponseDto {
 	game!: GameResponseDto;
 
 	@ApiProperty({ format: 'uuid' })
+	contractGameVersionId!: string;
+
+	@ApiProperty({ format: 'uuid' })
 	gameVersionId!: string;
 
 	@ApiProperty({ format: 'date-time', type: String })
@@ -82,6 +85,9 @@ export class ClassroomGameResponseDto {
 
 	@ApiProperty({ minimum: 1 })
 	licenseDurationDays!: number;
+
+	@ApiProperty({ type: MoneyDto })
+	price!: MoneyDto;
 
 	@ApiProperty({ format: 'date-time', type: String })
 	createdAt!: Date;
@@ -98,11 +104,13 @@ export class ClassroomGameResponseDto {
 				slug: classroomGame.classroom.slug,
 			},
 			createdAt: classroomGame.createdAt!,
-			game: GameResponseDto.fromEntity(classroomGame.gameVersion.game),
-			gameVersionId: classroomGame.gameVersion.id!,
+			game: GameResponseDto.fromEntity(classroomGame.contractGameVersion.gameVersion.game),
+			contractGameVersionId: classroomGame.contractGameVersion.id!,
+			gameVersionId: classroomGame.contractGameVersion.gameVersion.id!,
 			id: classroomGame.id!,
 			endAt: classroomGame.endAt,
-			licenseDurationDays: classroomGame.licenseDurationDays,
+			licenseDurationDays: classroomGame.contractGameVersion.licenseDurationDays,
+			price: classroomGame.contractGameVersion.price,
 			startAt: classroomGame.startAt,
 			updatedAt: classroomGame.updatedAt!,
 		};

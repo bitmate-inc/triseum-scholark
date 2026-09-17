@@ -16,7 +16,7 @@ export function SiteHeader() {
 			</Link>
 			<nav className={styles.primaryNav} aria-label="Primary navigation">
 				<Link href="/catalog">Game Catalog</Link>
-				<Link href="/institution">Educational Institutions</Link>
+				<Link href="/institution">Institutions</Link>
 			</nav>
 			<div className={styles.headerActions}>
 				<Link
