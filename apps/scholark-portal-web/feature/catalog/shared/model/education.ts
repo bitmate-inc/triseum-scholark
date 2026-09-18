@@ -52,6 +52,7 @@ export type ClassroomGame = {
 	classroom: Pick<Classroom, "id" | "name" | "slug" | "institution">;
 	game: Game;
 	contractGameProductId: string;
+	designatedPayor: "student" | "institution";
 	gameVersionId: string;
 	startAt: string;
 	endAt: string;

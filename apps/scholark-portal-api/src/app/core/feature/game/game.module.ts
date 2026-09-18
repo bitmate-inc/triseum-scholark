@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common';
 
 import { GetUserLibraryQuery } from '../catalog/query/get.user.library.query';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
-import { AcquireGameProductCommand } from './command/acquire.game.version.command';
+import { AcquireGameProductCommand } from './command/acquire.game.product.command';
 import { GameAcquisition } from './model/game.acquisition.entity';
 import { GameCustomization } from './model/game.customization.entity';
 import { Game } from './model/game.entity';

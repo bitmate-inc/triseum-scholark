@@ -6,7 +6,7 @@ import { ClassroomGame } from '../app/core/feature/education/model/classroom.gam
 import { ClassroomGameLicence } from '../app/core/feature/education/model/classroom.game.licence.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
 import { InstitutionContract } from '../app/core/feature/education/model/institution.contract.entity';
-import { InstitutionContractGameProduct } from '../app/core/feature/education/model/institution.contract.game.version.entity';
+import { InstitutionContractGameProduct } from '../app/core/feature/education/model/institution.contract.game.product.entity';
 import { Institution } from '../app/core/feature/education/model/institution.entity';
 import { Instructor } from '../app/core/feature/education/model/instructor.entity';
 import { GameAcquisition, GameAcquisitionMechanism } from '../app/core/feature/game/model/game.acquisition.entity';

@@ -22,7 +22,7 @@ import {
 import { GetCatalogGameListQuery } from '../../core/feature/catalog/query/get.catalog.game.list.query';
 import { GetFeaturedGameListQuery } from '../../core/feature/catalog/query/get.featured.game.list.query';
 import { GetGameQuery } from '../../core/feature/catalog/query/get.game.query';
-import { AcquireGameProductCommand, AcquireGameProductCommandData } from '../../core/feature/game/command/acquire.game.version.command';
+import { AcquireGameProductCommand, AcquireGameProductCommandData } from '../../core/feature/game/command/acquire.game.product.command';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
 import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import { SessionAuthGuard } from '../auth/session.auth.guard';

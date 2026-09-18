@@ -11,7 +11,7 @@ import { ClassroomGame } from '../../education/model/classroom.game.entity';
 import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
 import { ClassroomGameLicenceRepository } from '../../education/repository/classroom.game.licence.repository';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
-import { InstitutionContractGameProductRepository } from '../../education/repository/institution.contract.game.version.repository';
+import { InstitutionContractGameProductRepository } from '../../education/repository/institution.contract.game.product.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
 import { GameLicense } from '../model/game.license.entity';

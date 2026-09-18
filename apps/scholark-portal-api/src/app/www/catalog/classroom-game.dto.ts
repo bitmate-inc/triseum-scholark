@@ -7,6 +7,7 @@ import {
 	GetCatalogClassroomGameListQueryResult,
 } from '../../core/feature/catalog/query/get.catalog.classroom-game.query';
 import { ClassroomGame } from '../../core/feature/education/model/classroom.game.entity';
+import { InstitutionContractDesignatedPayor } from '../../core/feature/education/model/institution.contract.entity';
 import { GameResponseDto } from './game.dto';
 import { InstitutionResponseDto } from './institution.dto';
 
@@ -74,6 +75,9 @@ export class ClassroomGameResponseDto {
 	@ApiProperty({ format: 'uuid' })
 	contractGameProductId!: string;
 
+	@ApiProperty({ enum: InstitutionContractDesignatedPayor, enumName: 'InstitutionContractDesignatedPayor' })
+	designatedPayor!: InstitutionContractDesignatedPayor;
+
 	@ApiProperty({ format: 'uuid' })
 	gameVersionId!: string;
 
@@ -103,6 +107,7 @@ export class ClassroomGameResponseDto {
 			createdAt: classroomGame.createdAt!,
 			game: GameResponseDto.fromEntity(classroomGame.contractGameProduct.gameProduct.gameVariant.gameVersion.game),
 			contractGameProductId: classroomGame.contractGameProduct.id!,
+			designatedPayor: classroomGame.contractGameProduct.contract.designatedPayor,
 			gameVersionId: classroomGame.contractGameProduct.gameProduct.gameVariant.gameVersion.id!,
 			id: classroomGame.id!,
 			endAt: classroomGame.endAt,

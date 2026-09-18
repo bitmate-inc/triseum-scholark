@@ -1,11 +1,12 @@
 "use client";
 
 import { Badge } from "@repo/ui/badge";
-import { buttonVariants } from "@repo/ui/button";
+import { Button, buttonVariants } from "@repo/ui/button";
 import {
 	CheckCircle2,
 	Clock3,
 	MonitorPlay
+	,KeyRound
 } from "lucide-react";
 import Link from "next/link";
 
@@ -31,6 +32,7 @@ export function ClassroomGameList({ classroomGameList }: { classroomGameList: Cl
 					(item) => item.game.id === classroomGame.game.id && item.gameVersion.id === classroomGame.gameVersionId && item.classroom?.id === classroomGame.classroom.id,
 				);
 				const activeLicense = licenseList.find((item) => item.isActive);
+				const institutionFunded = classroomGame.designatedPayor === "institution";
 				return (
 					<article className={styles.classroomGameItem} key={classroomGame.id}>
 						<div className={styles.classroomGameMain}>
@@ -51,7 +53,12 @@ export function ClassroomGameList({ classroomGameList }: { classroomGameList: Cl
 						</div>
 						<div className={styles.classroomGameAction}>
 							{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>In Library</Badge> : licenseList.length ? <Badge variant="outline">In Library (Expired)</Badge> : null}
-							{!activeLicense && licenseStateReady ? (
+							{!activeLicense && licenseStateReady && institutionFunded ? (
+								<Button size="sm" type="button" variant="outline">
+									<KeyRound data-icon="inline-start"/>Redeem code
+								</Button>
+							) : null}
+							{!activeLicense && licenseStateReady && !institutionFunded ? (
 								<Link className={buttonVariants({ size: "sm" })} href={`/classroom-game/${classroomGame.id}/acquire`}>
 									<MonitorPlay data-icon="inline-start"/>Acquire
 								</Link>

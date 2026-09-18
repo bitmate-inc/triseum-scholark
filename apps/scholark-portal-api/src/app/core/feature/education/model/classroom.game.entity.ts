@@ -7,7 +7,7 @@ import {
 
 import { GameCustomization } from '../../game/model/game.customization.entity';
 import { Classroom } from './classroom.entity';
-import { InstitutionContractGameProduct } from './institution.contract.game.version.entity';
+import { InstitutionContractGameProduct } from './institution.contract.game.product.entity';
 
 @Entity({ tableName: 'classroom_game' })
 export class ClassroomGame {

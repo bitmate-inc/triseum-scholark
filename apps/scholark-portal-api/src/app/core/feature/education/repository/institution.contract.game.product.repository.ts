@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common';
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
 import { InstitutionContractDesignatedPayor, InstitutionContractStatus } from '../model/institution.contract.entity';
-import { InstitutionContractGameProduct } from '../model/institution.contract.game.version.entity';
+import { InstitutionContractGameProduct } from '../model/institution.contract.game.product.entity';
 import { Institution } from '../model/institution.entity';
 
 @Injectable()

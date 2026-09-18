@@ -48,6 +48,7 @@ function addClassroomGameRelations(
 		.leftJoinAndSelect('classroomGame.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
 		.leftJoinAndSelect('classroomGame.contractGameProduct', 'contractGameProduct')
+		.leftJoinAndSelect('contractGameProduct.contract', 'contract')
 		.leftJoinAndSelect('contractGameProduct.gameProduct', 'gameProduct')
 		.leftJoinAndSelect('gameProduct.gameVariant', 'gameVariant')
 		.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
