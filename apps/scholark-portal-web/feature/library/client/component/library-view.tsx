@@ -21,8 +21,12 @@ function shortId(id: string): string {
 	return id.replaceAll("-", "").slice(0, 7);
 }
 
-function sortLibraryItems<Item extends { game: { title: string }; createdAt: string; id: string }>(itemList: Item[]): Item[] {
+function sortLibraryItems<Item extends { game: { title: string }; createdAt: string; id: string; status: "active" | "scheduled" | "expired" }>(itemList: Item[]): Item[] {
 	return [...itemList].sort((firstItem, secondItem) => {
+		const statusOrder = { expired: 0, scheduled: 1, active: 2 } as const;
+		const statusDifference = statusOrder[secondItem.status] - statusOrder[firstItem.status];
+		if (statusDifference) return statusDifference;
+
 		const titleOrder = firstItem.game.title.localeCompare(secondItem.game.title);
 		if (titleOrder) return titleOrder;
 		const createdAtOrder = Date.parse(secondItem.createdAt) - Date.parse(firstItem.createdAt);
@@ -45,7 +49,7 @@ function LibraryItemCard({ item }: { item: NonNullable<ReturnType<typeof useGetU
 				</dl>
 			</div>
 			<div className={styles.actions}>
-				{item.isActive ? <Link className={styles.runLink} href={`/library/${item.id}/run`}><Play aria-hidden="true"/>Run game</Link> : <span className={styles.expiredAction}>Expired</span>}
+				{item.status === "active" ? <Link className={styles.runLink} href={`/library/${item.id}/run`}><Play aria-hidden="true"/>Run game</Link> : <span className={styles.expiredAction}>{item.status === "scheduled" ? "Scheduled" : "Expired"}</span>}
 			</div>
 		</article>
 	);

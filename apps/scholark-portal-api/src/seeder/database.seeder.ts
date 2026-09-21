@@ -244,30 +244,37 @@ export class DatabaseSeeder extends Seeder {
 
 			await transactionalEm.flush();
 
-			for (const gameVersionSeed of gameVersionSeedList) {
-				const gameVersion = gameVersionSeedMap.get(gameVersionSeed.id)!;
+			// Each public offer seed targets a distinct language variant, always on the default mode.
+			for (const publicOfferSeed of publicOfferSeedList) {
+				const gameVariantKey = `${publicOfferSeed.gameVersionSeedId}:${publicOfferSeed.language}`;
+				if (gameVariantSeedMap.has(gameVariantKey)) {
+					continue;
+				}
+
+				const gameVersion = gameVersionSeedMap.get(publicOfferSeed.gameVersionSeedId)!;
 				let gameVariant = await transactionalEm.findOne(GameVariant, {
 					gameVersion,
-					language: 'en',
+					language: publicOfferSeed.language,
 					mode: GameVariantMode.DEFAULT,
 				});
 				if (!gameVariant) {
 					gameVariant = transactionalEm.create(GameVariant, {
 						gameVersion,
-						language: 'en',
+						language: publicOfferSeed.language,
 						mode: GameVariantMode.DEFAULT,
 					});
 				}
-				gameVariantSeedMap.set(gameVersionSeed.id, gameVariant);
+				gameVariantSeedMap.set(gameVariantKey, gameVariant);
 			}
 
 			for (const publicOfferSeed of publicOfferSeedList) {
-				const gameVariant = gameVariantSeedMap.get(publicOfferSeed.gameVersionSeedId);
+				const gameVariantKey = `${publicOfferSeed.gameVersionSeedId}:${publicOfferSeed.language}`;
+				const gameVariant = gameVariantSeedMap.get(gameVariantKey);
 				if (!gameVariant) {
-					throw new Error(`Missing seeded game variant: ${publicOfferSeed.gameVersionSeedId}`);
+					throw new Error(`Missing seeded game variant: ${gameVariantKey}`);
 				}
 
-				let publicOffer = await transactionalEm.findOne(PublicGameOffer, { gameVariant });
+				let publicOffer = await transactionalEm.findOne(PublicGameOffer, { id: publicOfferSeed.id });
 				if (!publicOffer) {
 					publicOffer = transactionalEm.create(PublicGameOffer, {
 						id: publicOfferSeed.id,
@@ -278,6 +285,7 @@ export class DatabaseSeeder extends Seeder {
 					});
 				} else {
 					transactionalEm.assign(publicOffer, {
+						gameVariant,
 						isAvailable: true,
 						price: publicOfferSeed.price,
 						publishedAt: gameVariant.gameVersion.publishedAt,
@@ -413,7 +421,7 @@ export class DatabaseSeeder extends Seeder {
 				const user = await transactionalEm.findOne(User, { email: licenseSeed.email });
 				const publicOfferSeed = publicOfferSeedList.find((seed) => seed.id === licenseSeed.publicOfferSeedId);
 				const gameVariant = publicOfferSeed
-					? gameVariantSeedMap.get(publicOfferSeed.gameVersionSeedId)
+					? gameVariantSeedMap.get(`${publicOfferSeed.gameVersionSeedId}:${publicOfferSeed.language}`)
 					: undefined;
 				const publicOffer = publicOfferSeedMap.get(licenseSeed.publicOfferSeedId);
 				const customization = licenseSeed.customizationSeedId

@@ -3,7 +3,6 @@ import {
 	ManyToOne,
 	PrimaryKey,
 	Property,
-	Unique,
 } from '@mikro-orm/decorators/legacy';
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
@@ -13,7 +12,6 @@ import { GameCustomization } from './game.customization.entity';
 import { GameVariant } from './game.variant.entity';
 
 @Entity({ tableName: 'game_license' })
-@Unique({ properties: ['user', 'classroomGame'] })
 export class GameLicense extends StaticFactory {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
@@ -41,7 +39,7 @@ export class GameLicense extends StaticFactory {
 	createdAt?: Date;
 
 	isExpired(referenceDate: Date = new Date()): boolean {
-		return this.endAt < referenceDate;
+		return this.endAt <= referenceDate;
 	}
 
 	isActive(referenceDate: Date = new Date()): boolean {

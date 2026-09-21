@@ -22,7 +22,7 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		const now = new Date();
 		return (await this.repository.findOne(
 			{
-				endAt: { $gte: now },
+				endAt: { $gt: now },
 				gameVariant: { gameVersion: { game } },
 				startAt: { $lte: now },
 				user: userId,
@@ -35,7 +35,7 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		const now = new Date();
 		return (await this.repository.findOne(
 			{
-				endAt: { $gte: now },
+				endAt: { $gt: now },
 				gameVariant,
 				startAt: { $lte: now },
 				user: userId,
@@ -48,7 +48,7 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		const now = new Date();
 		return (await this.repository.findOne({
 			classroomGame: classroomGameId,
-			endAt: { $gte: now },
+			endAt: { $gt: now },
 			startAt: { $lte: now },
 			user: userId,
 		})) ?? undefined;

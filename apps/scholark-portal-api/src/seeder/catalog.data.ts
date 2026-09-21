@@ -58,6 +58,7 @@ export interface GameVersionSeed {
 export interface PublicOfferSeed {
 	id: string;
 	gameVersionSeedId: string;
+	language: string;
 	price: MoneySeed;
 }
 
@@ -413,14 +414,18 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 	}] : []),
 ]);
 
-export const publicOfferSeedList: PublicOfferSeed[] = gameVersionSeedList.map((gameVersionSeed, index) => ({
-	id: `00000000-0000-4000-8000-${String(601 + index).padStart(12, '0')}`,
+const publicOfferLanguageList = ['en', 'es'];
+
+// Each game version gets one public offer per language, all on default-mode game variants.
+export const publicOfferSeedList: PublicOfferSeed[] = gameVersionSeedList.flatMap((gameVersionSeed, versionIndex) => publicOfferLanguageList.map((language, languageIndex) => ({
+	id: `00000000-0000-4000-8000-${String(601 + versionIndex * publicOfferLanguageList.length + languageIndex).padStart(12, '0')}`,
 	gameVersionSeedId: gameVersionSeed.id,
+	language,
 	price: {
 		minorUnitAmount: createPublicOfferMoneyAmount(),
 		currency: Currency.USD,
 	},
-}));
+})));
 
 export const gameCustomizationSeedList: GameCustomizationSeed[] = [
 	{

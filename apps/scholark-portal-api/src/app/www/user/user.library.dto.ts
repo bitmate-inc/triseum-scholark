@@ -83,6 +83,9 @@ class UserLibraryItemResponseDto {
 	@ApiProperty()
 	isActive!: boolean;
 
+	@ApiProperty({ enum: ['active', 'scheduled', 'expired'] })
+	status!: 'active' | 'scheduled' | 'expired';
+
 }
 
 export class UserLibraryResponseDto {
@@ -91,6 +94,8 @@ export class UserLibraryResponseDto {
 	itemList!: UserLibraryItemResponseDto[];
 
 	static fromQueryResult(result: UserLibraryItem[]): UserLibraryResponseDto {
+		const now = new Date();
+
 		return {
 			itemList: result.map(({ license }) => {
 				const classroomGame = license.classroomGame;
@@ -121,6 +126,7 @@ export class UserLibraryResponseDto {
 					id: license.id!,
 					isActive: license.isActive(),
 					startAt: license.startAt,
+					status: license.isActive(now) ? 'active' : license.startAt > now ? 'scheduled' : 'expired',
 				};
 			}),
 		};

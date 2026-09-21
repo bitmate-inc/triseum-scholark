@@ -26,6 +26,7 @@ export type UserLibraryItem = {
 	endAt: string;
 	createdAt: string;
 	isActive: boolean;
+	status: "active" | "scheduled" | "expired";
 };
 
 export type UserLibraryResponse = { itemList: UserLibraryItem[] };

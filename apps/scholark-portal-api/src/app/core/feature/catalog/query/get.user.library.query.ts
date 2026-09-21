@@ -27,7 +27,23 @@ export class GetUserLibraryQuery {
 			},
 		);
 
-		return licenseList.map((license) => ({ license }));
+		return licenseList
+			.sort((firstLicense, secondLicense) => {
+				const now = new Date();
+				const getStatusOrder = (license: GameLicense): number => {
+					if (license.isActive(now)) return 2;
+					if (license.startAt > now) return 1;
+
+					return 0;
+				};
+				const firstStatusOrder = getStatusOrder(firstLicense);
+				const secondStatusOrder = getStatusOrder(secondLicense);
+
+				return secondStatusOrder - firstStatusOrder
+					|| secondLicense.endAt.getTime() - firstLicense.endAt.getTime()
+					|| secondLicense.createdAt!.getTime() - firstLicense.createdAt!.getTime();
+			})
+			.map((license) => ({ license }));
 	}
 
 }
