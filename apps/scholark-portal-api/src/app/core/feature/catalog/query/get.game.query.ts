@@ -7,8 +7,8 @@ import { GetOneQueryData } from '../../../../../lib/entity/query/get.one.query';
 import { GetOneFilterByDto, IncludeDto } from '../../../../../lib/entity/query/query.dto';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Game } from '../../game/model/game.entity';
-import { GameProduct } from '../../game/model/game.product.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
+import { PublicGameOffer } from '../../game/model/public.game.offer.entity';
 
 export class GetGameFilterByDto extends GetOneFilterByDto {
 
@@ -19,7 +19,7 @@ export class GetGameFilterByDto extends GetOneFilterByDto {
 
 export class GetGameIncludeDto extends IncludeDto {
 
-	publisherList?: boolean;
+	publisher?: boolean;
 	taxonomyList?: boolean;
 
 }
@@ -38,7 +38,7 @@ export class GetGameQueryResult extends StaticFactory {
 
 	game?: Game;
 	gameVersionList: GameVersion[] = [];
-	gameProductList: GameProduct[] = [];
+	publicOfferList: PublicGameOffer[] = [];
 
 }
 
@@ -50,8 +50,8 @@ export class GetGameQuery {
 		private readonly gameRepository: EntityRepository<Game>,
 		@InjectRepository(GameVersion)
 		private readonly gameVersionRepository: EntityRepository<GameVersion>,
-		@InjectRepository(GameProduct)
-		private readonly gameProductRepository: EntityRepository<GameProduct>,
+		@InjectRepository(PublicGameOffer)
+		private readonly publicOfferRepository: EntityRepository<PublicGameOffer>,
 	) {}
 
 	async execute(data: GetGameQueryData): Promise<GetGameQueryResult> {
@@ -60,7 +60,7 @@ export class GetGameQuery {
 		const gameSlug = data.filterBy?.slug;
 
 		if (!gameId && !gameSlug) {
-			return { game: undefined, gameProductList: [], gameVersionList: [] };
+			return GetGameQueryResult.create({});
 		}
 
 		if (data.include?.taxonomyList) {
@@ -69,8 +69,8 @@ export class GetGameQuery {
 				.leftJoinAndSelect('taxonomy.taxonomyTerm', 'taxonomyTerm');
 		}
 
-		if (data.include?.publisherList) {
-			queryBuilder.leftJoinAndSelect('game.publisherList', 'publisher');
+		if (data.include?.publisher) {
+			queryBuilder.leftJoinAndSelect('game.publisher', 'publisher');
 		}
 
 		queryBuilder.andWhere({ publishedAt: { $lte: new Date() } });
@@ -93,12 +93,15 @@ export class GetGameQuery {
 			{ game, publishedAt: { $lte: new Date() } },
 			{ orderBy: { publishedAt: 'desc' } },
 		);
-		const gameProductList = await this.gameProductRepository.find(
+
+		const publicOfferList = await this.publicOfferRepository.find(
 			{ gameVariant: { gameVersion: { $in: gameVersionList } }, isAvailable: true },
 			{ populate: ['gameVariant'] },
 		);
 
-		return GetGameQueryResult.create({ game: game ?? undefined, gameVersionList, gameProductList });
+		return GetGameQueryResult.create({ 
+			game, gameVersionList, publicOfferList 
+		});
 	}
 
 }

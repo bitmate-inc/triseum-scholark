@@ -4,19 +4,19 @@ import { Injectable } from '@nestjs/common';
 
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
-import { GameProduct } from '../model/game.product.entity';
+import { PublicGameOffer } from '../model/public.game.offer.entity';
 
 @Injectable()
-export class GameProductRepository extends MikroOrmEntityRepository<GameProduct> {
+export class PublicGameOfferRepository extends MikroOrmEntityRepository<PublicGameOffer> {
 
 	constructor(
-		@InjectRepository(GameProduct) repository: EntityRepository<GameProduct>,
+		@InjectRepository(PublicGameOffer) repository: EntityRepository<PublicGameOffer>,
 		transactionContext: MikroOrmTransactionContext,
 	) {
-		super(GameProduct, repository, transactionContext);
+		super(PublicGameOffer, repository, transactionContext);
 	}
 
-	async findForAcquisition(id: string): Promise<GameProduct | undefined> {
+	async findForAcquisition(id: string): Promise<PublicGameOffer | undefined> {
 		return (await this.repository.findOne(
 			{
 				id,

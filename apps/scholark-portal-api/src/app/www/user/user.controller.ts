@@ -6,24 +6,30 @@ import {
 	NotFoundException,
 	Patch,
 	Put,
+	Query,
 	UnprocessableEntityException,
-	UseGuards
+	UseGuards,
 } from '@nestjs/common';
 import {
 	ApiCookieAuth,
 	ApiOkResponse,
-	ApiTags
+	ApiTags,
 } from '@nestjs/swagger';
 
 import { ChangePasswordCommand, ChangePasswordCommandData } from '../../core/feature/account/command/auth/change.password.command';
 import { GetUserLibraryQuery } from '../../core/feature/catalog/query/get.user.library.query';
+import { GamePaymentAttemptRepository } from '../../core/feature/game/repository/game.payment.attempt.repository';
 import { UpdateUserCommand, UpdateUserCommandData } from '../../core/feature/user/command/update.user.command';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
 import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import { MessageResponseDto, UserResponseDto } from '../auth/auth.dto';
 import { SessionAuthGuard } from '../auth/session.auth.guard';
-import { ChangePasswordRequestDto, UpdateProfileRequestDto } from './user.dto';
+import {
+	ChangePasswordRequestDto,
+	GameCheckoutStatusResponseDto,
+	UpdateProfileRequestDto,
+} from './user.dto';
 import { UserLibraryResponseDto } from './user.library.dto';
 
 @ApiTags('Current User')
@@ -36,6 +42,7 @@ export class UserController {
 		private readonly changePasswordCommand: ChangePasswordCommand,
 		private readonly getUserQuery: GetUserQuery,
 		private readonly getUserLibraryQuery: GetUserLibraryQuery,
+		private readonly gamePaymentAttemptRepository: GamePaymentAttemptRepository,
 		private readonly updateUserCommand: UpdateUserCommand,
 	) {
 	}
@@ -60,6 +67,19 @@ export class UserController {
 		}
 
 		return UserResponseDto.fromEntity(queryResult.user);
+	}
+
+	@Get('checkout-status')
+	@ApiOkResponse({ type: GameCheckoutStatusResponseDto })
+	async getCheckoutStatus(
+		@AuthSession() session: AuthSessionData,
+		@Query('checkoutSessionId') checkoutSessionId: string,
+	): Promise<GameCheckoutStatusResponseDto> {
+		const attempt = await this.gamePaymentAttemptRepository.findByCheckoutSessionIdAndUser(checkoutSessionId, session.user.id);
+		if (!attempt) {
+			throw new NotFoundException('Checkout session not found');
+		}
+		return { status: attempt.status };
 	}
 
 	@Patch()

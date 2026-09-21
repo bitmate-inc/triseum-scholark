@@ -10,7 +10,7 @@ import { Game } from '../../game/model/game.entity';
 
 export class GetFeaturedGameListIncludeDto extends IncludeDto {
 
-	publisherList?: boolean;
+	publisher?: boolean;
 	taxonomyList?: boolean;
 
 }
@@ -47,8 +47,8 @@ export class GetFeaturedGameListQuery {
 				.leftJoinAndSelect('taxonomy.taxonomyTerm', 'taxonomyTerm');
 		}
 
-		if (data.include?.publisherList) {
-			queryBuilder.leftJoinAndSelect('game.publisherList', 'publisher');
+		if (data.include?.publisher) {
+			queryBuilder.leftJoinAndSelect('game.publisher', 'publisher');
 		}
 
 		queryBuilder.andWhere({

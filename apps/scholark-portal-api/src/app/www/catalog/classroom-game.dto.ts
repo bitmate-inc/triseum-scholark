@@ -73,7 +73,7 @@ export class ClassroomGameResponseDto {
 	game!: GameResponseDto;
 
 	@ApiProperty({ format: 'uuid' })
-	contractGameProductId!: string;
+	contractGameOfferId!: string;
 
 	@ApiProperty({ enum: InstitutionContractDesignatedPayor, enumName: 'InstitutionContractDesignatedPayor' })
 	designatedPayor!: InstitutionContractDesignatedPayor;
@@ -105,13 +105,13 @@ export class ClassroomGameResponseDto {
 				slug: classroomGame.classroom.slug,
 			},
 			createdAt: classroomGame.createdAt!,
-			game: GameResponseDto.fromEntity(classroomGame.contractGameProduct.gameProduct.gameVariant.gameVersion.game),
-			contractGameProductId: classroomGame.contractGameProduct.id!,
-			designatedPayor: classroomGame.contractGameProduct.contract.designatedPayor,
-			gameVersionId: classroomGame.contractGameProduct.gameProduct.gameVariant.gameVersion.id!,
+			game: GameResponseDto.fromEntity(classroomGame.contractGameOffer.gameVariant.gameVersion.game),
+			contractGameOfferId: classroomGame.contractGameOffer.id!,
+			designatedPayor: classroomGame.contractGameOffer.contract.designatedPayor,
+			gameVersionId: classroomGame.contractGameOffer.gameVariant.gameVersion.id!,
 			id: classroomGame.id!,
 			endAt: classroomGame.endAt,
-			licenseDurationDays: classroomGame.contractGameProduct.licenseDurationDays,
+			licenseDurationDays: classroomGame.contractGameOffer.licenseDurationDays,
 			startAt: classroomGame.startAt,
 			updatedAt: classroomGame.updatedAt!,
 		};

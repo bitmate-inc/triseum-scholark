@@ -21,6 +21,7 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { DebugModule } from './infrastructure/debug/debug.module';
 import { NodemailerModule } from './infrastructure/nodemailer/nodemailer.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
+import { StripeModule } from './infrastructure/stripe/stripe.module';
 import { Validator } from './infrastructure/validation/validator/validator';
 
 @Global()
@@ -34,6 +35,7 @@ export class CoreModule {
 			}),
 			RedisModule.forRootAsync(redisConfig.asProvider()),
 			RedisModule.forConnection(),
+			StripeModule,
 			DatabaseModule,
 			DebugModule,
 			UserModule.forRoot(),

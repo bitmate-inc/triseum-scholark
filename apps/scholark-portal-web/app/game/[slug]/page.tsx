@@ -9,7 +9,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Fragment } from "react";
 
 import styles from "../../../asset/style/site.module.css";
 import { GameVersionList } from "../../../feature/catalog/client/component/game-version-list";
@@ -64,18 +63,13 @@ export default async function GamePage({ params }: GamePageProps) {
 					<Separator/>
 					<dl className={styles.gameFacts}>
 						<div><dt><Clock3 aria-hidden="true"/> Typical length</dt><dd>{formatEstimatedLength(game)}</dd></div>
-						{game.publisherList.length ? (
+						{game.publisher ? (
 							<div>
-								<dt><Building2 aria-hidden="true"/> {game.publisherList.length === 1 ? "Publisher" : "Publishers"}</dt>
+								<dt><Building2 aria-hidden="true"/> Publisher</dt>
 								<dd>
-									{game.publisherList.map((publisher, index) => (
-										<Fragment key={publisher.id}>
-											{index > 0 ? ", " : null}
-											{publisher.websiteUrl ? (
-												<a href={publisher.websiteUrl} rel="noreferrer" target="_blank">{publisher.name}</a>
-											) : publisher.name}
-										</Fragment>
-									))}
+									{game.publisher.websiteUrl ? (
+										<a href={game.publisher.websiteUrl} rel="noreferrer" target="_blank">{game.publisher.name}</a>
+									) : game.publisher.name}
 								</dd>
 							</div>
 						) : null}

@@ -3,14 +3,17 @@ import {
 	ManyToOne,
 	PrimaryKey,
 	Property,
+	Unique,
 } from '@mikro-orm/decorators/legacy';
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
+import { ClassroomGame } from '../../education/model/classroom.game.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
 import { GameVariant } from './game.variant.entity';
 
 @Entity({ tableName: 'game_license' })
+@Unique({ properties: ['user', 'classroomGame'] })
 export class GameLicense extends StaticFactory {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
@@ -18,6 +21,9 @@ export class GameLicense extends StaticFactory {
 
 	@ManyToOne(() => User, { deleteRule: 'cascade' })
 	user!: User;
+
+	@ManyToOne(() => ClassroomGame, { nullable: true, deleteRule: 'restrict' })
+	classroomGame?: ClassroomGame;
 
 	@ManyToOne(() => GameVariant, { deleteRule: 'restrict' })
 	gameVariant!: GameVariant;

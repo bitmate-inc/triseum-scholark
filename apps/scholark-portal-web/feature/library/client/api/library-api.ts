@@ -18,6 +18,7 @@ export type UserLibraryItem = {
 		name: string;
 		slug: string;
 	};
+	classroomGameId?: string;
 	startAt: string;
 	endAt: string;
 	createdAt: string;

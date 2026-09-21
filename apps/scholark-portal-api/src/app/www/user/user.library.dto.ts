@@ -58,6 +58,9 @@ class UserLibraryItemResponseDto {
 	@ApiPropertyOptional({ type: UserLibraryClassroomResponseDto })
 	classroom?: UserLibraryClassroomResponseDto;
 
+	@ApiPropertyOptional()
+	classroomGameId?: string;
+
 	@ApiProperty()
 	startAt!: Date;
 
@@ -79,35 +82,33 @@ export class UserLibraryResponseDto {
 
 	static fromQueryResult(result: UserLibraryItem[]): UserLibraryResponseDto {
 		return {
-			itemList: result.flatMap(({ enrollmentList, license }) => {
-				const enrollmentListOrStandalone = enrollmentList.length ? enrollmentList : [undefined];
-				return enrollmentListOrStandalone.map((enrollment) => {
-					const customizationId = license.customization?.id;
+			itemList: result.map(({ license }) => {
+				const classroomGame = license.classroomGame;
 
-					return {
-						classroom: enrollment ? {
-							id: enrollment.classroomGame.classroom.id!,
-							name: enrollment.classroomGame.classroom.name,
-							slug: enrollment.classroomGame.classroom.slug,
-						} : undefined,
-						customizationId,
-						endAt: license.endAt,
-						createdAt: license.createdAt!,
-						game: {
-							id: license.gameVariant.gameVersion.game.id!,
-							slug: license.gameVariant.gameVersion.game.slug,
-							title: license.gameVariant.gameVersion.game.title,
-						},
-						gameVersion: {
-							id: license.gameVariant.gameVersion.id!,
-							publisherVersion: license.gameVariant.gameVersion.publisherVersion,
-							runUrl: license.gameVariant.gameVersion.runUrl,
-						},
-						id: enrollment ? `${license.id}:${enrollment.classroomGame.id}` : license.id!,
-						isActive: license.isActive(),
-						startAt: license.startAt,
-					};
-				});
+				return {
+					classroom: classroomGame ? {
+						id: classroomGame.classroom.id!,
+						name: classroomGame.classroom.name,
+						slug: classroomGame.classroom.slug,
+					} : undefined,
+					classroomGameId: classroomGame?.id,
+					customizationId: license.customization?.id,
+					endAt: license.endAt,
+					createdAt: license.createdAt!,
+					game: {
+						id: license.gameVariant.gameVersion.game.id!,
+						slug: license.gameVariant.gameVersion.game.slug,
+						title: license.gameVariant.gameVersion.game.title,
+					},
+					gameVersion: {
+						id: license.gameVariant.gameVersion.id!,
+						publisherVersion: license.gameVariant.gameVersion.publisherVersion,
+						runUrl: license.gameVariant.gameVersion.runUrl,
+					},
+					id: license.id!,
+					isActive: license.isActive(),
+					startAt: license.startAt,
+				};
 			}),
 		};
 	}

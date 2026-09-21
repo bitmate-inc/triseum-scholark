@@ -39,7 +39,7 @@ export function GameVersionList({ game }: { game: GameDetails }) {
 								{version.description ? <p className={styles.versionDescription}>{version.description}</p> : <span aria-hidden="true"/>}
 								<div className={styles.versionAction}>
 									{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>In Library</Badge> : licenseList.length ? <Badge variant="outline">In Library (Expired)</Badge> : null}
-									{!activeLicense && licenseStateReady ? (
+									{!activeLicense && version.publicOfferId && licenseStateReady ? (
 										<Link className={buttonVariants({ size: "sm" })} href={`/game/${game.slug}/acquire?version=${encodeURIComponent(version.id)}`}>
 											<MonitorPlay data-icon="inline-start"/>Acquire
 										</Link>

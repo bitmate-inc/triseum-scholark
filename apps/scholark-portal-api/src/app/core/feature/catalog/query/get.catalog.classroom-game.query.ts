@@ -47,13 +47,12 @@ function addClassroomGameRelations(
 	queryBuilder
 		.leftJoinAndSelect('classroomGame.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
-		.leftJoinAndSelect('classroomGame.contractGameProduct', 'contractGameProduct')
-		.leftJoinAndSelect('contractGameProduct.contract', 'contract')
-		.leftJoinAndSelect('contractGameProduct.gameProduct', 'gameProduct')
-		.leftJoinAndSelect('gameProduct.gameVariant', 'gameVariant')
+		.leftJoinAndSelect('classroomGame.contractGameOffer', 'contractGameOffer')
+		.leftJoinAndSelect('contractGameOffer.contract', 'contract')
+		.leftJoinAndSelect('contractGameOffer.gameVariant', 'gameVariant')
 		.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
 		.leftJoinAndSelect('gameVersion.game', 'game')
-		.leftJoinAndSelect('game.publisherList', 'publisher')
+		.leftJoinAndSelect('game.publisher', 'publisher')
 		.leftJoinAndSelect('game.taxonomyList', 'gameTaxonomy')
 		.leftJoinAndSelect('gameTaxonomy.taxonomyTerm', 'taxonomyTerm');
 }
@@ -71,7 +70,7 @@ export class GetCatalogClassroomGameListQuery {
 
 		addClassroomGameRelations(queryBuilder);
 
-		queryBuilder.distinct().andWhere({ contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } } } });
+		queryBuilder.distinct().andWhere({ contractGameOffer: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } } });
 
 		if (data.filterBy?.id) {
 			queryBuilder.andWhere({ id: { $in: data.filterBy.id } });
@@ -86,11 +85,11 @@ export class GetCatalogClassroomGameListQuery {
 		}
 
 		if (data.filterBy?.gameId) {
-			queryBuilder.andWhere({ contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: data.filterBy.gameId } } } } });
+			queryBuilder.andWhere({ contractGameOffer: { gameVariant: { gameVersion: { game: data.filterBy.gameId } } } });
 		}
 
 		if (data.filterBy?.taxonomyTermId) {
-			queryBuilder.andWhere({ contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } } } });
+			queryBuilder.andWhere({ contractGameOffer: { gameVariant: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
@@ -128,7 +127,7 @@ export class GetCatalogClassroomGameQuery {
 		addClassroomGameRelations(queryBuilder);
 		
 		queryBuilder.where({
-			contractGameProduct: { gameProduct: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } } },
+			contractGameOffer: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } },
 			id: data.filterBy.id,
 		});
 

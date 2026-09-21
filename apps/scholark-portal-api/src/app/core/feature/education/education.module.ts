@@ -6,23 +6,20 @@ import { GameModule } from '../game/game.module';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { Classroom } from './model/classroom.entity';
 import { ClassroomGame } from './model/classroom.game.entity';
-import { ClassroomGameLicence } from './model/classroom.game.licence.entity';
 import { Course } from './model/course.entity';
 import { InstitutionContract } from './model/institution.contract.entity';
-import { InstitutionContractGameProduct } from './model/institution.contract.game.product.entity';
+import { InstitutionContractGameOffer } from './model/institution.contract.game.offer.entity';
 import { Institution } from './model/institution.entity';
 import { Instructor } from './model/instructor.entity';
-import { ClassroomGameLicenceRepository } from './repository/classroom.game.licence.repository';
 import { ClassroomGameRepository } from './repository/classroom.game.repository';
-import { InstitutionContractGameProductRepository } from './repository/institution.contract.game.product.repository';
+import { InstitutionContractGameOfferRepository } from './repository/institution.contract.game.offer.repository';
 
 @Global()
 @Module({
 	exports: [
 		AcquireClassroomGameCommand,
-		ClassroomGameLicenceRepository,
 		ClassroomGameRepository,
-		InstitutionContractGameProductRepository,
+		InstitutionContractGameOfferRepository,
 		MikroOrmModule,
 	],
 	imports: [
@@ -31,8 +28,7 @@ import { InstitutionContractGameProductRepository } from './repository/instituti
 			Course,
 			Classroom,
 			ClassroomGame,
-			ClassroomGameLicence,
-			InstitutionContractGameProduct,
+			InstitutionContractGameOffer,
 			Instructor,
 			InstitutionContract,
 		]),
@@ -41,9 +37,8 @@ import { InstitutionContractGameProductRepository } from './repository/instituti
 	],
 	providers: [
 		AcquireClassroomGameCommand,
-		ClassroomGameLicenceRepository,
 		ClassroomGameRepository,
-		InstitutionContractGameProductRepository,
+		InstitutionContractGameOfferRepository,
 	],
 })
 export class EducationModule {}

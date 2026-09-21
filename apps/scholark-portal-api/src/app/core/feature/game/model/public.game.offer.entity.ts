@@ -9,8 +9,8 @@ import {
 import { Money } from '../../../shared/commerce/model/money.entity';
 import { GameVariant } from './game.variant.entity';
 
-@Entity({ tableName: 'game_product' })
-export class GameProduct {
+@Entity({ tableName: 'public_game_offer' })
+export class PublicGameOffer {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;

@@ -1,6 +1,7 @@
 import {
 	Embedded,
 	Entity,
+	Enum,
 	ManyToOne,
 	PrimaryKey,
 	Property,
@@ -8,19 +9,20 @@ import {
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Money } from '../../../shared/commerce/model/money.entity';
+import { ClassroomGame } from '../../education/model/classroom.game.entity';
 import { InstitutionContractGameOffer } from '../../education/model/institution.contract.game.offer.entity';
 import { User } from '../../user/model/user.entity';
-import { GameLicense } from './game.license.entity';
+import { GameCustomization } from './game.customization.entity';
 import { PublicGameOffer } from './public.game.offer.entity';
 
-export enum GameAcquisitionMechanism {
-	USER_PAID = 'user_paid',
-	INSTITUTION_FUNDED = 'institution_funded',
-	COMPLIMENTARY = 'complimentary',
+export enum GamePaymentAttemptStatus {
+	PENDING = 'pending',
+	FULFILLED = 'fulfilled',
+	FAILED = 'failed',
 }
 
-@Entity({ tableName: 'game_acquisition' })
-export class GameAcquisition extends StaticFactory {
+@Entity({ tableName: 'game_payment_attempt' })
+export class GamePaymentAttempt extends StaticFactory {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
@@ -34,16 +36,31 @@ export class GameAcquisition extends StaticFactory {
 	@ManyToOne(() => InstitutionContractGameOffer, { deleteRule: 'restrict', nullable: true })
 	institutionContractGameOffer?: InstitutionContractGameOffer;
 
-	@ManyToOne(() => GameLicense, { deleteRule: 'restrict' })
-	license!: GameLicense;
+	@ManyToOne(() => ClassroomGame, { deleteRule: 'restrict', nullable: true })
+	classroomGame?: ClassroomGame;
 
-	@Property({ type: 'string' })
-	mechanism!: GameAcquisitionMechanism;
+	@Property({ nullable: true, unique: true })
+	stripeCheckoutSessionId?: string;
+
+	@Property({ nullable: true })
+	stripePaymentIntentId?: string;
+
+	@Enum(() => GamePaymentAttemptStatus)
+	status: GamePaymentAttemptStatus = GamePaymentAttemptStatus.PENDING;
 
 	@Embedded(() => Money, { prefix: 'price_' })
 	price!: Money;
 
+	@Property()
+	licenseDurationDays!: number;
+
+	@ManyToOne(() => GameCustomization, { deleteRule: 'restrict', nullable: true })
+	customization?: GameCustomization;
+
 	@Property({ onCreate: () => new Date() })
 	createdAt?: Date;
+
+	@Property({ nullable: true })
+	fulfilledAt?: Date;
 
 }

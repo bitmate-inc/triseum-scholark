@@ -120,6 +120,9 @@ importers:
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3(supports-color@8.1.1)
+      stripe:
+        specifier: ^18.5.0
+        version: 18.5.0(@types/node@24.13.3)
     devDependencies:
       '@jest/globals':
         specifier: ^30.4.1
@@ -5459,6 +5462,15 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
+
+  stripe@18.5.0:
+    resolution: {integrity: sha512-Hp+wFiEQtCB0LlNgcFh5uVyKznpDjzyUZ+CNVEf+I3fhlYvh7rZruIg+jOwzJRCpy0ZTPMjlzm7J2/M2N6d+DA==}
+    engines: {node: '>=12.*'}
+    peerDependencies:
+      '@types/node': '>=12.x.x'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   strtok3@10.3.5:
     resolution: {integrity: sha512-ki4hZQfh5rX0QDLLkOCj+h+CVNkqmp/CMf8v8kZpkNVK6jGQooMytqzLZYUVYIZcFZ6yDB70EfD8POcFXiF5oA==}
@@ -11517,6 +11529,12 @@ snapshots:
   strip-final-newline@2.0.0: {}
 
   strip-json-comments@3.1.1: {}
+
+  stripe@18.5.0(@types/node@24.13.3):
+    dependencies:
+      qs: 6.16.0
+    optionalDependencies:
+      '@types/node': 24.13.3
 
   strtok3@10.3.5:
     dependencies:

@@ -59,7 +59,7 @@ services:
       retries: 5
 
   mc:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     container_name: scholark-mc
     volumes:
       - ./data/minio:/opt/minio/data

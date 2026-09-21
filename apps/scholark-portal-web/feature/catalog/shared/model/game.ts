@@ -29,7 +29,7 @@ export type Game = {
 	summary?: string;
 	description?: string;
 	cover?: Media;
-	publisherList: Publisher[];
+	publisher: Publisher;
 	taxonomyList: GameTaxonomyTerm[];
 	estimatedLengthMinutesMin?: number;
 	estimatedLengthMinutesMax?: number;
@@ -42,7 +42,7 @@ export type GameDetails = Game & { gameVersionList: GameVersion[] };
 
 export type GameVersion = {
 	id: string;
-	productId: string;
+	publicOfferId?: string;
 	description?: string;
 	publisherVersion: string;
 	runUrl: string;

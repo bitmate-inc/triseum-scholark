@@ -5,8 +5,8 @@ import { Button, buttonVariants } from "@repo/ui/button";
 import {
 	CheckCircle2,
 	Clock3,
-	MonitorPlay
-	,KeyRound
+	KeyRound,
+	MonitorPlay,
 } from "lucide-react";
 import Link from "next/link";
 

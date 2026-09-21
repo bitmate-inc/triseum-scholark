@@ -1,7 +1,7 @@
 import { Collection } from '@mikro-orm/core';
 import {
 	Entity,
-	ManyToMany,
+	ManyToOne,
 	OneToMany,
 	PrimaryKey,
 	Property,
@@ -32,8 +32,8 @@ export class Game {
 	@Property({ nullable: true, type: 'json' })
 	cover?: Media;
 
-	@ManyToMany({ entity: () => Publisher, owner: true })
-	publisherList = new Collection<Publisher>(this);
+	@ManyToOne(() => Publisher, { deleteRule: 'restrict' })
+	publisher!: Publisher;
 
 	@OneToMany(() => GameTaxonomyTerm, (gameTaxonomyTerm) => gameTaxonomyTerm.gameId)
 	taxonomyList = new Collection<GameTaxonomyTerm>(this);

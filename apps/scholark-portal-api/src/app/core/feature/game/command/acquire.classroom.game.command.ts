@@ -1,19 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { Exclude } from 'class-transformer';
-import { IsUUID } from 'class-validator';
+import {
+	IsInt,
+	IsOptional,
+	IsUUID,
+	Min,
+} from 'class-validator';
 
 import { MikroOrmUnitOfWork } from '../../../../../lib/database/mikro.orm.unit.of.work';
 import { CommandResult } from '../../../../../lib/entity/command/command.result';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { ValidationResult } from '../../../../../lib/validator/model/validation.result';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
+import { Money } from '../../../shared/commerce/model/money.entity';
 import { ClassroomGame } from '../../education/model/classroom.game.entity';
-import { ClassroomGameLicence } from '../../education/model/classroom.game.licence.entity';
-import { ClassroomGameLicenceRepository } from '../../education/repository/classroom.game.licence.repository';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
-import { InstitutionContractGameProductRepository } from '../../education/repository/institution.contract.game.product.repository';
+import { InstitutionContractGameOfferRepository } from '../../education/repository/institution.contract.game.offer.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
+import { GameCustomization } from '../model/game.customization.entity';
 import { GameLicense } from '../model/game.license.entity';
 import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
@@ -26,15 +31,23 @@ export class AcquireClassroomGameCommandData extends StaticFactory {
 	@IsUUID()
 	classroomGameId!: string;
 
+	@IsInt()
+	@IsOptional()
+	@Min(1)
+	licenseDurationDays?: number;
+
+	@IsOptional()
+	price?: Money;
+
+	@IsOptional()
+	customization?: GameCustomization;
+
 }
 
 export class AcquireClassroomGameCommandResult extends CommandResult {
 
 	classroomGame?: ClassroomGame;
 
-	@Exclude()
-	enrollment?: ClassroomGameLicence;
-	
 	@Exclude()
 	license?: GameLicense;
 
@@ -70,10 +83,9 @@ export class AcquireClassroomGameCommand {
 	constructor(
 		private readonly validator: Validator,
 		private readonly classroomGameRepository: ClassroomGameRepository,
-		private readonly classroomGameLicenceRepository: ClassroomGameLicenceRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
 		private readonly gameAcquisitionRepository: GameAcquisitionRepository,
-		private readonly contractGameRepository: InstitutionContractGameProductRepository,
+		private readonly contractGameRepository: InstitutionContractGameOfferRepository,
 		private readonly unitOfWork: MikroOrmUnitOfWork,
 		private readonly userRepository: UserEntityRepository,
 	) {}
@@ -105,9 +117,9 @@ export class AcquireClassroomGameCommand {
 			return AcquireClassroomGameCommandResult.userNotFoundFail();
 		}
 
-		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGameProduct(
+		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGameOffer(
 			classroomGame.classroom.institution,
-			classroomGame.contractGameProduct,
+			classroomGame.contractGameOffer,
 		);
 
 		if (!activeContractGame) {
@@ -115,51 +127,44 @@ export class AcquireClassroomGameCommand {
 		}
 
 		if (classroomGame.customization
-			&& classroomGame.customization.gameVersion !== classroomGame.contractGameProduct.gameProduct.gameVariant.gameVersion) {
+			&& classroomGame.customization.gameVersion !== classroomGame.contractGameOffer.gameVariant.gameVersion) {
 			return AcquireClassroomGameCommandResult.classroomGameUnavailableFail();
 		}
 
-		const existingEnrollment = await this.classroomGameLicenceRepository.findByClassroomGameAndUser(
-			classroomGame.id!,
+		const existingLicense = await this.gameLicenseRepository.findByUserAndClassroomGame(
 			user.id!,
+			classroomGame.id!,
 		);
 
-		if (existingEnrollment) {
+		if (existingLicense) {
 			return AcquireClassroomGameCommandResult.classroomGameAlreadyAcquiredFail();
 		}
 
-		let license: GameLicense | undefined;
-		
-		if (!classroomGame.customization) {
-			license = await this.gameLicenseRepository.findActiveByUserAndGameVariant(
-				user.id!,
-				classroomGame.contractGameProduct.gameProduct.gameVariant,
-			);
-		}
+		const customization = data.customization ?? classroomGame.customization;
+		const licenseDurationDays = data.licenseDurationDays ?? classroomGame.contractGameOffer.licenseDurationDays;
 
-		if (!license) {
-			license = GameLicense.createForDuration(classroomGame.contractGameProduct.licenseDurationDays, {
-				customization: classroomGame.customization,
-				gameVariant: classroomGame.contractGameProduct.gameProduct.gameVariant,
+		let license = GameLicense.createForDuration(
+			licenseDurationDays,
+			{
+				classroomGame,
+				customization,
+				gameVariant: classroomGame.contractGameOffer.gameVariant,
 				user,
-			});
-			license = await this.gameLicenseRepository.save(license);
-		}
+			},
+		);
+		license = await this.gameLicenseRepository.save(license);
+
+		const acquisitionPrice = data.price ?? classroomGame.contractGameOffer.price;
 
 		await this.gameAcquisitionRepository.save(GameAcquisition.create({
 			license,
 			mechanism: GameAcquisitionMechanism.USER_PAID,
-			price: classroomGame.contractGameProduct.gameProduct.price,
-			product: classroomGame.contractGameProduct.gameProduct,
+			price: acquisitionPrice,
+			institutionContractGameOffer: classroomGame.contractGameOffer,
 			user,
 		}));
 
-		const enrollment = await this.classroomGameLicenceRepository.save(ClassroomGameLicence.create({
-			classroomGame,
-			gameLicense: license,
-		}));
-
-		return AcquireClassroomGameCommandResult.success({ classroomGame, enrollment, license });
+		return AcquireClassroomGameCommandResult.success({ classroomGame, license });
 	}
 
 }

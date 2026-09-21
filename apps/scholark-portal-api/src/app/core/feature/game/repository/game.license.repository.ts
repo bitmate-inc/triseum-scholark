@@ -44,4 +44,14 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		)) ?? undefined;
 	}
 
+	async findByUserAndClassroomGame(userId: string, classroomGameId: string): Promise<GameLicense | undefined> {
+		const now = new Date();
+		return (await this.repository.findOne({
+			classroomGame: classroomGameId,
+			endAt: { $gte: now },
+			startAt: { $lte: now },
+			user: userId,
+		})) ?? undefined;
+	}
+
 }

@@ -7,7 +7,7 @@ import {
 
 import { GameCustomization } from '../../game/model/game.customization.entity';
 import { Classroom } from './classroom.entity';
-import { InstitutionContractGameProduct } from './institution.contract.game.product.entity';
+import { InstitutionContractGameOffer } from './institution.contract.game.offer.entity';
 
 @Entity({ tableName: 'classroom_game' })
 export class ClassroomGame {
@@ -18,8 +18,8 @@ export class ClassroomGame {
 	@ManyToOne(() => Classroom, { deleteRule: 'cascade' })
 	classroom!: Classroom;
 
-	@ManyToOne(() => InstitutionContractGameProduct, { deleteRule: 'restrict' })
-	contractGameProduct!: InstitutionContractGameProduct;
+	@ManyToOne(() => InstitutionContractGameOffer, { deleteRule: 'restrict' })
+	contractGameOffer!: InstitutionContractGameOffer;
 
 	@ManyToOne(() => GameCustomization, { nullable: true, deleteRule: 'restrict' })
 	customization?: GameCustomization;

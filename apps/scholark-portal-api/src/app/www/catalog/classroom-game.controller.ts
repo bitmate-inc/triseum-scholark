@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 
 import { GetCatalogClassroomGameListQuery, GetCatalogClassroomGameQuery } from '../../core/feature/catalog/query/get.catalog.classroom-game.query';
-import { AcquireClassroomGameCommand, AcquireClassroomGameCommandData } from '../../core/feature/game/command/acquire.classroom.game.command';
+import { CreateClassroomGameCheckoutCommandData, CreateGameCheckoutCommand } from '../../core/feature/game/command/create.game.checkout.command';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
 import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import { SessionAuthGuard } from '../auth/session.auth.guard';
@@ -29,13 +29,14 @@ import {
 	GetClassroomGameListResponseDto,
 	GetClassroomGameResponseDto,
 } from './classroom-game.dto';
+import { GameCheckoutResponseDto } from './game.dto';
 
 @ApiTags('Catalog Classroom Games')
 @Controller('api/v1/catalog/classroom-game')
 export class ClassroomGameController {
 
 	constructor(
-		private readonly acquireClassroomGameCommand: AcquireClassroomGameCommand,
+		private readonly createGameCheckoutCommand: CreateGameCheckoutCommand,
 		private readonly getClassroomGameListQuery: GetCatalogClassroomGameListQuery,
 		private readonly getClassroomGameQuery: GetCatalogClassroomGameQuery,
 	) {}
@@ -44,22 +45,22 @@ export class ClassroomGameController {
 	@HttpCode(200)
 	@UseGuards(SessionAuthGuard)
 	@ApiCookieAuth()
-	@ApiOperation({ summary: 'Acquire a classroom game without payment' })
+	@ApiOperation({ summary: 'Create a Stripe Checkout session for a classroom game' })
 	@ApiParam({ format: 'uuid', name: 'id' })
-	@ApiOkResponse({ type: GetClassroomGameResponseDto })
+	@ApiOkResponse({ type: GameCheckoutResponseDto })
 	async acquireClassroomGame(
 		@Param('id', ParseUUIDPipe) id: string,
 		@AuthSession() session: AuthSessionData,
-	): Promise<GetClassroomGameResponseDto> {
-		const result = await this.acquireClassroomGameCommand.execute(
-			AcquireClassroomGameCommandData.create({ classroomGameId: id, userId: session.user.id }),
+	): Promise<GameCheckoutResponseDto> {
+		const result = await this.createGameCheckoutCommand.createClassroomGameCheckout(
+			CreateClassroomGameCheckoutCommandData.create({ classroomGameId: id, userId: session.user.id }),
 		);
 
 		if (result.validationResult) {
 			throw new UnprocessableEntityException(result.validationResult);
 		}
 
-		return GetClassroomGameResponseDto.fromEntity(result.classroomGame!);
+		return { checkoutSessionId: result.checkoutSessionId!, checkoutUrl: result.checkoutUrl! };
 	}
 
 	@Get()

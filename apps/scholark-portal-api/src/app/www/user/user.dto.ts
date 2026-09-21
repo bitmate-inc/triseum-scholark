@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
 	IsString,
 	MaxLength,
-	MinLength
+	MinLength,
 } from 'class-validator';
 
 export class UpdateProfileRequestDto {
@@ -30,5 +30,12 @@ export class ChangePasswordRequestDto {
 	@MaxLength(128)
 	@MinLength(8)
 	password!: string;
+
+}
+
+export class GameCheckoutStatusResponseDto {
+
+	@ApiProperty({ enum: ['pending', 'fulfilled', 'failed'] })
+	status!: 'pending' | 'fulfilled' | 'failed';
 
 }

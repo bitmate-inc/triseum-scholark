@@ -5,6 +5,7 @@ import { ClassroomGameController } from './classroom-game.controller';
 import { CourseController } from './course.controller';
 import { GameController } from './game.controller';
 import { InstitutionController } from './institution.controller';
+import { StripeWebhookController } from './stripe.webhook.controller';
 
 @Module({
 	controllers: [
@@ -13,6 +14,7 @@ import { InstitutionController } from './institution.controller';
 		CourseController,
 		ClassroomController,
 		ClassroomGameController,
+		StripeWebhookController,
 	],
 })
 export class CatalogModule {}

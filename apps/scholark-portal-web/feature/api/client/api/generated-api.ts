@@ -469,7 +469,7 @@ export type GameResponseDto = {
 	summary?: string;
 	description?: string;
 	cover?: MediaResponseDto;
-	publisherList: PublisherResponseDto[];
+	publisher: PublisherResponseDto;
 	taxonomyList: GameTaxonomyTermResponseDto[];
 	estimatedLengthMinutesMin?: number;
 	estimatedLengthMinutesMax?: number;

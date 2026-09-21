@@ -70,7 +70,9 @@ export async function configureApp(app: NestExpressApplication): Promise<void> {
 }
 
 export async function bootstrap(): Promise<void> {
-	const app = await NestFactory.create<NestExpressApplication>(WwwModule);
+	const app = await NestFactory.create<NestExpressApplication>(WwwModule, {
+		rawBody: true,
+	});
   
 	await configureApp(app);
 
