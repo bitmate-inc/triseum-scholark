@@ -95,7 +95,11 @@ export class GetGameQuery {
 		);
 
 		const publicOfferList = await this.publicOfferRepository.find(
-			{ gameVariant: { gameVersion: { $in: gameVersionList } }, isAvailable: true },
+			{
+				gameVariant: { gameVersion: { $in: gameVersionList } },
+				isAvailable: true,
+				publishedAt: { $lte: new Date() },
+			},
 			{ populate: ['gameVariant'] },
 		);
 

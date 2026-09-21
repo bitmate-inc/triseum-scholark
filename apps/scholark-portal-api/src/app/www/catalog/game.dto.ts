@@ -168,8 +168,8 @@ class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' |
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
 
-	@ApiPropertyOptional({ format: 'uuid' })
-	publicOfferId?: string;
+	@ApiProperty({ type: () => [PublicGameOfferResponseDto] })
+	publicOfferList!: PublicGameOfferResponseDto[];
 
 	@ApiPropertyOptional()
 	description?: string;
@@ -185,6 +185,25 @@ class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' |
 
 }
 
+class PublicGameOfferResponseDto {
+
+	@ApiProperty({ format: 'uuid' })
+	id!: string;
+
+	@ApiProperty({ type: MoneyDto })
+	price!: MoneyDto;
+
+	@ApiProperty({ format: 'uuid' })
+	gameVariantId!: string;
+
+	@ApiProperty()
+	language!: string;
+
+	@ApiProperty()
+	mode!: string;
+
+}
+
 export class GetGameResponseDto {
 
 	@ApiProperty({ type: GameResponseDto })
@@ -194,16 +213,29 @@ export class GetGameResponseDto {
 	gameVersionList!: GameVersionResponseDto[];
 
 	static fromEntity(game: Game, gameVersionList: GameVersion[] = [], publicOfferList: PublicGameOffer[] = []): GetGameResponseDto {
-		const publicOfferIdByVersionId = new Map(
-			publicOfferList.map((offer) => [offer.gameVariant.gameVersion.id, offer.id!]),
-		);
+		const publicOffersByVersionId = new Map<string, PublicGameOfferResponseDto[]>();
+		for (const offer of publicOfferList) {
+			const versionId = offer.gameVariant.gameVersion.id!;
+			const offerList = publicOffersByVersionId.get(versionId) ?? [];
+			offerList.push({
+				gameVariantId: offer.gameVariant.id!,
+				id: offer.id!,
+				language: offer.gameVariant.language,
+				mode: offer.gameVariant.mode,
+				price: {
+					currency: offer.price.currency,
+					minorUnitAmount: offer.price.minorUnitAmount,
+				},
+			});
+			publicOffersByVersionId.set(versionId, offerList);
+		}
 
 		return {
 			game: GameResponseDto.fromEntity(game),
 			gameVersionList: gameVersionList.map((gameVersion) => ({
 				description: gameVersion.description,
 				id: gameVersion.id!,
-				publicOfferId: publicOfferIdByVersionId.get(gameVersion.id!),
+				publicOfferList: publicOffersByVersionId.get(gameVersion.id!) ?? [],
 				publishedAt: gameVersion.publishedAt,
 				publisherVersion: gameVersion.publisherVersion,
 				runUrl: gameVersion.runUrl,

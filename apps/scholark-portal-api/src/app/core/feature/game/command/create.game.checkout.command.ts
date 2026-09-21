@@ -118,7 +118,7 @@ export class CreateGameCheckoutCommand {
 		try {
 			session = await this.createSession({
 				attemptType: 'public',
-				cancelUrl: `${this.config.portalUrl}/game/${game.slug}/acquire?version=${publicOffer.gameVariant.gameVersion.id}`,
+				cancelUrl: `${this.config.portalUrl}/game/${game.slug}/acquire?offer=${publicOffer.id}`,
 				attemptId: attempt.id!,
 				publicOffer,
 				successUrl: `${this.config.portalUrl}/game/${game.slug}/acquire/success?checkout_session_id={CHECKOUT_SESSION_ID}`,

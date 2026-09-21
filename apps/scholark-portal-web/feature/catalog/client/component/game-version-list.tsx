@@ -8,7 +8,11 @@ import Link from "next/link";
 import styles from "../../../../asset/style/site.module.css";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { useGetUserLibraryQuery } from "../../../library/client/api/library-api";
-import type { GameDetails } from "../../shared/model/game";
+import {
+	formatOfferMode,
+	formatOfferPrice,
+	type GameDetails,
+} from "../../shared/model/game";
 
 export function GameVersionList({ game }: { game: GameDetails }) {
 	const session = useAuthGetSessionQuery();
@@ -25,11 +29,6 @@ export function GameVersionList({ game }: { game: GameDetails }) {
 			{gameVersionList.length ? (
 				<div className={styles.versionList}>
 					{gameVersionList.map((version) => {
-						const licenseList = (library.data?.itemList ?? []).filter(
-							(item) => item.game.id === game.id && item.gameVersion.id === version.id,
-						);
-						const activeLicense = licenseList.find((item) => item.isActive);
-
 						return (
 							<article className={styles.versionItem} key={version.id}>
 								<div className={styles.versionMain}>
@@ -38,12 +37,26 @@ export function GameVersionList({ game }: { game: GameDetails }) {
 								</div>
 								{version.description ? <p className={styles.versionDescription}>{version.description}</p> : <span aria-hidden="true"/>}
 								<div className={styles.versionAction}>
-									{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>In Library</Badge> : licenseList.length ? <Badge variant="outline">In Library (Expired)</Badge> : null}
-									{!activeLicense && version.publicOfferId && licenseStateReady ? (
-										<Link className={buttonVariants({ size: "sm" })} href={`/game/${game.slug}/acquire?version=${encodeURIComponent(version.id)}`}>
-											<MonitorPlay data-icon="inline-start"/>Acquire
-										</Link>
-									) : null}
+									{(version.publicOfferList ?? []).map((offer) => {
+										const offerLicenses = (library.data?.itemList ?? []).filter(
+											(item) => item.game.id === game.id
+												&& item.gameVersion.id === version.id
+												&& item.gameVariant.id === offer.gameVariantId,
+										);
+										const activeLicense = offerLicenses.find((item) => item.isActive);
+
+										return (
+											<div key={offer.id}>
+												<p>{offer.language} · {formatOfferMode(offer.mode)} · {formatOfferPrice(offer)}</p>
+												{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>In Library</Badge> : offerLicenses.length ? <Badge variant="outline">In Library (Expired)</Badge> : null}
+												{!activeLicense && licenseStateReady ? (
+													<Link className={buttonVariants({ size: "sm" })} href={`/game/${game.slug}/acquire?offer=${encodeURIComponent(offer.id)}`}>
+														<MonitorPlay data-icon="inline-start"/>Acquire
+													</Link>
+												) : null}
+											</div>
+										);
+									})}
 								</div>
 							</article>
 						);

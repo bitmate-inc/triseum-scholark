@@ -28,6 +28,13 @@ class UserLibraryVersionResponseDto {
 
 }
 
+class UserLibraryVariantResponseDto {
+
+	@ApiProperty({ format: 'uuid' })
+	id!: string;
+
+}
+
 class UserLibraryClassroomResponseDto {
 
 	@ApiProperty()
@@ -51,6 +58,9 @@ class UserLibraryItemResponseDto {
 
 	@ApiProperty({ type: UserLibraryVersionResponseDto })
 	gameVersion!: UserLibraryVersionResponseDto;
+
+	@ApiProperty({ type: UserLibraryVariantResponseDto })
+	gameVariant!: UserLibraryVariantResponseDto;
 
 	@ApiPropertyOptional()
 	customizationId?: string;
@@ -104,6 +114,9 @@ export class UserLibraryResponseDto {
 						id: license.gameVariant.gameVersion.id!,
 						publisherVersion: license.gameVariant.gameVersion.publisherVersion,
 						runUrl: license.gameVariant.gameVersion.runUrl,
+					},
+					gameVariant: {
+						id: license.gameVariant.id!,
 					},
 					id: license.id!,
 					isActive: license.isActive(),

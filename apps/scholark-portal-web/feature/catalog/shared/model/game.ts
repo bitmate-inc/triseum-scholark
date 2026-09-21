@@ -40,9 +40,20 @@ export type Game = {
 
 export type GameDetails = Game & { gameVersionList: GameVersion[] };
 
+export type PublicGameOffer = {
+	id: string;
+	price: {
+		minorUnitAmount: number;
+		currency: string;
+	};
+	gameVariantId: string;
+	language: string;
+	mode: string;
+};
+
 export type GameVersion = {
 	id: string;
-	publicOfferId?: string;
+	publicOfferList: PublicGameOffer[];
 	description?: string;
 	publisherVersion: string;
 	runUrl: string;
@@ -84,4 +95,18 @@ export function formatEstimatedLength(game: Game): string {
 	}
 
 	return `${min}–${max} minutes`;
+}
+
+export function formatOfferPrice(offer: PublicGameOffer): string {
+	return new Intl.NumberFormat(undefined, {
+		currency: offer.price.currency,
+		style: "currency",
+	}).format(offer.price.minorUnitAmount / 100);
+}
+
+export function formatOfferMode(mode: string): string {
+	return mode
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
 }

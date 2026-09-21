@@ -12,6 +12,9 @@ export type UserLibraryItem = {
 		publisherVersion: string;
 		runUrl: string;
 	};
+	gameVariant: {
+		id: string;
+	};
 	customizationId?: string;
 	classroom?: {
 		id: string;

@@ -19,33 +19,39 @@ import { useEffect } from "react";
 import styles from "../../../../asset/style/acquisition.module.css";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { getApiErrorMessage } from "../../../auth/client/lib/api-error";
-import type { Game, GameVersion } from "../../../catalog/shared/model/game";
+import {
+	formatOfferMode,
+	formatOfferPrice,
+	type Game,
+	type GameVersion,
+	type PublicGameOffer,
+} from "../../../catalog/shared/model/game";
 import { useGetUserLibraryQuery } from "../../../library/client/api/library-api";
 import { useAcquireGameMutation } from "../api/acquisition-api";
 
-export function AcquisitionConfirmation({ game, gameVersion }: { game: Game; gameVersion: GameVersion }) {
+export function AcquisitionConfirmation({ game, gameVersion, publicOffer }: { game: Game; gameVersion: GameVersion; publicOffer: PublicGameOffer }) {
 	const router = useRouter();
 	const session = useAuthGetSessionQuery();
 	const library = useGetUserLibraryQuery(undefined, { skip: !session.data });
 	const [acquire, acquisition] = useAcquireGameMutation();
 	const activeLicense = library.data?.itemList.find(
-		(item) => item.isActive && item.gameVersion.id === gameVersion.id,
+		(item) => item.isActive && item.gameVersion.id === gameVersion.id && item.gameVariant.id === publicOffer.gameVariantId,
 	);
 
 	useEffect(() => {
 		if (!session.isLoading && (!session.data || session.isError)) {
-			const backTo = `/game/${game.slug}/acquire?version=${gameVersion.id}`;
+			const backTo = `/game/${game.slug}/acquire?offer=${publicOffer.id}`;
 			const query = new URLSearchParams({ backTo });
 			router.replace(`/auth/login?${query.toString()}`);
 		}
-	}, [game.slug, gameVersion.id, router, session.data, session.isError, session.isLoading]);
+	}, [game.slug, publicOffer.id, router, session.data, session.isError, session.isLoading]);
 
 	async function confirm() {
-		if (activeLicense || !gameVersion.publicOfferId) {
+		if (activeLicense) {
 			return;
 		}
 
-		const response = await acquire(gameVersion.publicOfferId);
+		const response = await acquire(publicOffer.id);
 
 		if ("data" in response && response.data) {
 			window.location.assign(response.data.checkoutUrl);
@@ -67,24 +73,13 @@ export function AcquisitionConfirmation({ game, gameVersion }: { game: Game; gam
 		);
 	}
 
-	if (!gameVersion.publicOfferId) {
-		return (
-			<main className={styles.page}>
-				<p className={styles.kicker}>Not currently available</p>
-				<h1>{game.title} is not available for public acquisition.</h1>
-				<p className={styles.detail}>This version may be available through an institutional offer.</p>
-				<Link className={buttonVariants({ size: "lg" })} href={`/game/${game.slug}`}>Back to game</Link>
-			</main>
-		);
-	}
-
 	return (
 		<main className={styles.page}>
 			<p className={styles.kicker}>Acquire game</p>
 			<h1>Ready to add this game to your library?</h1>
 			<section className={styles.summary}>
 				{game.cover ? <div className={styles.cover}><Image alt="" fill sizes="180px" src={game.cover.src}/></div> : null}
-				<div><p className={styles.kicker}>Selected game</p><h2>{game.title}</h2><p>{game.summary}</p><p>Version {gameVersion.publisherVersion}</p></div>
+				<div><p className={styles.kicker}>Selected game</p><h2>{game.title}</h2><p>{game.summary}</p><p>Version {gameVersion.publisherVersion}</p><p>{publicOffer.language} · {formatOfferMode(publicOffer.mode)} · {formatOfferPrice(publicOffer)}</p></div>
 			</section>
 			<p className={styles.detail}>You will complete payment securely with Stripe before this game is added to your library.</p>
 			{acquisition.error ? <Alert variant="destructive"><AlertTitle>Unable to acquire game</AlertTitle><AlertDescription>{getApiErrorMessage(acquisition.error)}</AlertDescription></Alert> : null}
