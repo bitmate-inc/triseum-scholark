@@ -4,6 +4,8 @@ import {
 	ForbiddenException,
 	Get,
 	NotFoundException,
+	Param,
+	ParseUUIDPipe,
 	Patch,
 	Put,
 	Query,
@@ -18,6 +20,7 @@ import {
 
 import { ChangePasswordCommand, ChangePasswordCommandData } from '../../core/feature/account/command/auth/change.password.command';
 import { GetUserLibraryQuery } from '../../core/feature/catalog/query/get.user.library.query';
+import { GetGameLaunchQuery, GetGameLaunchQueryData } from '../../core/feature/game/query/get.game.launch.query';
 import { GamePaymentAttemptRepository } from '../../core/feature/game/repository/game.payment.attempt.repository';
 import { UpdateUserCommand, UpdateUserCommandData } from '../../core/feature/user/command/update.user.command';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
@@ -28,6 +31,7 @@ import { SessionAuthGuard } from '../auth/session.auth.guard';
 import {
 	ChangePasswordRequestDto,
 	GameCheckoutStatusResponseDto,
+	GameLaunchResponseDto,
 	UpdateProfileRequestDto,
 } from './user.dto';
 import { UserLibraryResponseDto } from './user.library.dto';
@@ -43,6 +47,7 @@ export class UserController {
 		private readonly getUserQuery: GetUserQuery,
 		private readonly getUserLibraryQuery: GetUserLibraryQuery,
 		private readonly gamePaymentAttemptRepository: GamePaymentAttemptRepository,
+		private readonly getGameLaunchQuery: GetGameLaunchQuery,
 		private readonly updateUserCommand: UpdateUserCommand,
 	) {
 	}
@@ -53,6 +58,27 @@ export class UserController {
 		return UserLibraryResponseDto.fromQueryResult(
 			await this.getUserLibraryQuery.execute(session.user.id),
 		);
+	}
+
+	@Get('library/:licenseId/launch')
+	@ApiOkResponse({ type: GameLaunchResponseDto })
+	async launchGame(
+		@AuthSession() session: AuthSessionData,
+		@Param('licenseId', ParseUUIDPipe) licenseId: string,
+	): Promise<GameLaunchResponseDto> {
+		const result = await this.getGameLaunchQuery.execute(
+			GetGameLaunchQueryData.create({ licenseId, userId: session.user.id }),
+		);
+
+		if (result.validationResult) {
+			throw new UnprocessableEntityException(result.validationResult);
+		}
+
+		return {
+			gameVersionId: result.license!.gameVariant.gameVersion.id!,
+			launchUrl: result.launchUrl!,
+			licenseId: result.license!.id!,
+		};
 	}
 
 	@Get()

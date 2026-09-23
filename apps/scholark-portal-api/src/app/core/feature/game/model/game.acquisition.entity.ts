@@ -8,7 +8,7 @@ import {
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Money } from '../../../shared/commerce/model/money.entity';
-import { InstitutionContractGameOffer } from '../../education/model/institution.contract.game.offer.entity';
+import { InstitutionGameOffer } from '../../education/model/institution.game.offer.entity';
 import { User } from '../../user/model/user.entity';
 import { GameLicense } from './game.license.entity';
 import { PublicGameOffer } from './public.game.offer.entity';
@@ -31,8 +31,8 @@ export class GameAcquisition extends StaticFactory {
 	@ManyToOne(() => PublicGameOffer, { deleteRule: 'restrict', nullable: true })
 	publicOffer?: PublicGameOffer;
 
-	@ManyToOne(() => InstitutionContractGameOffer, { deleteRule: 'restrict', nullable: true })
-	institutionContractGameOffer?: InstitutionContractGameOffer;
+	@ManyToOne(() => InstitutionGameOffer, { deleteRule: 'restrict', nullable: true })
+	institutionGameOffer?: InstitutionGameOffer;
 
 	@ManyToOne(() => GameLicense, { deleteRule: 'restrict' })
 	license!: GameLicense;

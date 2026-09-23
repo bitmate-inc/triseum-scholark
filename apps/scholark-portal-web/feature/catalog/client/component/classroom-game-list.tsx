@@ -9,8 +9,10 @@ import {
 	MonitorPlay,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import styles from "../../../../asset/style/site.module.css";
+import { ClassroomGameCodeRedemption } from "../../../acquisition/client/component/classroom-game-code-redemption";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { useGetUserLibraryQuery } from "../../../library/client/api/library-api";
 import type { ClassroomGame } from "../../shared/model/education";
@@ -20,7 +22,15 @@ function formatDateTime(value: string): string {
 	return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
+
+function formatPrice(price?: ClassroomGame["price"]): string | undefined {
+	if (!price) return undefined;
+
+	return new Intl.NumberFormat("en-US", { currency: price.currency, style: "currency" }).format(price.minorUnitAmount / 100);
+}
+
 export function ClassroomGameList({ classroomGameList }: { classroomGameList: ClassroomGame[] }) {
+	const [redeemingClassroomGameId, setRedeemingClassroomGameId] = useState<string>();
 	const session = useAuthGetSessionQuery();
 	const library = useGetUserLibraryQuery(undefined, { skip: !session.data });
 	const licenseStateReady = !session.isLoading && (!session.data || (!library.isLoading && !library.error));
@@ -48,13 +58,16 @@ export function ClassroomGameList({ classroomGameList }: { classroomGameList: Cl
 							</div>
 							<div className={styles.classroomGameFacts}>
 								<span><Clock3 aria-hidden="true"/>{formatEstimatedLength(classroomGame.game)}</span>
+								<span>{(classroomGame.language ?? "en").toUpperCase()} · {(classroomGame.mode ?? "default").replaceAll("_", " ")}</span>
+								<span>{institutionFunded ? "Institution-funded" : `Student-paid${formatPrice(classroomGame.price) ? ` · ${formatPrice(classroomGame.price)}` : ""}`}</span>
 								<span>Valid {formatDateTime(classroomGame.startAt)} – {formatDateTime(classroomGame.endAt)}</span>
 							</div>
 						</div>
 						<div className={styles.classroomGameAction}>
+							{redeemingClassroomGameId === classroomGame.id ? <ClassroomGameCodeRedemption classroomGameId={classroomGame.id} onCancel={() => setRedeemingClassroomGameId(undefined)}/> : null}
 							{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>In Library</Badge> : licenseList.length ? <Badge variant="outline">In Library (Expired)</Badge> : null}
 							{!activeLicense && licenseStateReady && institutionFunded ? (
-								<Button size="sm" type="button" variant="outline">
+								<Button onClick={() => setRedeemingClassroomGameId(classroomGame.id)} size="sm" type="button" variant="outline">
 									<KeyRound data-icon="inline-start"/>Redeem code
 								</Button>
 							) : null}

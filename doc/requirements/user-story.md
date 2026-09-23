@@ -6,7 +6,7 @@ New Users create a login and password. There would be different User Types: e.g.
 
 ## New User Login
 Step 1: User logs in or establishes an account (initially, by default, is Student User Type unless signing on as a result of a ScholArk invitation. Ultimately, there could also be an option for the new user to indicate they’re an instructor and select for which institution).
-Step 2: Returning users see a list of licensed games, with games under an active license on top. Expired licenses remain visible in history, but the games cannot be accessed until the license is renewed. Users can acquire or renew licenses here.
+Step 2: Returning users see a list of licensed games, with games under an active license on top. Expired licenses remain visible in history, but the games cannot be accessed. A user must acquire a separate new license; licenses are not renewed.
 
 ## Acquiring games
 ### Step A
@@ -23,14 +23,14 @@ Game acquisition means acquiring a license to access a game for a fixed period; 
 
 There are two acquisition paths:
 
-1. **For educational credit:** The Student selects an institution, course, classroom, and assigned game version. The institutional contract determines the contract type and designated payor. The classroom assignment determines the license period:
+1. **For educational credit:** The Student selects an institution, course, classroom, and assigned game version. The publisher-defined InstitutionGameOffer selected for the classroom assignment determines the designated payor, price, and license duration:
 	- **Institution-purchased:** The Student enters an acquisition code that activates a fixed-term license.
 	- **Student-purchased:** The Student purchases a fixed-term license through Stripe.
 2. **Not for educational credit:** The Student browses the ScholArk game catalog and purchases a fixed-term license for a base Game Version through Stripe for personal use, without an institution, course, or classroom association. This path is always student-purchased.
 
 Institution purchases are invoiced to the institution and invoicing is outside the MVP. How acquisition codes are generated, who generates them, and where institution-funded licenses are stored and validated remain to be determined during discovery. A future integration with the applicable Bookstore Management System (BMS) may be needed to access scholarship/grant funds.
 
-Access is allowed only while the license is active and applies to the exact Game Version named by the license. After expiry, access is denied, but historical acquisition, license, game-play, and game-state records remain. A license can be renewed without deleting that history. Discovery must determine license activation and expiration rules, renewal behavior, and what happens when a Student first acquires a base Game Version outside a classroom and later needs a classroom-associated version for educational credit.
+Access is allowed only while the license is active and applies to the exact Game Version named by the license. After expiry, access is denied, but historical acquisition, license, game-play, and game-state records remain. A later acquisition creates a separate license; licenses are not renewed. Discovery must determine license activation and expiration rules and what happens when a Student first acquires a base Game Version outside a classroom and later needs a classroom-associated version for educational credit.
 
 ## Playing Games
 ScholArk would store the website for acquired games, so clicking on Play would launch the game – and, possibly, enter the Student’s login and/or password. In addition, see the section on config files.
@@ -46,7 +46,7 @@ The instructor could designate how game play is graded, based on the structure o
 ScholArk will support Learning Management Systems (LMS’s) – e.g., Canvas, Blackboard, Moodle to either send grades directly or create a file in a specified format to facilitate someone uploading or manual entry.
 
 ## ScholArk Administration
-An employee at ScholArk establishes institutional contracts that permit an institution to assign specified games. The contract includes its type, designated payor, and active period. A classroom is then set up within the institution with the instructor, course number/name, usage information, language, and one or more contracted games. Each classroom game assignment selects one immutable Game Version, may select one published GameCustomization, has its own active period, and configures the duration of licenses acquired through that assignment. There’s a ScholArk Admin desktop app that’s used for setting up contracts, classrooms, and assignments. Once the assignment is published, it cannot be changed; an authorized ScholArk employee must replace it or a new assignment must be created. Students can acquire the assigned version while the assignment is active.
+Publishers define standalone PublicGameOffers and InstitutionGameOffers for classroom use. InstitutionGameOffers specify designated payor, price, and license duration without belonging to a particular institution. A classroom is set up with the instructor, course number/name, usage information, language, and one or more assignments; each assignment selects an InstitutionGameOffer and immutable Game Version and may select one published GameCustomization. The institution selects an offer by assigning it to a classroom. Once published, an assignment cannot be changed; an authorized user must create a replacement assignment. Students can acquire the assigned version while the assignment is active. Institutional billing is outside the MVP.
 
 Initially, a Game Version is a publisher-owned release of a Game. The publisher supplies its version identifier, which may use any format, such as `1.4.1`, `v1.4.1-demo`, or `release-17`; ScholArk does not impose semantic versioning. In a later Game Forge phase, an Instructor may create a data-only GameCustomization for a selected Game Version by adding content such as text or media. A customization has draft content until `publishedAt` is set. Once published, it is immutable; changes require a new customization. Customization does not create a separate executable or Game Version.
 New games and publisher versions can be added to the ScholArk catalog. The catalog and version availability rules remain subject to further discussion. A game may provide no ScholArk integration, partial integration, or full integration, and a game version may or may not support customization; the representation of these capabilities remains open.

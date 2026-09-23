@@ -17,20 +17,23 @@ import {
 	SlidersHorizontal,
 	X
 } from "lucide-react";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import styles from "../../../../asset/style/site.module.css";
 import { useGameGetGameListQuery } from "../../../api/client/api/generated-api";
 import { GameCard } from "../../shared/component/game-card";
+import { CATALOG_PAGE_SIZE } from "../../shared/model/catalog";
 import type { GetGameListResponse } from "../../shared/model/game";
 import { useDebouncedValue } from "../hook/use-debounced-value";
 
 const filterLabelList = ["Subject", "Skill level", "Play mode"];
-const PAGE_SIZE = 3;
 const SEARCH_DEBOUNCE_MS = 300;
 
 type CatalogSearchProps = {
 	initialGameListResponse: GetGameListResponse;
+	initialPage: number;
+	initialQuery: string;
 };
 
 type PaginationItemValue = number | "ellipsis-start" | "ellipsis-end";
@@ -63,31 +66,92 @@ function getPaginationItemList(
 	});
 }
 
-export function CatalogSearch({ initialGameListResponse }: CatalogSearchProps) {
-	const [query, setQuery] = useState("");
-	const [page, setPage] = useState(1);
+export function CatalogSearch({ initialGameListResponse, initialPage, initialQuery }: CatalogSearchProps) {
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const searchParamString = searchParams.toString();
+	const searchParamQuery = searchParams.get("q")?.trim() ?? "";
+	const pageParam = searchParams.get("page");
+	const parsedPage = Number(pageParam);
+	const requestedPage = Number.isSafeInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+	const initialPageCount = Math.max(1, Math.ceil(initialGameListResponse.totalItemCount / CATALOG_PAGE_SIZE));
+	const page = searchParamQuery === initialQuery ? Math.min(requestedPage, initialPageCount) : requestedPage;
+	const [query, setQuery] = useState(searchParamQuery);
 	const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
-	const normalizedQuery = query.trim() === "" ? "" : debouncedQuery.trim();
-	const isInitialRequest = page === 1 && normalizedQuery === "";
+	const normalizedQuery = debouncedQuery.trim();
+	const isDebouncing = query.trim() !== normalizedQuery;
+	const isInitialRequest = page === initialPage && searchParamQuery === initialQuery;
+
+	useEffect(() => {
+		setQuery(searchParamQuery);
+	}, [searchParamQuery]);
+
+	useEffect(() => {
+		if (requestedPage <= page || pageParam === null && requestedPage === 1) {
+			return;
+		}
+
+		const nextSearchParams = new URLSearchParams(searchParamString);
+		if (page > 1) {
+			nextSearchParams.set("page", String(page));
+		} else {
+			nextSearchParams.delete("page");
+		}
+		const nextSearchParamString = nextSearchParams.toString();
+		router.replace(`/catalog${nextSearchParamString ? `?${nextSearchParamString}` : ""}`, { scroll: false });
+	}, [page, pageParam, requestedPage, router, searchParamString]);
+
+	useEffect(() => {
+		if (isDebouncing) {
+			return;
+		}
+
+		const nextPage = normalizedQuery === searchParamQuery ? page : 1;
+		const nextSearchParams = new URLSearchParams();
+		if (normalizedQuery) {
+			nextSearchParams.set("q", normalizedQuery);
+		}
+		if (nextPage > 1) {
+			nextSearchParams.set("page", String(nextPage));
+		}
+
+		const nextSearchParamString = nextSearchParams.toString();
+		if (nextSearchParamString !== searchParamString) {
+			router.replace(`/catalog${nextSearchParamString ? `?${nextSearchParamString}` : ""}`, { scroll: false });
+		}
+	}, [isDebouncing, normalizedQuery, page, router, searchParamQuery, searchParamString]);
+
 	const { data, error, isFetching, refetch } = useGameGetGameListQuery(
 		{
-			limit: PAGE_SIZE,
-			offset: (page - 1) * PAGE_SIZE,
-			q: normalizedQuery || undefined,
+			limit: CATALOG_PAGE_SIZE,
+			offset: (page - 1) * CATALOG_PAGE_SIZE,
+			q: searchParamQuery || undefined,
 		},
 		{ skip: isInitialRequest },
 	);
 	const result = isInitialRequest ? initialGameListResponse : data ?? initialGameListResponse;
 	const gameList = result?.gameList ?? [];
 	const totalItemCount = result?.totalItemCount ?? 0;
-	const totalPageCount = Math.max(1, Math.ceil(totalItemCount / PAGE_SIZE));
+	const totalPageCount = Math.max(1, Math.ceil(totalItemCount / CATALOG_PAGE_SIZE));
 	const paginationItemList = getPaginationItemList(page, totalPageCount);
-	const isPending = isFetching || (query.trim() !== "" && debouncedQuery !== query);
+	const isPending = isFetching || isDebouncing || searchParamQuery !== normalizedQuery;
 
 	function updateQuery(nextQuery: string) {
 		setQuery(nextQuery);
-		setPage(1);
 	}
+
+	function updatePage(nextPage: number) {
+		const nextSearchParams = new URLSearchParams(searchParamString);
+		if (nextPage > 1) {
+			nextSearchParams.set("page", String(nextPage));
+		} else {
+			nextSearchParams.delete("page");
+		}
+		const nextSearchParamString = nextSearchParams.toString();
+		router.push(`/catalog${nextSearchParamString ? `?${nextSearchParamString}` : ""}`, { scroll: false });
+	}
+
+	const catalogReturnUrl = `/catalog${searchParamString ? `?${searchParamString}` : ""}`;
 
 	return (
 		<>
@@ -143,7 +207,11 @@ export function CatalogSearch({ initialGameListResponse }: CatalogSearchProps) {
 				<>
 					<div className={styles.gameGrid}>
 						{gameList.map((game) => (
-							<GameCard game={game} key={game.slug}/>
+							<GameCard
+								game={game}
+								href={`/game/${game.slug}?returnTo=${encodeURIComponent(catalogReturnUrl)}`}
+								key={game.slug}
+							/>
 						))}
 					</div>
 					{totalPageCount > 1 ? (
@@ -153,7 +221,7 @@ export function CatalogSearch({ initialGameListResponse }: CatalogSearchProps) {
 									<PaginationPrevious
 										type="button"
 										disabled={page === 1 || isFetching}
-										onClick={() => setPage((currentPage) => currentPage - 1)}
+										onClick={() => updatePage(page - 1)}
 									/>
 								</PaginationItem>
 								{paginationItemList.map((item) => item === "ellipsis-start" || item === "ellipsis-end" ? (
@@ -166,7 +234,7 @@ export function CatalogSearch({ initialGameListResponse }: CatalogSearchProps) {
 											type="button"
 											isActive={item === page}
 											disabled={isFetching}
-											onClick={() => setPage(item)}
+											onClick={() => updatePage(item)}
 										>
 											{item}
 										</PaginationLink>
@@ -176,7 +244,7 @@ export function CatalogSearch({ initialGameListResponse }: CatalogSearchProps) {
 									<PaginationNext
 										type="button"
 										disabled={page === totalPageCount || isFetching}
-										onClick={() => setPage((currentPage) => currentPage + 1)}
+										onClick={() => updatePage(page + 1)}
 									/>
 								</PaginationItem>
 							</PaginationContent>

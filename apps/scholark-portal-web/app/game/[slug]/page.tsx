@@ -21,7 +21,28 @@ import {
 } from "../../../feature/catalog/shared/model/game";
 import type { Media } from "../../../feature/media/shared/model/media";
 
-type GamePageProps = { params: Promise<{ slug: string }> };
+type GamePageProps = {
+	params: Promise<{ slug: string }>;
+	searchParams: Promise<{ returnTo?: string | string[] }>;
+};
+
+function getCatalogReturnUrl(value: string | string[] | undefined): string {
+	const candidate = Array.isArray(value) ? value[0] : value;
+	if (!candidate?.startsWith("/") || candidate.startsWith("//")) {
+		return "/catalog";
+	}
+
+	try {
+		const url = new URL(candidate, "https://scholark.invalid");
+		if (url.origin !== "https://scholark.invalid" || url.pathname !== "/catalog") {
+			return "/catalog";
+		}
+
+		return `${url.pathname}${url.search}`;
+	} catch {
+		return "/catalog";
+	}
+}
 
 export async function generateStaticParams() {
 	const { gameList } = await getGameListRequest();
@@ -33,9 +54,11 @@ export async function generateMetadata({ params }: GamePageProps): Promise<Metad
 	return game ? { title: `${game.title} · ScholArk`, description: game.summary } : {};
 }
 
-export default async function GamePage({ params }: GamePageProps) {
-	const game = await getGameRequest((await params).slug);
+export default async function GamePage({ params, searchParams }: GamePageProps) {
+	const [{ slug }, query] = await Promise.all([params, searchParams]);
+	const game = await getGameRequest(slug);
 	if (!game) notFound();
+	const catalogReturnUrl = getCatalogReturnUrl(query.returnTo);
 
 	const fallbackVideo: Media = {
 		type: "video",
@@ -48,7 +71,7 @@ export default async function GamePage({ params }: GamePageProps) {
 
 	return (
 		<main className={styles.gamePage}>
-			<Link className={styles.backLink} href="/catalog"><ArrowLeft aria-hidden="true"/>Back to catalog</Link>
+			<Link className={styles.backLink} href={catalogReturnUrl}><ArrowLeft aria-hidden="true"/>Back to catalog</Link>
 			<section className={styles.gameMasthead}>
 				<div className={styles.gameCover}>
 					{game.cover ? <Image src={game.cover.src} alt="" fill priority sizes="(max-width: 800px) 100vw, 56vw"/> : null}

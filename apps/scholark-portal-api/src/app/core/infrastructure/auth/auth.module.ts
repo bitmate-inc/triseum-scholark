@@ -112,7 +112,7 @@ export class AuthModule {
 		];
 
 		return {
-			exports: [...providers, PassportModule],
+			exports: [...providers, JwtModule, PassportModule],
 			global: true,
 			imports: [
 				PassportModule.register({

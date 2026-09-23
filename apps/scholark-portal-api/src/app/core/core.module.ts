@@ -10,6 +10,7 @@ import authConfig from '../../config/auth';
 import redisConfig from '../../config/redis';
 import { AccountModule } from './feature/account/account.module';
 import { createUserAuthProviderOptions } from './feature/account/auth/user.auth.providers';
+import { AdminFeatureModule } from './feature/admin/admin.module';
 import { CatalogModule } from './feature/catalog/catalog.module';
 import { EducationModule } from './feature/education/education.module';
 import { GameModule } from './feature/game/game.module';
@@ -39,6 +40,7 @@ export class CoreModule {
 			DatabaseModule,
 			DebugModule,
 			UserModule.forRoot(),
+			AdminFeatureModule,
 			AccountModule,
 			AuthModule.forRootAsync({
 				...authConfig.asProvider(),

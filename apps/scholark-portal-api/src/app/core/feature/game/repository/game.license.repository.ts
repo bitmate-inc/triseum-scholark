@@ -54,4 +54,17 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		})) ?? undefined;
 	}
 
+	findOwnedById(userId: string, licenseId: string): Promise<GameLicense | undefined> {
+		return this.findOneBy(
+			{ id: licenseId, user: userId },
+			{
+				relations: {
+					gameVariant: { gameVersion: { game: true } },
+					customization: true,
+					classroomGame: true,
+				},
+			},
+		);
+	}
+
 }

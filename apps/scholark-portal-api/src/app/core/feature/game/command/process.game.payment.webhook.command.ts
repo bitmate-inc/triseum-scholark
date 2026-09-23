@@ -118,7 +118,7 @@ export class ProcessGamePaymentWebhookCommand {
 				const metadataMatchesAttempt =
 					(!session.client_reference_id || session.client_reference_id === attempt.user.id)
 					&& (!session.metadata?.userId || session.metadata.userId === attempt.user.id)
-					&& (!session.metadata?.offerId || session.metadata.offerId === (attempt.publicOffer?.id ?? attempt.institutionContractGameOffer?.id))
+					&& (!session.metadata?.offerId || session.metadata.offerId === (attempt.publicOffer?.id ?? attempt.institutionGameOffer?.id))
 					&& (!session.metadata?.classroomGameId || session.metadata.classroomGameId === attempt.classroomGame?.id)
 					&& session.metadata?.purchaseType === purchaseType;
 

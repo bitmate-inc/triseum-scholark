@@ -1,9 +1,5 @@
 import { EducationCatalogStatus } from '../app/core/feature/education/model/education.catalog.status';
-import {
-	InstitutionContractDesignatedPayor,
-	InstitutionContractStatus,
-	InstitutionContractType,
-} from '../app/core/feature/education/model/institution.contract.entity';
+import { InstitutionGameOfferDesignatedPayor } from '../app/core/feature/education/model/institution.game.offer.entity';
 import type { Media } from '../app/core/feature/media/model/media';
 import { TaxonomyType } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 import { Currency } from '../app/core/shared/commerce/model/currency';
@@ -69,21 +65,11 @@ export interface GameCustomizationSeed {
 	publishedAt?: Date;
 }
 
-export interface InstitutionContractGameOfferSeed {
+export interface InstitutionGameOfferSeed {
 	publicOfferSeedId: string;
+	designatedPayor: InstitutionGameOfferDesignatedPayor;
 	licenseDurationDays: number;
 	price: MoneySeed;
-}
-
-export interface InstitutionContractSeed {
-	id: string;
-	institutionSlug: string;
-	type: InstitutionContractType;
-	designatedPayor: InstitutionContractDesignatedPayor;
-	status: InstitutionContractStatus;
-	startAt: Date;
-	endAt: Date;
-	institutionContractGameOfferList: InstitutionContractGameOfferSeed[];
 }
 
 export interface InstitutionSeed {
@@ -136,6 +122,7 @@ export interface ClassroomGameSeed {
 	classroomSlug: string;
 	gameSlug: string;
 	publicOfferSeedId: string;
+	designatedPayor: InstitutionGameOfferDesignatedPayor;
 	customizationSeedId?: string;
 }
 
@@ -147,6 +134,14 @@ export interface UserGameLicenseSeed {
 	classroomGameSeedId?: string;
 	startAt: Date;
 	endAt: Date;
+}
+
+export interface AcquisitionCodeSeed {
+	code: string;
+	publicOfferSeedId: string;
+	institutionSlug: string;
+	designatedPayor: InstitutionGameOfferDesignatedPayor;
+	expiresAt: Date;
 }
 
 type TaxonomyTermSeedInput = Pick<TaxonomyTermSeed, 'label' | 'slug' | 'type'> & {
@@ -551,70 +546,18 @@ function createAdditionalCourseSeedList(): CourseSeed[] {
 	});
 }
 
-export const institutionContractSeedList: InstitutionContractSeed[] = [
-	{
-		designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
-		endAt: new Date('2026-12-31T23:59:59.999Z'),
-		institutionContractGameOfferList: createInstitutionContractGameOfferList([
-			'00000000-0000-4000-8000-000000000312',
-			'shadow-of-the-plague',
-		]),
-		id: '00000000-0000-4000-8000-000000000331',
-		institutionSlug: 'northbridge-university',
-		startAt: new Date('2026-01-01T00:00:00.000Z'),
-		status: InstitutionContractStatus.ACTIVE,
-		type: InstitutionContractType.ADOPTION,
+export const institutionGameOfferSeedList: InstitutionGameOfferSeed[] = publicOfferSeedList.flatMap((publicOffer) => [
+	InstitutionGameOfferDesignatedPayor.STUDENT,
+	InstitutionGameOfferDesignatedPayor.INSTITUTION,
+].map((designatedPayor) => ({
+	publicOfferSeedId: publicOffer.id,
+	designatedPayor,
+	licenseDurationDays: 120,
+	price: {
+		currency: publicOffer.price.currency,
+		minorUnitAmount: Math.round(publicOffer.price.minorUnitAmount * 0.8),
 	},
-	{
-		designatedPayor: InstitutionContractDesignatedPayor.STUDENT,
-		endAt: new Date('2026-12-31T23:59:59.999Z'),
-		institutionContractGameOfferList: createInstitutionContractGameOfferList(['variant-limits']),
-		id: '00000000-0000-4000-8000-000000000332',
-		institutionSlug: 'riverside-college',
-		startAt: new Date('2026-01-01T00:00:00.000Z'),
-		status: InstitutionContractStatus.ACTIVE,
-		type: InstitutionContractType.PILOT,
-	},
-	...createAdditionalInstitutionContractSeedList(),
-];
-
-function createAdditionalInstitutionContractSeedList(): InstitutionContractSeed[] {
-	const contractGameSlugList = ['arte-mecenas', 'variant-limits', 'econland'];
-
-	return institutionSeedList.slice(2).map((institution, institutionIndex) => ({
-		designatedPayor: institutionIndex % 3 === 0
-			? InstitutionContractDesignatedPayor.INSTITUTION
-			: InstitutionContractDesignatedPayor.STUDENT,
-		endAt: new Date('2027-12-31T23:59:59.999Z'),
-		institutionContractGameOfferList: createInstitutionContractGameOfferList(contractGameSlugList),
-		id: `00000000-0000-4000-8000-${String(700 + institutionIndex).padStart(12, '0')}`,
-		institutionSlug: institution.slug,
-		startAt: new Date('2026-01-01T00:00:00.000Z'),
-		status: InstitutionContractStatus.ACTIVE,
-		type: institutionIndex % 2 === 0
-			? InstitutionContractType.ADOPTION
-			: InstitutionContractType.PILOT,
-	}));
-}
-
-
-function createInstitutionContractGameOfferList(gameSlugList: string[]): InstitutionContractGameOfferSeed[] {
-	return gameSlugList.map((gameSlugOrVersionId) => {
-		const gameVersion = gameVersionSeedList.find((seed) =>
-			seed.id === gameSlugOrVersionId || seed.gameSlug === gameSlugOrVersionId,
-		)!;
-		const publicOffer = publicOfferSeedList.find((seed) => seed.gameVersionSeedId === gameVersion.id)!;
-
-		return {
-			publicOfferSeedId: publicOffer.id,
-			licenseDurationDays: 120,
-			price: {
-				currency: publicOffer.price.currency,
-				minorUnitAmount: Math.round(publicOffer.price.minorUnitAmount * 0.8),
-			},
-		};
-	});
-}
+})));
 
 export const courseSeedList: CourseSeed[] = [
 	{
@@ -748,6 +691,7 @@ export const classroomGameSeedList: ClassroomGameSeed[] = [
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'arte-mecenas',
 		publicOfferSeedId: publicOfferSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000312')!.id,
+		designatedPayor: InstitutionGameOfferDesignatedPayor.STUDENT,
 		customizationSeedId: '00000000-0000-4000-8000-000000000322',
 		id: '00000000-0000-4000-8000-000000000231',
 	},
@@ -755,12 +699,14 @@ export const classroomGameSeedList: ClassroomGameSeed[] = [
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'shadow-of-the-plague',
 		publicOfferSeedId: publicOfferSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'shadow-of-the-plague')!.id)!.id,
+		designatedPayor: InstitutionGameOfferDesignatedPayor.STUDENT,
 		id: '00000000-0000-4000-8000-000000000232',
 	},
 	{
 		classroomSlug: 'limits-lab-fall-2026',
 		gameSlug: 'variant-limits',
 		publicOfferSeedId: publicOfferSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'variant-limits')!.id)!.id,
+		designatedPayor: InstitutionGameOfferDesignatedPayor.STUDENT,
 		id: '00000000-0000-4000-8000-000000000233',
 	},
 	...createAdditionalClassroomGameSeedList(),
@@ -783,6 +729,10 @@ function createAdditionalClassroomGameSeedList(): ClassroomGameSeed[] {
 				classroomSlug: classroom.slug,
 				gameSlug,
 				publicOfferSeedId: publicOffer.id,
+				designatedPayor: classroom.institutionSlug === 'pinecrest-community-college'
+					|| institutionSeedList.slice(2).findIndex((institution) => institution.slug === classroom.institutionSlug) % 3 === 0
+					? InstitutionGameOfferDesignatedPayor.INSTITUTION
+					: InstitutionGameOfferDesignatedPayor.STUDENT,
 				id: `00000000-0000-4000-8000-${String(800 + classroomIndex * 10 + gameIndex).padStart(12, '0')}`,
 			};
 		});
@@ -828,5 +778,15 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		publicOfferSeedId: publicOfferSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000313')!.id,
 		id: '00000000-0000-4000-8000-000000000345',
 		startAt: new Date('2026-09-01T00:00:00.000Z'),
+	},
+];
+
+export const acquisitionCodeSeedList: AcquisitionCodeSeed[] = [
+	{
+		code: 'PINECREST-ARTE-2026-DEMO',
+		designatedPayor: InstitutionGameOfferDesignatedPayor.INSTITUTION,
+		expiresAt: new Date('2027-12-31T23:59:59.999Z'),
+		institutionSlug: 'pinecrest-community-college',
+		publicOfferSeedId: publicOfferSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'arte-mecenas')!.id)!.id,
 	},
 ];

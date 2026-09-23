@@ -20,7 +20,15 @@ const acquisitionApi = api.injectEndpoints({
 				url: `/api/v1/user/me/checkout-status?checkoutSessionId=${encodeURIComponent(checkoutSessionId)}`,
 			}),
 		}),
+		redeemAcquisitionCode: build.mutation<{ licenseId: string; licenseDurationDays: number }, { classroomGameId: string; code: string }>({
+			invalidatesTags: ["Library"],
+			query: ({ classroomGameId, code }) => ({
+				body: { code },
+				method: "POST",
+				url: `/api/v1/catalog/classroom-game/${classroomGameId}/redeem-code`,
+			}),
+		}),
 	}),
 });
 
-export const { useAcquireClassroomGameMutation, useAcquireGameMutation, useGetCheckoutStatusQuery } = acquisitionApi;
+export const { useAcquireClassroomGameMutation, useAcquireGameMutation, useGetCheckoutStatusQuery, useRedeemAcquisitionCodeMutation } = acquisitionApi;

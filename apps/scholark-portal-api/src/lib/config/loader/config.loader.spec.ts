@@ -14,6 +14,9 @@ jest.mock('@mikro-orm/core', () => ({
 jest.mock('@mikro-orm/decorators/legacy', () => ({
 	ReflectMetadataProvider: class ReflectMetadataProvider {},
 }));
+jest.mock('@mikro-orm/migrations', () => ({
+	Migrator: class Migrator {},
+}));
 jest.mock('@mikro-orm/postgresql', () => ({
 	PostgreSqlDriver: class PostgreSqlDriver {},
 }));
@@ -31,7 +34,7 @@ describe('config loader', () => {
 		);
 		const validationSchema = buildValidationSchema(definitionList);
 
-		expect(definitionList).toHaveLength(9);
+		expect(definitionList).toHaveLength(10);
 		expect(
 			validationSchema?.validate({
 				CORS_ORIGIN: '',
@@ -47,6 +50,9 @@ describe('config loader', () => {
 				PORT: 3001,
 				AUTH_SESSION_SECRET: 'test-session-secret-at-least-32-characters',
 				REDIS_URL: 'redis://localhost:6379',
+				STRIPE_API_KEY: 'sk_test_config_loader',
+				STRIPE_PORTAL_URL: 'http://localhost:3000/billing/portal',
+				STRIPE_WEBHOOK_SECRET: 'whsec_config_loader',
 			}).error,
 		).toBeUndefined();
 	});

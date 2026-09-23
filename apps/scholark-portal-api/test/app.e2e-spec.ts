@@ -50,6 +50,19 @@ describe('AppController (e2e)', () => {
 			.expect(422);
 	});
 
+	it('validates acquisition-code input before database access', async () => {
+		const agent = request.agent(app.getHttpServer());
+		await agent
+			.post('/api/v1/auth/login')
+			.send({ email: 'user1@scholark.com', password: 'password' })
+			.expect(200);
+
+		await agent
+			.post('/api/v1/catalog/classroom-game/00000000-0000-4000-8000-000000000800/redeem-code')
+			.send({ code: '' })
+			.expect(400);
+	});
+
 	afterAll(async () => {
 		await app.close();
 	});

@@ -76,8 +76,8 @@ flowchart TB
 - Manage or expose portal acquisition, launch, progress, grading, and configuration workflows according to the source-of-truth matrix established during discovery.
 - Implement game-data mapping to ScholArk's generic record model and validate it with one representative Triseum-produced web game.
 - Allow an authorized Instructor to initiate and download a classroom-scoped grade file in each LMS-oriented export format included in the finite target-MVP list baselined during discovery; later additions require explicit scope and forecast revision.
-- Activate and renew fixed-term licenses for exact immutable Game Versions through the approved acquisition paths, enforce expiry for game access, and retain historical acquisition, license, game-play, and game-state records.
-- Represent institutional contracts separately from classroom game assignments. Contracts determine which games an institution may assign and contain the contract type, designated payor, and active period; assignments select a Game Version, optional GameCustomization, active period, and license duration.
+- Activate fixed-term licenses for exact immutable Game Versions through the approved acquisition paths; after expiry, a new acquisition creates a separate license. Enforce expiry and retain historical acquisition, license, game-play, and game-state records.
+- Represent publisher-defined InstitutionGameOffers separately from institutions. An offer specifies designated payor, price, and license duration; a classroom assignment selects the offer and exact Game Version. Institutional billing is outside the MVP.
 - Treat published classroom Game Version assignments and published GameCustomizations as immutable. Changes create replacement assignments or new customizations.
 
 ## Initial Pilot Boundary
@@ -115,11 +115,11 @@ Milestone 2 must validate this direction against the existing implementation, in
 - Define the minimum usable pilot acceptance set and its deployment environment.
 - If PostgreSQL synchronization is selected, define direction, triggering or frequency, initial backfill, change detection, idempotency, deletion handling, conflict policy, reconciliation, monitoring, retry and recovery, and acceptable staleness.
 - Define the Store catalog/discovery boundary and the Stripe checkout, webhook, idempotency, failure-handling, and fixed-term license activation flow.
-- Define license duration, activation, expiry, renewal, grace-period, status, and historical-retention rules, including in-progress session behavior at expiry.
+- Define license duration, activation, expiry, fresh acquisition after expiry, status, and historical-retention rules, including in-progress session behavior at expiry. Licenses are not renewed.
 - Define Game Version identity and release lifecycle. Publishers provide an unconstrained `publisherVersion` label; the target model licenses exact immutable Game Versions and classroom assignments select the permitted version. Discovery must define upgrade/replacement behavior and launch behavior for permitted versions.
-- Define institutional contract structure, contract-to-game eligibility, contract periods, and how contract changes affect existing classroom assignments.
+- Define publisher ownership and publication of standalone and institution-use offers, and how institutions select institution-use offers through classroom assignments.
 - Define the future Game Forge publication flow for data-only GameCustomizations, including content snapshots, draft/publication behavior, and compatibility with the selected Game Version. Capability and integration metadata remain open.
-- Define institution acquisition-code generation, ownership, validation, license activation, and renewal behavior.
+- Define institution acquisition-code generation, ownership, validation, and license activation behavior.
 - Decide whether and how an existing not-for-credit Student Game and license can be associated with a classroom for credit, including license-term and duplicate-payment rules.
 - Define how game-play and game-state records relate to a Student Game, and whether records created before a later classroom association are visible to the Instructor or eligible for classroom progress and grading.
 - Select the LMS grade-export format(s) and define classroom/student mapping, Instructor authorization, and generation/download behavior.

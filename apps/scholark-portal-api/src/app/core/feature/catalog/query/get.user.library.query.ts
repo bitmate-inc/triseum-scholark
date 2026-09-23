@@ -1,10 +1,12 @@
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 
+import { GameAcquisition } from '../../game/model/game.acquisition.entity';
 import { GameLicense } from '../../game/model/game.license.entity';
 
 export type UserLibraryItem = {
 	license: GameLicense;
+	acquisition?: GameAcquisition;
 };
 
 @Injectable()
@@ -26,6 +28,10 @@ export class GetUserLibraryQuery {
 				orderBy: { endAt: 'desc' },
 			},
 		);
+		const acquisitionList = await this.entityManager.find(GameAcquisition, {
+			license: { $in: licenseList },
+		});
+		const acquisitionByLicenseId = new Map(acquisitionList.map((acquisition) => [acquisition.license.id, acquisition]));
 
 		return licenseList
 			.sort((firstLicense, secondLicense) => {
@@ -43,7 +49,7 @@ export class GetUserLibraryQuery {
 					|| secondLicense.endAt.getTime() - firstLicense.endAt.getTime()
 					|| secondLicense.createdAt!.getTime() - firstLicense.createdAt!.getTime();
 			})
-			.map((license) => ({ license }));
+			.map((license) => ({ license, acquisition: acquisitionByLicenseId.get(license.id!) }));
 	}
 
 }

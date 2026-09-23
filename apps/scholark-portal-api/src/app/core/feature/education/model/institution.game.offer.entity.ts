@@ -9,20 +9,24 @@ import {
 
 import { Money } from '../../../shared/commerce/model/money.entity';
 import { GameVariant } from '../../game/model/game.variant.entity';
-import { InstitutionContract } from './institution.contract.entity';
 
-@Entity({ tableName: 'institution_contract_game_offer' })
-@Unique({ properties: ['contract', 'gameVariant'] })
-export class InstitutionContractGameOffer {
+export enum InstitutionGameOfferDesignatedPayor {
+	STUDENT = 'student',
+	INSTITUTION = 'institution',
+}
+
+@Entity({ tableName: 'institution_game_offer' })
+@Unique({ properties: ['gameVariant', 'designatedPayor'] })
+export class InstitutionGameOffer {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })
 	id?: string;
 
-	@ManyToOne(() => InstitutionContract, { deleteRule: 'cascade' })
-	contract!: InstitutionContract;
-
 	@ManyToOne(() => GameVariant, { deleteRule: 'restrict' })
 	gameVariant!: GameVariant;
+
+	@Property({ type: 'string' })
+	designatedPayor!: InstitutionGameOfferDesignatedPayor;
 
 	@Embedded(() => Money, { prefix: 'price_' })
 	price!: Money;

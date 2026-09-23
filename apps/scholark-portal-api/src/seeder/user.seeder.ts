@@ -2,6 +2,7 @@ import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
 import { AccountIdentity, AccountIdentityProvider } from '../app/core/feature/account/model/account.identity.entity';
+import { AdminUser } from '../app/core/feature/admin/model/admin.user.entity';
 import { User } from '../app/core/feature/user/model/user.entity';
 import { BCryptPasswordEncoder } from '../lib/security/encoder/bcrypt.password-encoder';
 import { userSeedList } from './user.data';
@@ -45,6 +46,14 @@ export class UserSeeder extends Seeder {
 					transactionalEm.persist(
 						AccountIdentity.createLocalIdentity({ email, passwordHash, user }),
 					);
+				}
+
+				if (email === 'user1@scholark.com') {
+					const adminUser = await transactionalEm.findOne(AdminUser, { user: { id: user.id } });
+
+					if (!adminUser) {
+						transactionalEm.persist(transactionalEm.create(AdminUser, { user }));
+					}
 				}
 			}
 

@@ -10,7 +10,7 @@ import {
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Money } from '../../../shared/commerce/model/money.entity';
 import { ClassroomGame } from '../../education/model/classroom.game.entity';
-import { InstitutionContractGameOffer } from '../../education/model/institution.contract.game.offer.entity';
+import { InstitutionGameOffer } from '../../education/model/institution.game.offer.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
 import { PublicGameOffer } from './public.game.offer.entity';
@@ -33,8 +33,8 @@ export class GamePaymentAttempt extends StaticFactory {
 	@ManyToOne(() => PublicGameOffer, { deleteRule: 'restrict', nullable: true })
 	publicOffer?: PublicGameOffer;
 
-	@ManyToOne(() => InstitutionContractGameOffer, { deleteRule: 'restrict', nullable: true })
-	institutionContractGameOffer?: InstitutionContractGameOffer;
+	@ManyToOne(() => InstitutionGameOffer, { deleteRule: 'restrict', nullable: true })
+	institutionGameOffer?: InstitutionGameOffer;
 
 	@ManyToOne(() => ClassroomGame, { deleteRule: 'restrict', nullable: true })
 	classroomGame?: ClassroomGame;

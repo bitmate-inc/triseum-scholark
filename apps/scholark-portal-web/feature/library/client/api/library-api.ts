@@ -22,11 +22,16 @@ export type UserLibraryItem = {
 		slug: string;
 	};
 	classroomGameId?: string;
+	progress?: {
+		completedCount: number;
+		totalCount: number;
+	};
 	startAt: string;
 	endAt: string;
 	createdAt: string;
 	isActive: boolean;
 	status: "active" | "scheduled" | "expired";
+	acquisitionMechanism: string;
 };
 
 export type UserLibraryResponse = { itemList: UserLibraryItem[] };
@@ -37,7 +42,10 @@ const libraryApi = api.injectEndpoints({
 			providesTags: ["Library"],
 			query: () => "/api/v1/user/me/library",
 		}),
+		launchGame: build.query<{ licenseId: string; launchUrl: string; gameVersionId: string }, string>({
+			query: (licenseId) => `/api/v1/user/me/library/${licenseId}/launch`,
+		}),
 	}),
 });
 
-export const { useGetUserLibraryQuery } = libraryApi;
+export const { useGetUserLibraryQuery, useLaunchGameQuery } = libraryApi;

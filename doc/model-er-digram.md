@@ -62,6 +62,16 @@ erDiagram
         date publishedAt
     }
 
+    INSTITUTION_GAME_OFFER {
+        uuid id PK
+        uuid gameVariant_id FK
+        string designatedPayor
+        int price_minorUnitAmount
+        string price_currency
+        int allocatedLicenseQuantity
+        int licenseDurationDays
+    }
+
     GAME_CUSTOMIZATION {
         uuid id PK
         uuid gameVersion_id FK
@@ -85,12 +95,46 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid publicOffer_id FK
-        uuid institutionContractGameOffer_id FK
+        uuid institutionGameOffer_id FK
         uuid license_id FK
         string mechanism
         int price_minorUnitAmount
         string price_currency
         date createdAt
+    }
+
+    ACQUISITION_CODE {
+        uuid id PK
+        string code UK
+        uuid institutionGameOffer_id FK
+        date expiresAt
+        date revokedAt
+        date createdAt
+    }
+
+    ACQUISITION_CODE_REDEMPTION {
+        uuid id PK
+        uuid acquisitionCode_id FK
+        uuid redeemedBy_id FK
+        date redeemedAt
+        UK acquisitionCode_id_redeemedBy_id
+    }
+
+    GAME_PAYMENT_ATTEMPT {
+        uuid id PK
+        uuid user_id FK
+        uuid publicOffer_id FK
+        uuid institutionGameOffer_id FK
+        uuid classroomGame_id FK
+        uuid customization_id FK
+        string stripeCheckoutSessionId UK
+        string stripePaymentIntentId
+        string status
+        int price_minorUnitAmount
+        string price_currency
+        int licenseDurationDays
+        date createdAt
+        date fulfilledAt
     }
 
     GAME_TAXONOMY_TERM {
@@ -115,14 +159,22 @@ erDiagram
     TAXONOMY_TERM ||--o{ GAME_TAXONOMY_TERM : tags
     GAME_VERSION ||--o{ GAME_VARIANT : variants
     GAME_VARIANT ||--o{ PUBLIC_GAME_OFFER : public_offers
+    GAME_VARIANT ||--o{ INSTITUTION_GAME_OFFER : institution_offers
     GAME_VERSION ||--o{ GAME_CUSTOMIZATION : customizations
     GAME_VARIANT ||--o{ GAME_LICENSE : licenses
     GAME_CUSTOMIZATION o|--o{ GAME_LICENSE : optional_customization
     PUBLIC_GAME_OFFER ||--o{ GAME_ACQUISITION : acquired_as
-    INSTITUTION_CONTRACT_GAME_OFFER ||--o{ GAME_ACQUISITION : acquired_as
+    INSTITUTION_GAME_OFFER ||--o{ GAME_ACQUISITION : acquired_as
     GAME_LICENSE ||--o{ GAME_ACQUISITION : created_by
+    INSTITUTION_GAME_OFFER ||--o{ ACQUISITION_CODE : authorizes
+    USER o|--o{ ACQUISITION_CODE : redeemed_by
+    USER ||--o{ GAME_PAYMENT_ATTEMPT : creates
+    PUBLIC_GAME_OFFER o|--o{ GAME_PAYMENT_ATTEMPT : pays_for
+    INSTITUTION_GAME_OFFER o|--o{ GAME_PAYMENT_ATTEMPT : pays_for
+    CLASSROOM_GAME o|--o{ GAME_PAYMENT_ATTEMPT : pays_for
+    GAME_CUSTOMIZATION o|--o{ GAME_PAYMENT_ATTEMPT : configures
 
-    %% Institution, classroom, and contract slice
+    %% Institution and classroom slice
     INSTITUTION {
         uuid id PK
         string name
@@ -170,32 +222,10 @@ erDiagram
         string slug UK
     }
 
-    INSTITUTION_CONTRACT {
-        uuid id PK
-        uuid institution_id FK
-        string type
-        string designatedPayor
-        string status
-        date startAt
-        date endAt
-        date createdAt
-        date updatedAt
-    }
-
-    INSTITUTION_CONTRACT_GAME_OFFER {
-        uuid id PK
-        uuid contract_id FK
-        uuid gameVariant_id FK
-        int price_minorUnitAmount
-        string price_currency
-        int allocatedLicenseQuantity
-        int licenseDurationDays
-    }
-
     CLASSROOM_GAME {
         uuid id PK
         uuid classroom_id FK
-        uuid contractGameOffer_id FK
+        uuid institutionGameOffer_id FK
         uuid customization_id FK
         date startAt
         date endAt
@@ -207,16 +237,13 @@ erDiagram
     INSTITUTION ||--o{ COURSE : offers
     INSTITUTION ||--o{ CLASSROOM : contains
     INSTITUTION }o--o{ INSTRUCTOR : associates
-    INSTITUTION ||--o{ INSTITUTION_CONTRACT : contracts
     CLASSROOM }o--o{ COURSE : includes
     CLASSROOM }o--o{ INSTRUCTOR : assigns
     CLASSROOM }o--o{ TAXONOMY_TERM : tagged_by
-    INSTITUTION_CONTRACT ||--o{ INSTITUTION_CONTRACT_GAME_OFFER : includes
-    GAME_VARIANT ||--o{ INSTITUTION_CONTRACT_GAME_OFFER : contracted
     CLASSROOM ||--o{ CLASSROOM_GAME : schedules
-    INSTITUTION_CONTRACT_GAME_OFFER ||--o{ CLASSROOM_GAME : schedules
+    INSTITUTION_GAME_OFFER ||--o{ CLASSROOM_GAME : selected_for
     GAME_CUSTOMIZATION o|--o{ CLASSROOM_GAME : optional_customization
-    CLASSROOM_GAME ||--o{ GAME_LICENSE : grants
+    CLASSROOM_GAME ||--o{ GAME_LICENSE : contextualizes
 ```
 
 ## Constraints
@@ -232,8 +259,12 @@ erDiagram
 - `Instructor.slug` unique.
 - `TaxonomyTerm(type, slug)` unique.
 - `GameTaxonomyTerm(gameId, taxonomyTerm)` unique.
-- `InstitutionContractGameOffer(contract, gameVariant)` unique.
-- `GameLicense(user, classroomGame)` unique for classroom licenses; public licenses leave `classroomGame` null.
+- `InstitutionGameOffer(gameVariant, designatedPayor)` unique.
+- `AcquisitionCode.code` unique.
+- `GamePaymentAttempt.stripeCheckoutSessionId` unique when present.
+- An expired license is retained as history. A later purchase or redemption creates a separate license through the ordinary acquisition path; licenses are not renewed.
+- Duplicate active classroom acquisition is enforced by application transactions, not a blanket `(user, classroomGame)` unique constraint.
+- `GameLicense.startAt <= now < endAt` is the active interval. Expired licenses remain historical records.
 
 ## Value Types
 
@@ -242,4 +273,12 @@ Media = { type: image | video, src: string, alt: string }
 Money = { minorUnitAmount: integer, currency: Currency }
 ```
 
-`Media` is stored as JSON. `Money` is embedded with `price_` prefixes in `PublicGameOffer`, `InstitutionContractGameOffer`, `GameAcquisition`, and payment attempts. Public offers are optional; a listed game version can have institutional offers without a public offer.
+`Media` is stored as JSON. `Money` is embedded with `price_` prefixes in `PublicGameOffer`, `InstitutionGameOffer`, `GameAcquisition`, and payment attempts. Publishers define standalone public offers and classroom-use institution offers independently of institutions. A classroom assignment selects an institution offer; institution billing is out of scope.
+
+## Implemented acquisition and launch behavior
+
+- Public and student-paid classroom acquisitions create `GamePaymentAttempt` records and are fulfilled only after a verified Stripe webhook.
+- Institution-funded classroom acquisition uses a single-use `AcquisitionCode` scoped to the selected `InstitutionGameOffer`; redemption creates the license and `GameAcquisition` transactionally. This is access fulfillment, not institution billing.
+- Expired licenses are not renewed. A new license must be acquired through a new standalone purchase or the selected classroom assignment's payer flow.
+- A classroom assignment determines the exact `GameVariant`, optional customization, payer, and license duration. The assigned variant supplies language, mode, and runtime configuration.
+- The protected launch endpoint authorizes the current user and active exact-version license, then returns the stored game URL with a short-lived signed `launch_token`. Token validation by the game is part of the game integration contract and is not represented as a persisted ER entity.

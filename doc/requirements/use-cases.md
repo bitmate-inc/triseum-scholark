@@ -33,7 +33,7 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-23 | MVP | Target-MVP grading rules are retained; Milestone 2 determines the minimum grading behavior required in the initial pilot. |
 | UC-24 | Future | Existing ScholArk Administration responsibility. |
 | UC-25 | Future | Existing ScholArk Administration responsibility. |
-| UC-26 | Mixed | Existing Administration may maintain assignments, while the target Instructor workflow can select from eligible contracted games and publish the approved Game Version assignment. |
+| UC-26 | Mixed | Existing Administration may maintain assignments, while the target Instructor workflow can select a publisher-defined InstitutionGameOffer and publish the approved Game Version assignment. |
 | UC-27 | Future | Existing ScholArk Administration responsibility. |
 | UC-28 | Mixed | Game catalog administration is an existing-system responsibility; mapping MVP game records to ScholArk's generic structure is included, with the supporting mechanism selected in Milestone 2. |
 | UC-29 | MVP | Mapping MVP game-play and game-state records to ScholArk's generic structure is required; Milestone 2 determines whether configuration, scripts, or authoring tools support it. |
@@ -47,8 +47,8 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-37 | Future | Direct LMS synchronization is excluded from MVP. |
 | UC-38 | MVP | An Instructor initiates an LMS-oriented grade-file export for an authorized classroom. Discovery baselines the finite target-MVP format list and classroom/student mapping; later formats require explicit scope and forecast revision. |
 | UC-39 | MVP | Within the for-credit path, the Student redeems an institution-purchased assigned game using an acquisition code that activates a fixed-term license; code generation and license authority are discovery decisions. |
-| UC-40 | MVP | A fixed-term game license can be renewed without deleting historical acquisitions, license terms, game-play records, or game-state records. |
-| UC-41 | Future | Institutional contracts define which games an institution may assign; contract administration remains outside the target Student and Instructor portals. |
+| UC-40 | MVP | After expiry, the Student can acquire a separate new license; expired license history is retained. |
+| UC-41 | Future | Publishers define institution-use offers; institutions select them through classroom assignments. Institutional billing is out of scope. |
 | UC-42 | MVP | An authorized employee or Instructor publishes an immutable classroom Game Version assignment with an active period and configured acquisition-license duration; changing it requires a replacement assignment. |
 | UC-43 | Future | Game Forge can create a data-only GameCustomization for a selected Game Version; unpublished customizations are drafts and published customizations are immutable. |
 
@@ -94,7 +94,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 2. Student sees games for which they have current or historical licenses.
 3. Games with active licenses are shown first, with license status and expiration information.
 4. Games with expired licenses remain visible in history but cannot be launched.
-5. Student can acquire additional licenses or renew an eligible license.
+5. Student can acquire a separate new license through an available offer; existing licenses are not renewed.
 
 ### UC-06 — Student acquires a game for educational credit
 **Actor:** Student
@@ -102,7 +102,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 1. Student chooses to acquire a game.
 2. ScholArk asks whether the game is for educational credit.
 3. Student confirms that it is.
-4. ScholArk presents institutions that have at least one active contract with an eligible game.
+4. ScholArk presents institutions with active classrooms containing assigned institution-use offers.
 5. Student selects an institution.
 6. ScholArk presents courses currently using at least one game.
 7. Student selects a course.
@@ -182,14 +182,13 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 5. ScholArk activates or records the Student's fixed-term license for the exact assigned Game Version.
 6. Institution invoicing remains outside the MVP.
 
-### UC-40 — Student renews a game license
+### UC-40 — Student acquires a new license after expiry
 **Actor:** Student
 
-1. Student views a game with an expiring or expired license.
-2. Student initiates renewal through the approved Student-funded or institution-funded process.
-3. ScholArk validates the payment or acquisition code and creates or extends the active license term exactly once.
-4. The renewed license permits the Game Version or versions defined by the approved renewal policy for the new fixed period.
-5. Historical acquisitions, prior license terms, game-play records, game-state records, progress, and grading history remain preserved and attributable to their applicable versions.
+1. Student views an expired license in library history.
+2. Student returns to the standalone offer or classroom assignment acquisition flow.
+3. ScholArk validates the offer, designated payor, and any required payment or acquisition code.
+4. ScholArk creates a separate fixed-term license and acquisition record; the expired license remains unchanged.
 
 ---
 
@@ -203,7 +202,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 3. ScholArk confirms that the Student has an active license.
 4. ScholArk resolves the Game Version permitted by the license and classroom rules established during discovery.
 5. ScholArk launches that version using the stored game website.
-6. If the license is expired or does not permit the required version, ScholArk denies launch and offers the applicable renewal or upgrade path.
+6. If the license is expired or does not permit the required version, ScholArk denies launch and directs the Student to the applicable new-acquisition path.
 7. The student's login and/or password may be entered into the game.
 
 ### UC-14 — Student resumes a game
@@ -297,11 +296,11 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 3. Employee specifies course number/name.
 4. Employee specifies how the game will be used.
 5. Employee specifies the language.
-6. Employee selects contracted games that the institution is permitted to assign.
+6. Employee selects publisher-defined InstitutionGameOffers for classroom use.
 7. Employee creates classroom game assignments with a selected immutable Game Version.
 8. Employee specifies the assignment active period.
 9. Employee specifies the duration of licenses acquired through the assignment.
-10. Employee records the contract's designated payor for the classroom assignment.
+10. The selected offer supplies the designated payor for the classroom assignment.
 
 ### UC-25 — ScholArk employee assigns an instructor
 **Actor:** ScholArk Employee
@@ -313,7 +312,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 **Actor:** ScholArk Employee
 
 1. Employee configures a classroom.
-2. Employee selects one or more games permitted by the institution's active contract.
+2. Employee selects one or more publisher-defined InstitutionGameOffers for the classroom.
 3. Employee selects the immutable Game Version for each classroom assignment.
 4. Employee configures the assignment active period and license duration.
 5. Once published, the assignment cannot be edited; a replacement assignment is required for a change.
@@ -327,22 +326,21 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 3. Employee specifies the language.
 4. Custom content is a future Game Forge capability and is published as a new immutable GameCustomization rather than changing the assigned Game Version.
 
-### UC-41 — ScholArk employee manages an institution game contract
-**Actor:** ScholArk Employee
+### UC-41 — Publisher defines institution-use offers
+**Actor:** Publisher / ScholArk Employee
 
-1. Employee creates or updates an institutional contract.
-2. Employee specifies the contract status, institution, type, channel, sales region, start date, and end date.
-3. Employee specifies the designated payor as Student or Institution.
-4. Employee links games that the institution may assign under the contract.
-5. Only games linked to an active contract may be selected for a classroom assignment.
+1. Publisher defines an institution-use offer for a Game Variant, including designated payor, price, and license duration.
+2. The offer is available for selection independently of any institution.
+3. An institution selects the offer by assigning it to a ClassroomGame.
+4. Institutional billing and invoicing are outside the MVP.
 
 ### UC-42 — Authorized user publishes a classroom Game Version assignment
 **Actor:** ScholArk Employee / Authorized Instructor
 
-1. Authorized user selects a contracted Game and an immutable Game Version.
+1. Authorized user selects an InstitutionGameOffer and its immutable Game Version.
 2. Authorized user selects the classroom and configures the assignment start and end dates.
 3. Authorized user configures the fixed duration of licenses acquired through the assignment.
-4. ScholArk validates that the institution contract and selected Game Version permit the assignment.
+4. ScholArk validates that the selected offer and Game Version permit the assignment.
 5. ScholArk publishes the assignment.
 6. After publication, the assignment and its selected Game Version cannot be changed.
 7. A change requires a replacement assignment, and a change to game content requires a new Game Version.

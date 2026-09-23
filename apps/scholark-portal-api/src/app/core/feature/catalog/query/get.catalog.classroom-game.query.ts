@@ -47,9 +47,8 @@ function addClassroomGameRelations(
 	queryBuilder
 		.leftJoinAndSelect('classroomGame.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
-		.leftJoinAndSelect('classroomGame.contractGameOffer', 'contractGameOffer')
-		.leftJoinAndSelect('contractGameOffer.contract', 'contract')
-		.leftJoinAndSelect('contractGameOffer.gameVariant', 'gameVariant')
+		.leftJoinAndSelect('classroomGame.institutionGameOffer', 'institutionGameOffer')
+		.leftJoinAndSelect('institutionGameOffer.gameVariant', 'gameVariant')
 		.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
 		.leftJoinAndSelect('gameVersion.game', 'game')
 		.leftJoinAndSelect('game.publisher', 'publisher')
@@ -70,7 +69,7 @@ export class GetCatalogClassroomGameListQuery {
 
 		addClassroomGameRelations(queryBuilder);
 
-		queryBuilder.distinct().andWhere({ contractGameOffer: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } } });
+		queryBuilder.distinct().andWhere({ institutionGameOffer: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } } });
 
 		if (data.filterBy?.id) {
 			queryBuilder.andWhere({ id: { $in: data.filterBy.id } });
@@ -85,11 +84,11 @@ export class GetCatalogClassroomGameListQuery {
 		}
 
 		if (data.filterBy?.gameId) {
-			queryBuilder.andWhere({ contractGameOffer: { gameVariant: { gameVersion: { game: data.filterBy.gameId } } } });
+			queryBuilder.andWhere({ institutionGameOffer: { gameVariant: { gameVersion: { game: data.filterBy.gameId } } } });
 		}
 
 		if (data.filterBy?.taxonomyTermId) {
-			queryBuilder.andWhere({ contractGameOffer: { gameVariant: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } } });
+			queryBuilder.andWhere({ institutionGameOffer: { gameVariant: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
@@ -127,7 +126,7 @@ export class GetCatalogClassroomGameQuery {
 		addClassroomGameRelations(queryBuilder);
 		
 		queryBuilder.where({
-			contractGameOffer: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } },
+			institutionGameOffer: { gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } },
 			id: data.filterBy.id,
 		});
 

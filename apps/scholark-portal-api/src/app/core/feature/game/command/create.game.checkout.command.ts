@@ -10,7 +10,7 @@ import { ValidationResult } from '../../../../../lib/validator/model/validation.
 import { StripeClient } from '../../../infrastructure/stripe/stripe.module';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
-import { InstitutionContractGameOfferRepository } from '../../education/repository/institution.contract.game.offer.repository';
+import { InstitutionGameOfferRepository } from '../../education/repository/institution.game.offer.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GamePaymentAttempt, GamePaymentAttemptStatus } from '../model/game.payment.attempt.entity';
 import { GameLicenseRepository } from '../repository/game.license.repository';
@@ -66,7 +66,7 @@ export class CreateGameCheckoutCommand {
 		private readonly userRepository: UserEntityRepository,
 		private readonly paymentAttemptRepository: GamePaymentAttemptRepository,
 		private readonly classroomGameRepository: ClassroomGameRepository,
-		private readonly contractGameRepository: InstitutionContractGameOfferRepository,
+		private readonly institutionGameOfferRepository: InstitutionGameOfferRepository,
 		@Inject(StripeClient()) private readonly stripe: Stripe,
 		@Inject(stripeConfig.KEY) private readonly config: ConfigType<typeof stripeConfig>,
 	) {}
@@ -168,13 +168,10 @@ export class CreateGameCheckoutCommand {
 			return CreateGameCheckoutCommandResult.userNotFoundFail();
 		}
 
-		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGameOffer(
-			classroomGame.classroom.institution,
-			classroomGame.contractGameOffer,
-		);
+		const studentPayorOffer = await this.institutionGameOfferRepository.findStudentPayorOffer(classroomGame.institutionGameOffer);
 
-		if (!activeContractGame || (classroomGame.customization
-			&& classroomGame.customization.gameVersion !== classroomGame.contractGameOffer.gameVariant.gameVersion)) {
+		if (!studentPayorOffer || (classroomGame.customization
+			&& classroomGame.customization.gameVersion !== classroomGame.institutionGameOffer.gameVariant.gameVersion)) {
 			return CreateGameCheckoutCommandResult.unavailableFail();
 		}
 
@@ -187,12 +184,12 @@ export class CreateGameCheckoutCommand {
 			return CreateGameCheckoutCommandResult.alreadyAcquiredFail();
 		}
 
-		const institutionContractGameOffer = classroomGame.contractGameOffer;
+		const institutionGameOffer = classroomGame.institutionGameOffer;
 		const attempt = GamePaymentAttempt.create({
 			classroomGame,
-			licenseDurationDays: classroomGame.contractGameOffer.licenseDurationDays,
-			price: institutionContractGameOffer.price,
-			institutionContractGameOffer,
+			licenseDurationDays: classroomGame.institutionGameOffer.licenseDurationDays,
+			price: institutionGameOffer.price,
+			institutionGameOffer,
 			status: GamePaymentAttemptStatus.PENDING,
 			user,
 			customization: classroomGame.customization,
@@ -207,7 +204,7 @@ export class CreateGameCheckoutCommand {
 				attemptType: 'classroom',
 				cancelUrl: `${this.config.portalUrl}/classroom-game/${classroomGame.id}/acquire`,
 				attemptId: attempt.id!,
-				publicOffer: institutionContractGameOffer,
+				publicOffer: institutionGameOffer,
 				classroomGameId: classroomGame.id!,
 				successUrl: `${this.config.portalUrl}/classroom-game/${classroomGame.id}/acquire/success?checkout_session_id={CHECKOUT_SESSION_ID}`,
 				userId: user.id!,

@@ -104,6 +104,33 @@ export function formatOfferPrice(offer: PublicGameOffer): string {
 	}).format(offer.price.minorUnitAmount / 100);
 }
 
+export function formatOfferPriceRange(offerList: PublicGameOffer[]): string {
+	const offerListByCurrency = new Map<string, PublicGameOffer[]>();
+	for (const offer of offerList) {
+		const currencyOfferList = offerListByCurrency.get(offer.price.currency) ?? [];
+		currencyOfferList.push(offer);
+		offerListByCurrency.set(offer.price.currency, currencyOfferList);
+	}
+
+	return [...offerListByCurrency.entries()].map(([currency, currencyOfferList]) => {
+		const amountList = currencyOfferList.map((offer) => offer.price.minorUnitAmount);
+		const minAmount = Math.min(...amountList) / 100;
+		const maxAmount = Math.max(...amountList) / 100;
+		const formatter = new Intl.NumberFormat(undefined, { currency, style: "currency" });
+		const minPrice = formatter.format(minAmount);
+		return minAmount === maxAmount ? minPrice : `${minPrice}–${formatter.format(maxAmount)}`;
+	}).join(" · ");
+}
+
+export function formatOfferLanguage(language: string): string {
+	const languageTag = language.replaceAll("_", "-");
+	try {
+		return new Intl.DisplayNames(["en"], { type: "language" }).of(languageTag) ?? language.toUpperCase();
+	} catch {
+		return language.toUpperCase();
+	}
+}
+
 export function formatOfferMode(mode: string): string {
 	return mode
 		.split("_")

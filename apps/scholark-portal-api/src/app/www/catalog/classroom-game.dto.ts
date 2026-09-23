@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsUUID } from 'class-validator';
+import {
+	IsNotEmpty,
+	IsOptional,
+	IsString,
+	IsUUID,
+} from 'class-validator';
 
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import {
@@ -7,8 +12,8 @@ import {
 	GetCatalogClassroomGameListQueryResult,
 } from '../../core/feature/catalog/query/get.catalog.classroom-game.query';
 import { ClassroomGame } from '../../core/feature/education/model/classroom.game.entity';
-import { InstitutionContractDesignatedPayor } from '../../core/feature/education/model/institution.contract.entity';
-import { GameResponseDto } from './game.dto';
+import { InstitutionGameOfferDesignatedPayor } from '../../core/feature/education/model/institution.game.offer.entity';
+import { GameResponseDto, MoneyDto } from './game.dto';
 import { InstitutionResponseDto } from './institution.dto';
 
 export class GetClassroomGameListQueryDto extends GetListRequestQueryParamsDto {
@@ -45,6 +50,25 @@ export class GetClassroomGameListQueryDto extends GetListRequestQueryParamsDto {
 
 }
 
+export class RedeemAcquisitionCodeRequestDto {
+
+	@ApiProperty()
+	@IsString()
+	@IsNotEmpty()
+	code!: string;
+
+}
+
+export class RedeemAcquisitionCodeResponseDto {
+
+	@ApiProperty({ format: 'uuid' })
+	licenseId!: string;
+
+	@ApiProperty({ minimum: 1 })
+	licenseDurationDays!: number;
+
+}
+
 class ClassroomGameClassroomResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
@@ -73,13 +97,22 @@ export class ClassroomGameResponseDto {
 	game!: GameResponseDto;
 
 	@ApiProperty({ format: 'uuid' })
-	contractGameOfferId!: string;
+	institutionGameOfferId!: string;
 
-	@ApiProperty({ enum: InstitutionContractDesignatedPayor, enumName: 'InstitutionContractDesignatedPayor' })
-	designatedPayor!: InstitutionContractDesignatedPayor;
+	@ApiProperty({ enum: InstitutionGameOfferDesignatedPayor, enumName: 'InstitutionGameOfferDesignatedPayor' })
+	designatedPayor!: InstitutionGameOfferDesignatedPayor;
 
 	@ApiProperty({ format: 'uuid' })
 	gameVersionId!: string;
+
+	@ApiProperty({ type: MoneyDto })
+	price!: MoneyDto;
+
+	@ApiProperty()
+	language!: string;
+
+	@ApiProperty()
+	mode!: string;
 
 	@ApiProperty({ format: 'date-time', type: String })
 	startAt!: Date;
@@ -105,13 +138,16 @@ export class ClassroomGameResponseDto {
 				slug: classroomGame.classroom.slug,
 			},
 			createdAt: classroomGame.createdAt!,
-			game: GameResponseDto.fromEntity(classroomGame.contractGameOffer.gameVariant.gameVersion.game),
-			contractGameOfferId: classroomGame.contractGameOffer.id!,
-			designatedPayor: classroomGame.contractGameOffer.contract.designatedPayor,
-			gameVersionId: classroomGame.contractGameOffer.gameVariant.gameVersion.id!,
+			game: GameResponseDto.fromEntity(classroomGame.institutionGameOffer.gameVariant.gameVersion.game),
+			institutionGameOfferId: classroomGame.institutionGameOffer.id!,
+			designatedPayor: classroomGame.institutionGameOffer.designatedPayor,
+			gameVersionId: classroomGame.institutionGameOffer.gameVariant.gameVersion.id!,
 			id: classroomGame.id!,
 			endAt: classroomGame.endAt,
-			licenseDurationDays: classroomGame.contractGameOffer.licenseDurationDays,
+			licenseDurationDays: classroomGame.institutionGameOffer.licenseDurationDays,
+			language: classroomGame.institutionGameOffer.gameVariant.language,
+			mode: classroomGame.institutionGameOffer.gameVariant.mode,
+			price: classroomGame.institutionGameOffer.price,
 			startAt: classroomGame.startAt,
 			updatedAt: classroomGame.updatedAt!,
 		};

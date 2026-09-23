@@ -23,9 +23,9 @@ export class ClassroomGameRepository extends MikroOrmEntityRepository<ClassroomG
 				populate: [
 					'classroom.institution',
 					'customization',
-					'contractGameOffer.gameVariant.gameVersion.game',
-					'contractGameOffer.gameVariant.gameVersion.game.publisher',
-					'contractGameOffer.gameVariant.gameVersion.game.taxonomyList.taxonomyTerm',
+					'institutionGameOffer.gameVariant.gameVersion.game',
+					'institutionGameOffer.gameVariant.gameVersion.game.publisher',
+					'institutionGameOffer.gameVariant.gameVersion.game.taxonomyList.taxonomyTerm',
 				] as never,
 			},
 		)) ?? undefined;

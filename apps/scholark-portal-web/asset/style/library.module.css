@@ -1,9 +1,16 @@
 .sections { display: grid; gap: 48px; }
 .librarySection { display: grid; gap: 18px; }
-.sectionHeading { display: flex; align-items: end; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
-.sectionHeading h2 { font-family: var(--font-display); font-size: 32px; font-weight: 400; line-height: 1; }
-.sectionHeading a { display: inline-flex; align-items: center; gap: 6px; border-bottom: 1px solid currentColor; padding-bottom: 4px; font-size: 13px; font-weight: 700; white-space: nowrap; }
-.sectionHeading a svg { width: 15px; height: 15px; }
+.libraryTabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); }
+.libraryTabs a { display: inline-flex; align-items: center; min-height: 42px; padding: 0 14px; border-bottom: 3px solid transparent; color: var(--muted-foreground); font-size: 14px; font-weight: 700; }
+.libraryTabs a[aria-current="page"] { border-color: #147a74; color: var(--foreground); }
+.statusHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+.statusHeading h2 { font-family: var(--font-display); font-size: 32px; font-weight: 400; line-height: 1; }
+.statusHeading > span { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 11px; text-transform: uppercase; }
+.classroomGroup { display: grid; gap: 14px; }
+.sectionHeading { display: flex; align-items: end; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+.sectionHeading h3 { font-family: var(--font-display); font-size: 25px; font-weight: 400; line-height: 1; }
+.classroomLink { color: inherit; }
+.classroomLink:hover { color: #147a74; }
 .sectionHeading > span { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 11px; text-transform: uppercase; }
 .list { display: grid; gap: 14px; }
 .item { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 22px; border: 1px solid var(--border); background: var(--card); box-shadow: 5px 5px 0 var(--accent); }
@@ -23,11 +30,30 @@
 .openLink { display: grid; place-items: center; width: 38px; aspect-ratio: 1; border: 1px solid var(--border); color: var(--foreground); }
 .openLink:hover { color: #fffdf7; background: #147a74; }
 .openLink svg { width: 18px; height: 18px; }
-.actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 132px; }
+.actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 220px; }
+.actionAccess { text-align: right; }
+.actionAccess dt { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 10px; text-transform: uppercase; }
+.actionAccess dd { margin-top: 4px; font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .runLink { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; color: #fffdf7; background: #147a74; font-size: 13px; font-weight: 700; white-space: nowrap; }
 .runLink:hover { background: #0f625d; }
 .runLink svg { width: 15px; height: 15px; }
 .expiredAction { display: inline-flex; align-items: center; min-height: 38px; padding: 0 12px; border: 1px solid var(--border); color: var(--muted-foreground); font-size: 13px; font-weight: 700; }
+.progressSection { display: grid; grid-column: 1 / -1; gap: 9px; }
+.progressHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.progressSummary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; color: var(--muted-foreground); font-size: 13px; }
+.progressSummary strong { color: var(--foreground); font-variant-numeric: tabular-nums; }
+.progressTooltip { position: relative; display: flex; align-items: center; }
+.progressTooltipTrigger { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border); color: #147a74; background: var(--card); cursor: help; }
+.progressTooltipTrigger svg { width: 15px; height: 15px; }
+.progressTooltipTrigger:focus-visible { outline: 2px solid #147a74; outline-offset: 2px; }
+.progressTooltipContent { position: absolute; z-index: 2; right: 0; bottom: calc(100% + 8px); display: grid; gap: 4px; width: max-content; min-width: 190px; padding: 10px 12px; border-left: 3px solid #c65039; color: var(--foreground); background: var(--card); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14); font-size: 12px; opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity 120ms ease, transform 120ms ease; }
+.progressTooltipContent dl { display: grid; gap: 6px; }
+.progressTooltipContent dl > div { display: flex; justify-content: space-between; gap: 16px; }
+.progressTooltipContent dt { color: var(--muted-foreground); }
+.progressTooltipContent dd { font-weight: 700; font-variant-numeric: tabular-nums; }
+.progressTooltip:hover .progressTooltipContent, .progressTooltip:focus-within .progressTooltipContent { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.progressTrack { height: 5px; overflow: hidden; background: #e1ddd2; }
+.progressFill { display: block; height: 100%; background: #45677A; transition: width 220ms ease; }
 .state, .empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 90px 20px; border: 1px dashed var(--border); text-align: center; }
 .state svg, .empty > svg { width: 32px; height: 32px; color: #147a74; }
 .state h2, .empty h2 { font-family: var(--font-display); font-size: 30px; font-weight: 400; }
@@ -36,4 +62,4 @@
 .empty a svg { width: 16px; height: 16px; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 680px) { .sections { gap: 38px; } .sectionHeading { align-items: start; } .sectionHeading h2 { font-size: 27px; } .sectionHeading a { margin-top: 4px; } .item { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 16px; } .itemIcon { width: 42px; } .item h3 { font-size: 25px; } .itemHeading { display: block; } .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .facts dd { overflow-wrap: anywhere; } .actions { grid-column: 2; width: 100%; max-width: 132px; } }
+@media (max-width: 680px) { .sections { gap: 38px; } .sectionHeading { align-items: start; } .sectionHeading h3 { font-size: 23px; } .statusHeading h2 { font-size: 27px; } .item { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 16px; } .itemIcon { width: 42px; } .item h3 { font-size: 25px; } .itemHeading { display: block; } .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .facts dd { overflow-wrap: anywhere; } .actions { grid-column: 2; width: min(100%, 220px); } .progressHeading { align-items: flex-start; flex-direction: column; } }

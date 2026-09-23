@@ -51,9 +51,15 @@ export type ClassroomGame = {
 	id: string;
 	classroom: Pick<Classroom, "id" | "name" | "slug" | "institution">;
 	game: Game;
-	contractGameOfferId: string;
+	institutionGameOfferId: string;
 	designatedPayor: "student" | "institution";
 	gameVersionId: string;
+	price?: {
+		minorUnitAmount: number;
+		currency: string;
+	};
+	language?: string;
+	mode?: string;
 	startAt: string;
 	endAt: string;
 	licenseDurationDays: number;

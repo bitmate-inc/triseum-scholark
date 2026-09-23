@@ -16,4 +16,8 @@ export class GameAcquisitionRepository extends MikroOrmEntityRepository<GameAcqu
 		super(GameAcquisition, repository, transactionContext);
 	}
 
+	findLatestByLicense(licenseId: string): Promise<GameAcquisition | undefined> {
+		return this.findOneBy({ license: licenseId });
+	}
+
 }

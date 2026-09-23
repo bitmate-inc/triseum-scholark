@@ -1,4 +1,5 @@
 import {
+	Body,
 	Controller,
 	Get,
 	HttpCode,
@@ -21,6 +22,7 @@ import {
 
 import { GetCatalogClassroomGameListQuery, GetCatalogClassroomGameQuery } from '../../core/feature/catalog/query/get.catalog.classroom-game.query';
 import { CreateClassroomGameCheckoutCommandData, CreateGameCheckoutCommand } from '../../core/feature/game/command/create.game.checkout.command';
+import { RedeemAcquisitionCodeCommand, RedeemAcquisitionCodeCommandData } from '../../core/feature/game/command/redeem.acquisition.code.command';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
 import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import { SessionAuthGuard } from '../auth/session.auth.guard';
@@ -28,6 +30,8 @@ import {
 	GetClassroomGameListQueryDto,
 	GetClassroomGameListResponseDto,
 	GetClassroomGameResponseDto,
+	RedeemAcquisitionCodeRequestDto,
+	RedeemAcquisitionCodeResponseDto,
 } from './classroom-game.dto';
 import { GameCheckoutResponseDto } from './game.dto';
 
@@ -37,9 +41,40 @@ export class ClassroomGameController {
 
 	constructor(
 		private readonly createGameCheckoutCommand: CreateGameCheckoutCommand,
+		private readonly redeemAcquisitionCodeCommand: RedeemAcquisitionCodeCommand,
 		private readonly getClassroomGameListQuery: GetCatalogClassroomGameListQuery,
 		private readonly getClassroomGameQuery: GetCatalogClassroomGameQuery,
 	) {}
+
+	@Post(':id/redeem-code')
+	@HttpCode(200)
+	@UseGuards(SessionAuthGuard)
+	@ApiCookieAuth()
+	@ApiOperation({ summary: 'Redeem an institution-funded acquisition code' })
+	@ApiParam({ format: 'uuid', name: 'id' })
+	@ApiOkResponse({ type: RedeemAcquisitionCodeResponseDto })
+	async redeemAcquisitionCode(
+		@Param('id', ParseUUIDPipe) id: string,
+		@AuthSession() session: AuthSessionData,
+		@Body() body: RedeemAcquisitionCodeRequestDto,
+	): Promise<RedeemAcquisitionCodeResponseDto> {
+		const result = await this.redeemAcquisitionCodeCommand.execute(
+			RedeemAcquisitionCodeCommandData.create({
+				classroomGameId: id,
+				code: body.code,
+				userId: session.user.id,
+			}),
+		);
+
+		if (result.validationResult) {
+			throw new UnprocessableEntityException(result.validationResult);
+		}
+
+		return {
+			licenseDurationDays: result.classroomGame!.institutionGameOffer.licenseDurationDays,
+			licenseId: result.license!.id!,
+		};
+	}
 
 	@Post(':id/acquisition')
 	@HttpCode(200)

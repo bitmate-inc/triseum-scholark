@@ -16,6 +16,7 @@ import { GameVariant } from './model/game.variant.entity';
 import { GameVersion } from './model/game.version.entity';
 import { PublicGameOffer } from './model/public.game.offer.entity';
 import { StripeWebhookEvent } from './model/stripe.webhook.event.entity';
+import { GetGameLaunchQuery } from './query/get.game.launch.query';
 import { GetGameListQuery } from './query/get.game.list.query';
 import { GameAcquisitionRepository } from './repository/game.acquisition.repository';
 import { GameLicenseRepository } from './repository/game.license.repository';
@@ -38,6 +39,7 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		StripeWebhookEventRepository,
 		MikroOrmModule,
 		GetGameListQuery,
+		GetGameLaunchQuery,
 		GetUserLibraryQuery,
 	],
 	imports: [
@@ -67,6 +69,7 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		GameRepository,
 		GameVersionRepository,
 		GetGameListQuery,
+		GetGameLaunchQuery,
 		GetUserLibraryQuery,
 	],
 })

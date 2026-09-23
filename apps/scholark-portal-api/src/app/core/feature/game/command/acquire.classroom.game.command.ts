@@ -15,7 +15,7 @@ import { Validator } from '../../../infrastructure/validation/validator/validato
 import { Money } from '../../../shared/commerce/model/money.entity';
 import { ClassroomGame } from '../../education/model/classroom.game.entity';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
-import { InstitutionContractGameOfferRepository } from '../../education/repository/institution.contract.game.offer.repository';
+import { InstitutionGameOfferRepository } from '../../education/repository/institution.game.offer.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
 import { GameCustomization } from '../model/game.customization.entity';
@@ -85,7 +85,7 @@ export class AcquireClassroomGameCommand {
 		private readonly classroomGameRepository: ClassroomGameRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
 		private readonly gameAcquisitionRepository: GameAcquisitionRepository,
-		private readonly contractGameRepository: InstitutionContractGameOfferRepository,
+		private readonly institutionGameOfferRepository: InstitutionGameOfferRepository,
 		private readonly unitOfWork: MikroOrmUnitOfWork,
 		private readonly userRepository: UserEntityRepository,
 	) {}
@@ -117,17 +117,14 @@ export class AcquireClassroomGameCommand {
 			return AcquireClassroomGameCommandResult.userNotFoundFail();
 		}
 
-		const activeContractGame = await this.contractGameRepository.findActiveStudentPayorByInstitutionAndGameOffer(
-			classroomGame.classroom.institution,
-			classroomGame.contractGameOffer,
-		);
+		const studentPayorOffer = await this.institutionGameOfferRepository.findStudentPayorOffer(classroomGame.institutionGameOffer);
 
-		if (!activeContractGame) {
+		if (!studentPayorOffer) {
 			return AcquireClassroomGameCommandResult.classroomGameUnavailableFail();
 		}
 
 		if (classroomGame.customization
-			&& classroomGame.customization.gameVersion !== classroomGame.contractGameOffer.gameVariant.gameVersion) {
+			&& classroomGame.customization.gameVersion !== classroomGame.institutionGameOffer.gameVariant.gameVersion) {
 			return AcquireClassroomGameCommandResult.classroomGameUnavailableFail();
 		}
 
@@ -141,26 +138,26 @@ export class AcquireClassroomGameCommand {
 		}
 
 		const customization = data.customization ?? classroomGame.customization;
-		const licenseDurationDays = data.licenseDurationDays ?? classroomGame.contractGameOffer.licenseDurationDays;
+		const licenseDurationDays = data.licenseDurationDays ?? classroomGame.institutionGameOffer.licenseDurationDays;
 
 		let license = GameLicense.createForDuration(
 			licenseDurationDays,
 			{
 				classroomGame,
 				customization,
-				gameVariant: classroomGame.contractGameOffer.gameVariant,
+				gameVariant: classroomGame.institutionGameOffer.gameVariant,
 				user,
 			},
 		);
 		license = await this.gameLicenseRepository.save(license);
 
-		const acquisitionPrice = data.price ?? classroomGame.contractGameOffer.price;
+		const acquisitionPrice = data.price ?? classroomGame.institutionGameOffer.price;
 
 		await this.gameAcquisitionRepository.save(GameAcquisition.create({
 			license,
 			mechanism: GameAcquisitionMechanism.USER_PAID,
 			price: acquisitionPrice,
-			institutionContractGameOffer: classroomGame.contractGameOffer,
+			institutionGameOffer: classroomGame.institutionGameOffer,
 			user,
 		}));
 

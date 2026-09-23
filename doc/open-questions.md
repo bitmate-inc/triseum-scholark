@@ -12,7 +12,7 @@ This living document tracks questions raised after the client-delivered scope ba
 | ID | Area | Question | Owner | Status | Needed By |
 | --- | --- | --- | --- | --- | --- |
 | OQ-001 | Game catalog | Should `Game` support soft deletion through a nullable `deletedAt` timestamp? | Product / Architecture | Open | Catalog persistence baseline |
-| OQ-002 | Contracts and assignments | Who owns institutional contracts, contracted-game links, and immutable classroom Game Version assignments between the Admin app and Portal? | Product / Admin / Architecture | Open | Domain and source-of-truth baseline |
+| OQ-002 | Publisher offers and assignments | Which system owns publisher offer definition and classroom assignment publication? | Product / Admin / Architecture | Partially resolved | Domain and source-of-truth baseline |
 | OQ-004 | Catalog and capabilities | How should catalog availability and publisher/game-version capabilities be represented? | Product / Catalog / Game Integration | Open | Catalog and game-version baseline |
 | OQ-005 | Game customization | Which data-driven customization content can be authored, validated, and consumed for each Game Version? | Product / Game Integration | Open | Game Forge design |
 
@@ -50,20 +50,19 @@ This living document tracks questions raised after the client-delivered scope ba
 - Whether integration/customization capabilities are modeled as fields, structured metadata, or a separate contract.
 - How the rule excluding versions intended for classroom use from general catalog discovery is represented and enforced.
 
-## OQ-002 - Institutional Contracts and Classroom Game Version Assignments
+## OQ-002 - Publisher Offers and Classroom Game Version Assignments
 
-**Question:** Which system owns institutional contracts and the publication of classroom Game Version assignments?
+**Question:** Which system owns publisher offer definition and the publication of classroom Game Version assignments?
 
-**Context:** An institution may contract with ScholArk for access to specified games during a contract period. An authorized employee or, in a later workflow, an Instructor can select a contracted game and publish an assignment of an immutable Game Version to a classroom. The assignment has its own active period and configures the duration of licenses acquired through it. Once published, the assignment cannot be changed; replacement requires a new assignment.
+**Context:** Client decision: publishers define standalone and institution-use offers. An `InstitutionGameOffer` is independent of any institution and specifies a Game Variant, designated payor, price, and license duration. An institution selects an offer by assigning it to a `ClassroomGame`. Classroom assignment availability dates remain on the assignment. Offers are not institution-owned; institutional billing is out of scope. Once published, an assignment cannot be changed; replacement requires a new assignment.
 
 **Decision criteria:**
 
-- Whether the existing Admin app can represent contracts, contracted games, exact Game Versions, assignment periods, and license duration.
-- Whether the Portal may publish assignments or only consume Admin-owned assignments.
-- How contract expiry affects existing assignments and already-issued licenses.
+- Whether publishers or authorized ScholArk employees maintain offers in the existing catalog/Admin tooling.
+- Whether the existing Admin app or Portal publishes classroom assignments.
 - Which changes require employee authorization and audit history.
 
-**Resolution:** Pending.
+**Resolution:** Offer ownership and selection semantics are decided as described above. The system and role responsible for maintaining offers and publishing assignments remain open.
 
 ## OQ-005 - Game Customization Content
 
@@ -78,3 +77,4 @@ This living document tracks questions raised after the client-delivered scope ba
 | Date | Change |
 | --- | --- |
 | 2026-08-28 | Created the discovery question log and added OQ-001. |
+| 2026-09-22 | Recorded the client decision to remove institution contracts and use publisher-defined offers selected through classroom assignments. |

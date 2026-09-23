@@ -1,12 +1,12 @@
 import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
+import { AcquisitionCode } from '../app/core/feature/education/model/acquisition.code.entity';
 import { Classroom } from '../app/core/feature/education/model/classroom.entity';
 import { ClassroomGame } from '../app/core/feature/education/model/classroom.game.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
-import { InstitutionContract } from '../app/core/feature/education/model/institution.contract.entity';
-import { InstitutionContractGameOffer } from '../app/core/feature/education/model/institution.contract.game.offer.entity';
 import { Institution } from '../app/core/feature/education/model/institution.entity';
+import { InstitutionGameOffer } from '../app/core/feature/education/model/institution.game.offer.entity';
 import { Instructor } from '../app/core/feature/education/model/instructor.entity';
 import { GameAcquisition, GameAcquisitionMechanism } from '../app/core/feature/game/model/game.acquisition.entity';
 import { GameCustomization } from '../app/core/feature/game/model/game.customization.entity';
@@ -20,13 +20,14 @@ import { Publisher } from '../app/core/feature/publisher/model/publisher.entity'
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 import { User } from '../app/core/feature/user/model/user.entity';
 import {
+	acquisitionCodeSeedList,
 	classroomGameSeedList,
 	classroomSeedList,
 	courseSeedList,
 	gameCustomizationSeedList,
 	gameSeedList,
 	gameVersionSeedList,
-	institutionContractSeedList,
+	institutionGameOfferSeedList,
 	institutionSeedList,
 	instructorSeedList,
 	publicOfferSeedList,
@@ -53,8 +54,7 @@ export class DatabaseSeeder extends Seeder {
 			const publicOfferSeedMap = new Map<string, PublicGameOffer>();
 			const gameCustomizationMap = new Map<string, GameCustomization>();
 			const classroomGameSeedMap = new Map<string, ClassroomGame>();
-			const institutionContractGameOfferMap = new Map<string, InstitutionContractGameOffer>();
-			const contractMap = new Map<string, InstitutionContract>();
+			const institutionGameOfferMap = new Map<string, InstitutionGameOffer>();
 
 			for (const publisherSeed of publisherSeedList) {
 				let publisher = await transactionalEm.findOne(Publisher, { slug: publisherSeed.slug });
@@ -325,78 +325,54 @@ export class DatabaseSeeder extends Seeder {
 
 			await transactionalEm.flush();
 
-			for (const contractSeed of institutionContractSeedList) {
-				const institution = institutionMap.get(contractSeed.institutionSlug)!;
-				let contract = await transactionalEm.findOne(InstitutionContract, {
-					id: contractSeed.id,
-				});
+			for (const offerSeed of institutionGameOfferSeedList) {
+				const publicOffer = publicOfferSeedMap.get(offerSeed.publicOfferSeedId);
+				if (!publicOffer) {
+					throw new Error(`Missing seeded public offer: ${offerSeed.publicOfferSeedId}`);
+				}
 
-				if (contract) {
-					transactionalEm.assign(contract, {
-						designatedPayor: contractSeed.designatedPayor,
-						endAt: contractSeed.endAt,
-						institution,
-						startAt: contractSeed.startAt,
-						status: contractSeed.status,
-						type: contractSeed.type,
+				let institutionGameOffer = await transactionalEm.findOne(InstitutionGameOffer, {
+					designatedPayor: offerSeed.designatedPayor,
+					gameVariant: publicOffer.gameVariant,
+				});
+				if (!institutionGameOffer) {
+					institutionGameOffer = transactionalEm.create(InstitutionGameOffer, {
+						designatedPayor: offerSeed.designatedPayor,
+						gameVariant: publicOffer.gameVariant,
+						licenseDurationDays: offerSeed.licenseDurationDays,
+						price: offerSeed.price,
 					});
 				} else {
-					contract = transactionalEm.create(InstitutionContract, {
-						designatedPayor: contractSeed.designatedPayor,
-						endAt: contractSeed.endAt,
-						id: contractSeed.id,
-						institution,
-						startAt: contractSeed.startAt,
-						status: contractSeed.status,
-						type: contractSeed.type,
+					transactionalEm.assign(institutionGameOffer, {
+						licenseDurationDays: offerSeed.licenseDurationDays,
+						price: offerSeed.price,
 					});
 				}
-				contractMap.set(institution.slug, contract);
-
-				await transactionalEm.flush();
-
-				for (const institutionContractGameOfferSeed of contractSeed.institutionContractGameOfferList) {
-					const publicOffer = publicOfferSeedMap.get(institutionContractGameOfferSeed.publicOfferSeedId)!;
-					let institutionContractGameOffer = await transactionalEm.findOne(InstitutionContractGameOffer, { contract, gameVariant: publicOffer.gameVariant });
-					if (!institutionContractGameOffer) {
-						institutionContractGameOffer = transactionalEm.create(InstitutionContractGameOffer, {
-							contract,
-							gameVariant: publicOffer.gameVariant,
-							licenseDurationDays: institutionContractGameOfferSeed.licenseDurationDays,
-							price: institutionContractGameOfferSeed.price,
-						});
-					} else {
-						transactionalEm.assign(institutionContractGameOffer, {
-							licenseDurationDays: institutionContractGameOfferSeed.licenseDurationDays,
-							price: institutionContractGameOfferSeed.price,
-						});
-					}
-					institutionContractGameOfferMap.set(`${institution.slug}:${institutionContractGameOfferSeed.publicOfferSeedId}`, institutionContractGameOffer);
-				}
+				institutionGameOfferMap.set(`${publicOffer.id}:${offerSeed.designatedPayor}`, institutionGameOffer);
 			}
 
 			await transactionalEm.flush();
 
 			for (const classroomGameSeed of classroomGameSeedList) {
 				const classroom = classroomMap.get(classroomGameSeed.classroomSlug)!;
-				const institutionContractGameOffer = institutionContractGameOfferMap.get(
-					`${classroom.institution.slug}:${classroomGameSeed.publicOfferSeedId}`,
+				const institutionGameOffer = institutionGameOfferMap.get(
+					`${classroomGameSeed.publicOfferSeedId}:${classroomGameSeed.designatedPayor}`,
 				);
-				if (!institutionContractGameOffer) {
+				if (!institutionGameOffer) {
 					throw new Error(
-						`Missing seeded institution game offer for classroom ${classroomGameSeed.id}: ${classroom.institution.slug}:${classroomGameSeed.publicOfferSeedId}`,
+						`Missing seeded institution game offer for classroom ${classroomGameSeed.id}: ${classroomGameSeed.publicOfferSeedId}:${classroomGameSeed.designatedPayor}`,
 					);
 				}
 				const customization = classroomGameSeed.customizationSeedId
 					? gameCustomizationMap.get(classroomGameSeed.customizationSeedId)
 					: undefined;
 				const classroomGame = await transactionalEm.findOne(ClassroomGame, { id: classroomGameSeed.id })
-					?? await transactionalEm.findOne(ClassroomGame, { classroom, contractGameOffer: institutionContractGameOffer });
+					?? await transactionalEm.findOne(ClassroomGame, { classroom, institutionGameOffer });
 
 				if (!classroomGame) {
 					const createdClassroomGame = transactionalEm.create(ClassroomGame, {
 						classroom,
-						contractGameOffer: institutionContractGameOffer,
+						institutionGameOffer,
 						customization,
 						startAt: new Date('2026-01-01T00:00:00.000Z'),
 						endAt: new Date('2026-12-31T23:59:59.999Z'),
@@ -406,12 +382,39 @@ export class DatabaseSeeder extends Seeder {
 					classroomGameSeedMap.set(classroomGameSeed.id, createdClassroomGame);
 				} else {
 					transactionalEm.assign(classroomGame, {
-						contractGameOffer: institutionContractGameOffer,
+						institutionGameOffer,
 						customization,
 						startAt: new Date('2026-01-01T00:00:00.000Z'),
 						endAt: new Date('2026-12-31T23:59:59.999Z'),
 					});
 					classroomGameSeedMap.set(classroomGameSeed.id, classroomGame);
+				}
+			}
+
+			await transactionalEm.flush();
+
+			for (const acquisitionCodeSeed of acquisitionCodeSeedList) {
+				const publicOfferSeed = publicOfferSeedList.find((seed) => seed.id === acquisitionCodeSeed.publicOfferSeedId)!;
+				const institutionGameOffer = institutionGameOfferMap.get(
+					`${publicOfferSeed.id}:${acquisitionCodeSeed.designatedPayor}`,
+				);
+
+				if (!institutionGameOffer) {
+					throw new Error(`Missing seeded institution game offer for acquisition code: ${acquisitionCodeSeed.code}`);
+				}
+
+				const acquisitionCode = await transactionalEm.findOne(AcquisitionCode, { code: acquisitionCodeSeed.code });
+				if (!acquisitionCode) {
+					transactionalEm.create(AcquisitionCode, {
+						code: acquisitionCodeSeed.code,
+						institutionGameOffer,
+						expiresAt: acquisitionCodeSeed.expiresAt,
+					});
+				} else {
+					transactionalEm.assign(acquisitionCode, {
+						institutionGameOffer,
+						expiresAt: acquisitionCodeSeed.expiresAt,
+					});
 				}
 			}
 

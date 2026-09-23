@@ -39,3 +39,16 @@ export class GameCheckoutStatusResponseDto {
 	status!: 'pending' | 'fulfilled' | 'failed';
 
 }
+
+export class GameLaunchResponseDto {
+
+	@ApiProperty({ format: 'uuid' })
+	licenseId!: string;
+
+	@ApiProperty({ format: 'uri' })
+	launchUrl!: string;
+
+	@ApiProperty({ format: 'uuid' })
+	gameVersionId!: string;
+
+}
