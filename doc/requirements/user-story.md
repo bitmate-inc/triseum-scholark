@@ -63,19 +63,20 @@ ScholArk will be able to maintain the config files for games. Initially, ScholAr
 
 ## MVP Scope
 
-MVP will include only
+The planned ScholArk product includes
+ - New ScholArk Administration app
  - Student portal
  - Instructor portal
 
 The initial MVP supports Triseum-produced web games. The representative game and responsibility for required game-side changes will be determined during discovery. Student purchases use Stripe. Institution invoicing is outside the MVP, but students must be able to redeem institution-purchased games using acquisition codes. The MVP allows an authorized Instructor to initiate and download an LMS grade file for a selected classroom; supported format(s) and classroom/student mapping will be determined during discovery.
 
-ScholArk Administration, ScholArk Support, Institution portal, and Game Publisher portal are out of scope of MVP.
+The new ScholArk Administration app is in the planned product scope; Milestone 2 will baseline its detailed workflows and initial-pilot delivery. ScholArk Support administration, Institution portal, and Game Publisher portal are out of scope of MVP.
 
 ## Existing apps
 
-ScholArk Administration already exists as a standalone Visual Basic application connected to an MSSQL database.
+The legacy ScholArk Administration application is a standalone Visual Basic application connected to an MSSQL database. It will not remain in operational use. It may be used to export selected data for a one-time migration to the new platform; the export scope is to be determined.
 
-ScholArk Administration includes setting up Institution, Game Publisher, and Instructor accounts, setting up the class and course hierarchy, and creating Game listings.
+The new ScholArk Administration app is expected to provide the institution, publisher, Instructor, course/classroom, catalog, assignment, acquisition-code, and configuration workflows required by the product. Detailed feature scope and migration needs will be baselined during discovery.
 
 
 

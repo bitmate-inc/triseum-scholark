@@ -4,7 +4,7 @@
 
 This matrix classifies the documented use cases against the target MVP roadmap. It does not guarantee that every target-MVP use case will fit into the initial 2-3 month pilot. Milestone 2 will baseline that minimum usable pilot set using business value, architectural risk, dependency readiness, and available capacity.
 
-**MVP** means included in the target Student or Instructor portal delivery. **Future** means excluded from the target MVP. **Mixed** means only the stated portal-facing portion is included. **TBD** means discovery must select one of the documented alternatives.
+**MVP** means included in the target ScholArk product scope across the new Admin app and Student and Instructor portals. **Future** means excluded from the target MVP. **Mixed** means only the stated portion is included or its owning application remains to be assigned. **TBD** means discovery must select one of the documented alternatives.
 
 | Use Case | Classification | MVP Boundary or Rationale |
 | --- | --- | --- |
@@ -31,18 +31,18 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-21 | MVP | Student progress view. |
 | UC-22 | MVP | Student grade view. |
 | UC-23 | MVP | Target-MVP grading rules are retained; Milestone 2 determines the minimum grading behavior required in the initial pilot. |
-| UC-24 | Future | Existing ScholArk Administration responsibility. |
-| UC-25 | Future | Existing ScholArk Administration responsibility. |
-| UC-26 | Mixed | Existing Administration may maintain assignments, while the target Instructor workflow can select a publisher-defined InstitutionGameOffer and publish the approved Game Version assignment. |
-| UC-27 | Future | Existing ScholArk Administration responsibility. |
-| UC-28 | Mixed | Game catalog administration is an existing-system responsibility; mapping MVP game records to ScholArk's generic structure is included, with the supporting mechanism selected in Milestone 2. |
+| UC-24 | MVP | New Admin app creates and configures classrooms; detailed workflow and initial-pilot acceptance are baselined in Milestone 2. |
+| UC-25 | MVP | New Admin app maintains classroom Instructor assignments and supports authorized Instructor access. |
+| UC-26 | MVP | New Admin app supports publishing immutable Game Version assignments; Milestone 2 assigns any additional Instructor-facing authoring workflow. |
+| UC-27 | MVP | New Admin app maintains approved classroom game-usage settings; custom content remains future Game Forge scope. |
+| UC-28 | Mixed | New Admin app maintains catalog records; mapping MVP game records to ScholArk's generic structure is included, with the supporting mechanism selected in Milestone 2. |
 | UC-29 | MVP | Mapping MVP game-play and game-state records to ScholArk's generic structure is required; Milestone 2 determines whether configuration, scripts, or authoring tools support it. |
 | UC-30 | Future | Selling games without full ScholArk services is excluded from MVP. |
 | UC-31 | MVP | Event ingestion for the representative Triseum game, with each game-play record associated with the relevant Student Game and source Game Version. |
 | UC-32 | MVP | State ingestion/resume support for the representative Triseum game, with each game-state record associated with the relevant Student Game and source Game Version; storage and cross-version compatibility remain discovery decisions. |
 | UC-33 | MVP | Mapping MVP game data to ScholArk's generic structure is required for progress, metrics, and grading; Milestone 2 selects the maintainable mapping and authoring mechanism. |
 | UC-34 | Mixed | Student and Instructor metrics are MVP; Game Company metrics are future work. |
-| UC-35 | Mixed | Portals consume current configuration; configuration administration/authoring is existing-system or future work. |
+| UC-35 | Mixed | New Admin app maintains approved configuration; portals consume current compatible configuration. The authoring boundary is baselined in Milestone 2. |
 | UC-36 | MVP | Current configuration retrieval for the representative MVP game. |
 | UC-37 | Future | Direct LMS synchronization is excluded from MVP. |
 | UC-38 | MVP | An Instructor initiates an LMS-oriented grade-file export for an authorized classroom. Discovery baselines the finite target-MVP format list and classroom/student mapping; later formats require explicit scope and forecast revision. |

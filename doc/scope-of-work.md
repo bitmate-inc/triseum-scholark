@@ -19,15 +19,15 @@
 
 # 1. Executive Summary
 
-ScholArk is a centralized platform for distributing educational computer games to colleges and universities. The proposed work focuses on web-based Student and Instructor portals integrated with the existing desktop administration application and its MSSQL data.
+ScholArk is a centralized platform for distributing educational computer games to colleges and universities. The planned product includes web-based Student and Instructor portals and a new ScholArk Administration application. The existing Visual Basic application is not a target runtime dependency; selected data may be exported from it for migration, subject to discovery.
 
-The existing Visual Basic administration application and MSSQL database provide part of the operational foundation. The status and suitability of any existing portal implementation remain to be assessed. This Scope of Work, architecture, and delivery plan is the first engagement milestone. It defines the proposed MVP, architecture direction, delivery phases, dependencies, and decisions required next. Discovery will identify reusable components, determine what requires refactoring or rebuilding, and establish an evidence-based technical and functional baseline before dependent implementation proceeds.
+The existing Visual Basic administration application and MSSQL database are potential sources of legacy data only; they will not remain the operational administration system. The status and suitability of existing portal and service implementations remain to be assessed. This Scope of Work, architecture, and delivery plan is the first engagement milestone. It defines the proposed product scope, architecture direction, delivery phases, dependencies, and decisions required next. Discovery will identify reusable components, determine what requires refactoring or rebuilding, and establish an evidence-based technical and functional baseline before dependent implementation proceeds.
 
 # 2. Project Objectives
 
 The engagement objectives are to:
 
-- Deliver secure Student and Instructor portal workflows around the existing administration system.
+- Deliver a new ScholArk Administration application and secure Student and Instructor portal workflows.
 - Support game discovery, fresh license acquisition, time-bounded access, launch, resume, progress, grading, and LMS-oriented grade export for the agreed MVP games.
 - Establish maintainable boundaries for legacy data, portal-owned data, game integrations, payments, support routing, and LMS exports.
 - Validate the architecture through a representative end-to-end game workflow and controlled pilot.
@@ -45,26 +45,25 @@ The initial engagement is expected to establish this architecture baseline and d
 
 ## Target MVP Scope
 
-The target MVP includes only the **Student Portal** and **Instructor Portal**. It will consume approved operational data from the existing ScholArk Administration application and its MSSQL database; it does not replace the application or recreate its administration workflows.
-
-The MVP is therefore a portal layer over the existing operational administration system, rather than a replacement for that system.
+The planned product includes a new **ScholArk Administration application**, **Student Portal**, and **Instructor Portal**. The new Admin app replaces the legacy Visual Basic application as the operational administration surface. Milestone 2 will baseline the features and delivery sequence for each application; inclusion in this product scope does not imply that every documented use case ships in the initial pilot.
 
 The target MVP includes:
 
 - Student self-registration, login, profile, and preferred language. The new portal is expected to own Student and Instructor authentication and profiles, subject to validation during discovery and linkage to legacy Instructor records. The MVP ships an English UI with internationalization-ready structure; additional translations are future work.
 - Invitation-based Instructor onboarding, login, and active User Type switching when applicable.
+- Administration workflows for maintaining institutions, academic structures, instructors, games, offers, assignments, acquisition codes, and applicable game configuration. Milestone 2 will baseline detailed Admin workflows, roles, and pilot acceptance criteria.
 - A returning Student's licensed-game list, with games under an active license shown first and expired licenses retained in history.
 - Two acquisition paths: for-credit acquisition through an institution, course, classroom, and assigned Game Version; and not-for-credit acquisition of a base Game Version through the game catalog without a classroom association.
 - Two purchase types within the for-credit path: Student purchase through Stripe, or institution purchase redeemed by acquisition code. Not-for-credit acquisition is always Student-purchased through Stripe.
 - Student-paid license acquisition through Stripe, including payment confirmation, license activation, and a fixed access period.
-- Institution-paid acquisition-code redemption that activates a fixed-term license. Institution invoicing is outside the MVP; discovery must determine how codes are generated, who generates them, and where institution-funded licenses are authoritative.
+- Institution-paid acquisition-code redemption that activates a fixed-term license. Institution invoicing is outside the MVP; the new ScholArk platform must define code issuance, revocation, audit, and institution-funded license authority.
 - Fresh license acquisition after expiry while preserving prior acquisitions, license terms, game-play records, and game-state records. Licenses are not renewed.
 - Student submission of unlisted institution, course, game, and general support requests to an existing support channel. Support administration and resolution workflows are excluded.
 - Launching licensed **web games** from their stored URLs only while the Student has an active license, using agreed authentication and configuration handoff.
 - Student progress, game-state resume behavior, and available grading information for supported Triseum games. Game-state ownership and storage remain blocking discovery decisions.
 - Instructor access to assigned classrooms, students who acquired games, student progress, student grades, and game-play grading rules.
 - Instructor-initiated, classroom-scoped LMS grade-file export. Discovery will baseline the required target-MVP format list, fields, and mapping between ScholArk classes/students and LMS data; formats added later require explicit scope and forecast revision.
-- Integration with the existing administration data required for portal operation.
+- Import of any legacy administration data selected for migration, with the import scope, mapping, and acceptance criteria determined during discovery.
 
 ## Initial Engagement Outcome
 
@@ -72,36 +71,25 @@ The 2-3 month engagement targets a minimum usable MVP pilot rather than automati
 
 - A working frontend and backend deployed to an agreed pilot environment.
 - Student and Instructor role-based access for the selected pilot workflows.
-- A validated integration path to approved existing administration data.
+- A validated new Admin-to-Portal data path and, if required, a tested legacy data export/import path.
 - One representative Triseum game integration or an agreed substitute that validates the game data contract.
 - Automated coverage of the critical pilot workflows and phase-appropriate deployment, test, support, and handover documentation for controlled pilot operation.
 
 Features not included in the Milestone 2 pilot baseline remain in the target MVP roadmap unless explicitly reclassified as future work.
 
-## Existing Application Dependency
+## Legacy Data Transition
 
-For the MVP, the existing standalone Visual Basic ScholArk Administration application, backed by MSSQL, is expected to remain the authoritative source for the following data:
+The new ScholArk platform is the planned operational system. The existing Visual Basic application and MSSQL database will not remain authoritative after cutover and are not a runtime integration dependency. The legacy system may provide a one-time export for selected data; whether an export is needed, which records it contains, and how they are mapped remain open.
 
-- Institution, Game Publisher, and Instructor accounts.
-- Classes, course hierarchy, and classrooms.
-- Game listings and classroom game assignments.
-- Classroom setup data, including available payment, language, usage, and configuration settings.
-
-The client prefers one database as the source of truth. Milestone 2 will therefore begin with a single-MSSQL architecture as the preferred hypothesis, while still assessing the existing code, schema, infrastructure, and operations before adoption. A single database does not require reuse of legacy tables: Portal-owned data may use new platform-specific schemas or tables, while shared or Admin-owned data may be exposed through stable views, stored procedures, or an API shaped for the Portal. A PostgreSQL Portal database synchronized with MSSQL remains an option when discovery demonstrates material advantages, such as workload isolation, independent scaling/deployment, resilience, or a stronger security boundary, that justify synchronization and reconciliation complexity. A limited hybrid requires similarly explicit domain-level justification.
-
-The decision must evaluate data ownership and authority, schema coupling, consistency and acceptable latency, read/write paths, security and network access, expected load on the legacy system, synchronization and reconciliation complexity, failure recovery, auditability, operational support, scalability, and future migration from the Visual Basic application. The resulting architecture must establish stable identifiers, authoritative sources, write responsibilities, conflict handling, and, if synchronization is selected, controls that prevent the databases from silently diverging.
-
-The MVP does not include replacement or modernization of the existing ScholArk Administration application. The existing application remains responsible for creating and managing the administrative data required by the portals.
+Milestone 2 will define the new platform's source of truth, persistence architecture, and Admin-to-Portal data boundary. It will also decide whether legacy data should be imported or recreated, identify stable identifiers and historical records that must be preserved, and establish validation, reconciliation, cutover, and rollback criteria. No ongoing synchronization with the legacy application is assumed.
 
 ## Out of Scope for MVP
 
 The following are explicitly excluded from the MVP:
 
-- ScholArk Administration portal or a replacement/modernization of the existing Visual Basic administration application.
 - ScholArk Support portal and internal case-management workflows.
 - Institution portal and Game Publisher portal functionality.
 - Game Publisher administration, catalog management, and publisher-facing progress or metric views.
-- Institution, course, classroom, instructor, game catalog, and game-assignment management interfaces.
 - A generalized self-service or publisher-facing game-onboarding portal. The mapping of MVP game data to ScholArk's generic record model is included; Milestone 2 will determine whether dedicated onboarding or authoring tools are required to deliver and maintain that mapping.
 - Bookstore Management System integration for scholarship/grant funds.
 - Native desktop game launching; MVP supports web games only.
@@ -110,13 +98,13 @@ The following are explicitly excluded from the MVP:
 
 ## Future Work
 
-Out-of-scope capabilities may be considered in later phases after the MVP has been validated. Future planning may include modernization of administration, dedicated Support, Institution, and Game Publisher portals, additional LMS integrations, BMS integration, advanced grading and configuration, custom-content authoring, publisher-facing metrics, and support for additional game delivery models.
+Out-of-scope capabilities may be considered in later phases after the MVP has been validated. Future planning may include dedicated Support, Institution, and Game Publisher portals, additional LMS integrations, BMS integration, advanced grading and configuration, custom-content authoring, publisher-facing metrics, and support for additional game delivery models.
 
 # 5. User Types and Account Rules
 
 Expected User Types are Student / Individual, Instructor, Institutional Administrator, Game Company Support, Game Company Administrator, ScholArk Support, and ScholArk Administrator.
 
-Only Student and Instructor are MVP portal User Types. Institutional Administrator, Game Company, ScholArk Support, and ScholArk Administrator portal access is future work.
+Student and Instructor are the target portal User Types. Authorized ScholArk administration roles are required for the new Admin app; their permission model and pilot roles will be baselined in Milestone 2. Institutional self-service, Game Company, and ScholArk Support portal access remain future work.
 
 - Uninvited registrations create Student accounts.
 - Other User Types require authorization, initially through invitation.
@@ -134,13 +122,13 @@ Students can register, sign in, maintain a profile, select a language, view and 
 
 Instructors establish accounts by invitation, access assigned classrooms across institutions, view students who acquired assigned games, view progress and grades, and define grading based on a game's available structure.
 
-## ScholArk Administration and Game Companies (Future Work)
+## ScholArk Administration
 
-Administration configures publisher offers, classrooms, instructors, course data, immutable Game Version assignments, assignment periods, game usage, language, future customizations, catalog entries, integrations, configuration, and support. Publishers define standalone and institution-use offers; institutions select institution-use offers through classroom assignments. Game Company Support and Administrator functionality requires further definition.
+The new Admin app will provide the approved workflows for publisher offers, institutions, classrooms, instructors, course data, immutable Game Version assignments, assignment periods, game usage, language, catalog entries, integrations, and configuration. Publishers define standalone and institution-use offers; authorized ScholArk users maintain their records, and institutions select institution-use offers through classroom assignments. Exact workflows, permissions, and pilot sequence will be baselined in Milestone 2. Game Company Support and Administrator portals remain future work.
 
 # 7. Initial Domain Model
 
-The following represents the initial domain model derived from the current requirements. It is intended as an architectural starting point and will be validated against the existing implementation and detailed requirements during discovery.
+The following represents the initial domain model derived from the current requirements. It is intended as an architectural starting point and will be validated against the new platform design, detailed requirements, and any approved legacy migration data during discovery.
 
 Initial domain concepts include User, User Type, User Profile, Institution, Course, Classroom, Instructor, Student, Game, Game Version, PublicGameOffer, InstitutionGameOffer, GameCustomization, Student Game, Game Assignment, Game Acquisition, Game License, Classroom Game Association, Classroom Game Enrollment, Game Configuration, Game-Play Record, Game-State Record, Progress, Grade, Support Request, and LMS Integration. In this initial model, **Student Game** represents a Student's persistent relationship and history for a particular Game, **Classroom Game Enrollment** links a User to an acquired ClassroomGame for classroom progress and grading, and **Game License** represents a time-bounded right to access one exact Game Version with an optional published GameCustomization. Pricing, SKUs, and purchase-product modeling are outside this domain-model decision.
 
@@ -248,53 +236,53 @@ Game events flow through version-aware generic records into progress/metrics and
 
 ScholArk should eventually support Canvas, Blackboard, and Moodle. The MVP will allow an authorized Instructor to initiate and download an LMS-oriented grade file for a selected classroom. Discovery must determine the number and type of export formats and define how ScholArk classrooms and students map to the selected LMS data model. Direct LMS synchronization is future work.
 
-# 12. Existing Administration Application and Architecture Principles
+# 12. New Administration Application and Architecture Principles
 
-The existing Visual Basic ScholArk Administration application, backed by MSSQL, supports administration such as account provisioning, class/course hierarchy, game listings, and classroom setup. It is expected to remain operational during MVP delivery. Discovery will validate this assumption and determine its integration boundary, data ownership, and longer-term reuse or replacement recommendation.
+The new ScholArk Administration application will provide the operational administration workflows required by the product. The legacy Visual Basic application will not remain in operation as the source of truth. Discovery will define the new Admin app's feature boundary, data ownership, integration with the portals, and whether selected legacy records should be exported and imported.
 
 Architecture should prioritize scalability, separation of concerns, extensibility, maintainability, and role-based security.
 
-Milestone 2 will gather expected user, institution, game, event-volume, retention, and concurrency assumptions and use them to define measurable API, database, and performance targets. This initial plan may identify a preferred technology direction, but formal adoption and storage decisions follow the existing-system assessment.
+Milestone 2 will gather expected user, institution, game, event-volume, retention, and concurrency assumptions and use them to define measurable API, database, and performance targets. This initial plan may identify a preferred technology direction, but formal adoption and storage decisions follow new-platform requirements and infrastructure assessment.
 
 ## Proposed Technology Direction
 
 The proposed implementation direction is:
 
 - **Frontend:** Next.js and React with shared TypeScript UI packages.
-- **Backend:** NestJS on Node.js with a documented API boundary between portals, games, external services, and legacy data.
-- **Portal-owned data:** Stored in platform-specific MSSQL schemas/tables under the preferred single-database hypothesis, or in PostgreSQL only if discovery justifies a synchronized Portal store. Logical ownership does not depend on physical database choice.
+- **Backend:** NestJS on Node.js with a documented API boundary between the Admin app, portals, games, and external services.
+- **Platform data:** Stored in the new platform's selected data store. Admin and Portal domains have explicit ownership and write boundaries; legacy MSSQL is only a possible one-time export source.
 - **Code organization:** A Turborepo monorepo managed with pnpm is the suggested option for organizing portal applications, backend services, and reusable packages by responsibility. Milestone 2 will validate this option against the implementation and deployment needs.
 - **Version control:** Git, using the client's agreed repository hosting, branching, review, and release conventions.
 
-These are recommended implementation choices, not immutable constraints. Milestone 2 will validate them against the existing codebase, hosting environment, ongoing maintenance and support model, security requirements, deployment constraints, and database-integration decision. It will also select supporting technologies such as database access, schema migration, authentication, API documentation, testing, observability, and deployment tooling.
+These are recommended implementation choices, not immutable constraints. Milestone 2 will validate them against the new product requirements, hosting environment, ongoing maintenance and support model, security requirements, deployment constraints, and persistence decision. It will also select supporting technologies such as database access, schema migration, authentication, API documentation, testing, observability, and deployment tooling.
 
 ```text
-Existing ScholArk Administration (Visual Basic + MSSQL)
+New ScholArk Administration App
           |
-        Integration Boundary
+      ScholArk Platform API
           |
-  Student Portal / Instructor Portal
+  +-------+-------------------+
+  |                           |
+Student Portal         Instructor Portal
           |
-        ScholArk Portal Services
-          |
-     Game Integrations | Selected LMS / Grade Export
+  Game Integrations | Selected LMS / Grade Export
 ```
 
 # 13. MVP Delivery Model
 
-The **target MVP** is the complete Student and Instructor portal scope defined in Section 4 and classified in the related use-case document. The **initial pilot** is the minimum usable subset baselined during Milestone 2 for delivery within the initial engagement window. Deferring a target-MVP use case from the pilot changes its sequence, not its target-MVP classification.
+The **target MVP** is the new Admin app and complete Student and Instructor portal scope defined in Section 4 and classified in the related use-case document. The **initial pilot** is the minimum usable subset baselined during Milestone 2 for delivery within the initial engagement window. Deferring a target-MVP use case from the pilot changes its sequence, not its target-MVP classification.
 
 The implementation must establish this end-to-end product path:
 
 ```text
-Existing Administration configures institution/classroom and assigns instructor/game
+New Admin app configures institution/classroom and publishes an assignment
   -> Student registers and acquires game
   -> Student launches game
   -> Game reports progress
   -> Instructor views progress
 ```
 
-The pilot may validate this path with selected users, one representative Triseum game, and the acquisition and grading behavior agreed during discovery. The target MVP extends the validated path to all retained target-MVP requirements, including the required LMS grade-export formats. Future phases include administration, support, institution, and Game Publisher portals; additional User Types; advanced grading; direct LMS synchronization, BMS integration, advanced configuration, custom content, and non-Triseum games.
+The pilot may validate this path with selected users, one representative Triseum game, and the acquisition and grading behavior agreed during discovery. The target MVP extends the validated path to all retained target-MVP requirements, including the new Admin workflows and required LMS grade-export formats. Future phases include Support, Institution, and Game Publisher portals; additional User Types; advanced grading; direct LMS synchronization, BMS integration, advanced configuration, custom content, and non-Triseum games.
 
 # 14. MVP Implementation Plan and Milestones
 
@@ -316,9 +304,9 @@ The current sequence is ordered by known dependencies. Each milestone includes i
 
 **Implementation steps**
 
-1. Inventory the existing code, MSSQL schema, infrastructure, authentication, integrations, tests, and operational processes; classify components as reuse, refactor, partially rebuild, or rebuild.
+1. Assess existing portal/service code and the legacy Admin data available for export; inventory the new Admin app's requirements, architecture, authentication, integrations, tests, and operational processes.
 2. Baseline the initial pilot use cases, acceptance scenarios, target browsers, representative users/data, non-functional targets, and target-MVP continuation scope.
-3. Validate the preferred single-MSSQL architecture, including platform-specific schemas/tables and stable views, stored procedures, or API boundaries; compare synchronization only where it offers material advantages; validate the selected path with proof-of-concept evidence where necessary; and complete the source-of-truth matrix and integration contract.
+3. Define the new platform's persistence architecture and Admin-to-Portal API/data boundary; determine whether a one-time legacy export/import is required, and validate the selected path with representative data and migration evidence.
 4. Confirm identity ownership, Instructor linkage, authorization boundaries, audit requirements, and multi-User-Type behavior.
 5. Define catalog ownership, both acquisition paths, both for-credit purchase types, license terms and fresh-acquisition-after-expiry behavior, game-version licensing and upgrade rights, Stripe lifecycle, acquisition-code behavior, support routing, treatment of prior not-for-credit Student Games and licenses, and eligibility of their existing game records for classroom progress and grading.
 6. Validate game launch, version selection, authentication, configuration, game-state ownership and compatibility, versioned JSON contracts, generic record mapping, and responsibility for game-side changes using representative Triseum data.
@@ -326,7 +314,7 @@ The current sequence is ordered by known dependencies. Each milestone includes i
 8. Produce the concrete domain model from the validated schema, workflows, integration boundaries, and business rules.
 9. Validate the proposed technology direction and produce revised estimates, dependencies, risks, and milestone sequencing.
 
-**Outputs:** Existing-system assessment, approved pilot baseline, architecture and technology decisions, concrete domain model, source-of-truth matrix, database decision record, integration and game-data contracts, decision log, acceptance scenarios, and revised delivery forecast.
+**Outputs:** New Admin requirements and architecture assessment, approved pilot baseline, platform persistence and API/data-boundary decisions, concrete domain model, source-of-truth matrix, optional legacy migration assessment, integration and game-data contracts, decision log, acceptance scenarios, and revised delivery forecast.
 
 **Acceptance gate:** The pilot acceptance set and concrete domain model are approved. Each decision required by a later milestone is either approved before that milestone starts or explicitly deferred with a documented assumption, owner, resolution date, affected acceptance scenarios, and contingency. At minimum, Milestone 3 requires approved data-architecture, identity, environment, and integration-boundary decisions; Milestone 5 requires approved payment, acquisition-code, license-authority, fresh-acquisition-after-expiry, catalog, and support-routing decisions; Milestones 6 and 7 require approved representative-game, Game Version, state-compatibility, mapping, and grading policies; and Milestone 8 requires an approved finite list of export formats and mappings.
 
@@ -337,7 +325,7 @@ The current sequence is ordered by known dependencies. Each milestone includes i
 **Implementation steps**
 
 1. Establish the agreed Next.js and NestJS application structure, code-organization model, shared packages where applicable, environment configuration, CI checks, and deployment pipeline. If selected during Milestone 2, implement this as a Turborepo monorepo managed with pnpm.
-2. Implement the selected database and legacy-integration foundations, schema management where applicable, health checks, structured logging, error handling, and secrets/configuration handling.
+2. Implement the selected database and Admin-to-Portal foundations, schema management where applicable, health checks, structured logging, error handling, and secrets/configuration handling.
 3. Create Student and Instructor portal shells and one thin end-to-end request path through the API to approved data.
 4. Add baseline automated tests and deploy the walking skeleton to a non-production environment.
 
@@ -345,13 +333,13 @@ The current sequence is ordered by known dependencies. Each milestone includes i
 
 ## Milestone 4 - Identity, Roles, and Academic Context
 
-**Dependencies:** Milestone 3 foundation and access to representative legacy records.
+**Dependencies:** Milestone 3 foundation and the approved legacy export/import dataset, if migration is required.
 
 **Implementation steps**
 
 1. Implement Student self-registration and invitation-based Instructor onboarding.
 2. Implement login, profile, preferred language storage, role authorization, and User Type switching where applicable.
-3. Link Instructor identities to legacy records and expose authorized institutions, courses, classrooms, students, game listings, and assignments.
+3. Link Instructor identities to imported or newly created Admin records and expose authorized institutions, courses, classrooms, students, game listings, and assignments.
 4. Verify role and data isolation with automated authorization tests.
 
 **Acceptance gate:** Representative Students and Instructors can access only their permitted profiles and academic context, including an Instructor assigned across more than one institution where the supplied data supports it. A person with both Student and Instructor User Types can switch active context without gaining access to data unauthorized for that context.
@@ -459,12 +447,12 @@ Progress will be reported against completed acceptance gates, forecast effort, d
 
 # 16. Dependencies and Risks
 
-The delivery forecast depends on timely system access, representative data, stakeholder decisions, third-party credentials, and participation from owners of the existing administration application and representative game.
+The delivery forecast depends on timely access to the new Admin app and platform environments, representative data, stakeholder decisions, third-party credentials, and participation from the Admin and representative-game owners.
 
 | Risk | Potential Effect | Planned Control |
 | --- | --- | --- |
 | Existing code, schema, or infrastructure differs materially from current assumptions | Rework or delayed implementation | Complete Milestone 2 assessment before dependent implementation and revise the forecast from evidence. |
-| Physical storage, logical ownership, or synchronization responsibilities are unclear | Conflicting, stale, or tightly coupled data | Validate the single-MSSQL preference, approve the source-of-truth matrix and stable model boundary, and require consistency/reconciliation controls for any synchronized store. |
+| Physical storage or logical ownership is unclear, or a legacy import is poorly bounded | Conflicting data, migration loss, or tightly coupled services | Select the new platform's persistence architecture, approve the source-of-truth matrix, and require validation/cutover controls for any one-time legacy import. |
 | Representative game access, versions, payloads, or game-side changes are delayed | Game launch, resume, mapping, progress, and grading are blocked | Validate the game and version contracts early, assign owners and dates, and use an agreed simulator only when it preserves the same contracts. |
 | A new Game Version changes state or play structure without compatibility rules | Students may lose resume access or grades may become inconsistent | Version licenses, configuration, state, play records, mappings, and grading rules; approve migration, fallback, or reset behavior before rollout. |
 | Stripe, acquisition-code, or license-term rules remain unresolved | Incorrect access duration, duplicate charges, or unauthorized access | Baseline term calculation, expiry, idempotency, validation, and failure scenarios before acquisition implementation. |
@@ -477,7 +465,7 @@ The delivery forecast depends on timely system access, representative data, stak
 
 The client is expected to provide the following in time to support discovery and implementation:
 
-- Access to the existing Visual Basic source code, MSSQL schema, and an approved development or test database.
+- Access to new Admin app requirements and environments, plus an approved legacy data export if migration is required.
 - A representative game, its available integration documentation, and sample game-play and game-state records.
 - Representative institutions, classrooms, instructors, students, assignments, and other test data.
 - Access to existing hosting and infrastructure information, accounts, domains, certificates, and deployment processes.
@@ -498,7 +486,7 @@ The phased artifact set includes:
 - A Portal/Admin interdependency companion covering shared ownership, interfaces, sequencing, repository coordination, and joint acceptance.
 - A requirements traceability and pilot-baseline record mapping accepted workflows to implementation milestones and acceptance scenarios.
 - An integration contract covering identifiers, data mappings, interfaces, synchronization, ownership, validation, and error handling.
-- A database-integration decision record validating the preferred single-MSSQL approach against any justified synchronized-store alternative, including platform-specific model boundaries, rejected alternatives, operational consequences, and transition path.
+- A persistence and Admin-to-Portal boundary decision record, including data ownership, rejected alternatives, operational consequences, and any legacy export/import and cutover plan.
 - A source-of-truth matrix for users, institutions, courses, classrooms, games, assignments, acquisitions, licenses, configurations, progress, and grades.
 - Versioned API and game-data contracts, including representative payloads and validation/error behavior.
 - A test and UAT report recording agreed scenarios, executed results, known limitations, and unresolved defects.
@@ -528,7 +516,7 @@ The intended release sequence begins with a controlled pilot. Broader production
 4. Complete client-led UAT and the agreed acceptance process.
 5. Decide whether to proceed directly to broader production rollout or continue target-MVP implementation and hardening.
 
-Milestone 2 will validate whether the preferred single-MSSQL approach meets the MVP’s security, performance, availability, deployment, and operational needs using platform-specific schemas/tables and stable views, stored procedures, or an API where appropriate. If evidence justifies PostgreSQL synchronization or a limited hybrid, the design must define authority, direction, triggering, backfill, change detection, idempotency, deletion handling, conflict policy, reconciliation, monitoring, retry/recovery, and acceptable staleness. It will also recommend who provisions and operates development, test, staging, and production environments. The transition plan must preserve the existing ScholArk Administration application as the operational administration system unless a separately approved future phase changes that responsibility.
+Milestone 2 will validate the new platform's persistence, security, performance, availability, deployment, and operational needs, and define the Admin-to-Portal boundary. If legacy data is needed, the transition plan will define export, mapping, import, validation, cutover, and rollback; no ongoing legacy synchronization is assumed. Milestone 2 will also recommend who provisions and operates development, test, staging, and production environments.
 
 # 21. Open Questions
 
@@ -536,8 +524,8 @@ Discovery must resolve:
 
 - Existing system technologies, production readiness, documentation, tests, infrastructure, and integrations.
 - Expected Year-1 users, institutions, games, event volumes, retention, and concurrency needed to define scalability and performance targets.
-- Which data remains owned by legacy MSSQL versus new portal services, and which system is authoritative where data overlaps.
-- Whether discovery validates the preferred single-MSSQL approach, with platform-specific schemas/tables and stable views, stored procedures, or an API, or demonstrates material advantages that justify a synchronized PostgreSQL store or limited hybrid.
+- The new platform's source of truth and data ownership across the Admin app and portals, including the persistence technology and API/data boundary.
+- Whether any legacy data should be exported and imported, which records and historical relationships are required, and how import validation, cutover, and rollback will work. Ongoing synchronization with the legacy app is not assumed.
 - User Type permissions, invitation workflow, and multi-User-Type switching.
 - Institution/course/classroom ownership and multi-institution enrollment rules.
 - Whether an Instructor can browse the game catalog, and which games, metadata, pricing, availability, and filters are visible in that context.
@@ -556,9 +544,9 @@ Discovery must resolve:
 
 # 22. Proposed Next Steps
 
-1. Obtain access to the existing implementation, database, infrastructure, game integrations, and LMS integrations.
+1. Confirm requirements and access for the new Admin app and platform environments, representative game/LMS integrations, and an approved legacy export if migration is required.
 2. Confirm the product decision maker, technical contacts, representative pilot users/data, and owners of external dependencies.
-3. Execute Milestone 2, prioritizing the pilot baseline, database architecture, identity ownership, acquisition rules, and representative-game contract because they gate implementation.
+3. Execute Milestone 2, prioritizing Admin workflow scope, the pilot baseline, platform data architecture, identity ownership, acquisition rules, and representative-game contract because they gate implementation.
 4. Review and approve the Milestone 2 outputs, acceptance scenarios, revised estimates, pilot cut line, and dependency owners.
 5. Begin Milestone 3 only after its acceptance-gate dependencies are satisfied or explicitly deferred with documented assumptions.
 
@@ -566,6 +554,6 @@ Discovery must resolve:
 
 The engagement is successful when decisions and delivery status are evidenced by the milestone acceptance gates rather than by feature completion claims alone.
 
-The **initial minimum usable MVP pilot** succeeds when the baselined Student and Instructor workflows pass the agreed acceptance scenarios and client-led UAT, integrate correctly with approved existing-system and game data, satisfy the agreed security and operational baseline, and can be deployed, observed, supported, and recovered in the pilot environment using the delivered documentation.
+The **initial minimum usable MVP pilot** succeeds when the baselined Admin, Student, and Instructor workflows pass the agreed acceptance scenarios and client-led UAT, use the new platform data correctly, complete any approved legacy import, satisfy the agreed security and operational baseline, and can be deployed, observed, supported, and recovered in the pilot environment using the delivered documentation.
 
 The **complete target MVP** succeeds when all retained target-MVP use cases, including every required grade-export format, meet their acceptance criteria and are ready for the agreed broader deployment and operational handover. Completion of the target MVP may extend beyond the initial 2-3 month engagement.

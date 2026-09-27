@@ -47,6 +47,16 @@ Use these URL values after the Vercel project exists, replacing `<web-origin>` w
 | `AUTH_CONFIRM_EMAIL_URL` | `<web-origin>/auth/confirm-email` |
 | `AUTH_UPDATE_PASSWORD_URL` | `<web-origin>/auth/reset-password` |
 
+Configure the game proxy separately when onboarding a game build:
+
+| Variable | Value |
+| --- | --- |
+| `GAME_PROXY_PUBLIC_ORIGIN` | Dedicated HTTPS origin routed to the API, for example `https://games.<your-domain>` |
+| `GAME_PROXY_ALLOW_HTTP_UPSTREAM` | `false` in production; enable only for explicitly approved legacy/test upstreams |
+| `GAME_PROXY_ALLOW_SAME_ORIGIN_DEV` | `true` only for local development without a dedicated game origin |
+
+The public game origin must route `/api/v1/game/*` to the API. Do not point it directly at a publisher host. Production startup rejects a missing or non-HTTPS game origin. Upstream destinations come from the licensed Game Version's admin-managed `runUrl`; publisher-domain verification and internal-network destination protections are still to be decided (see OQ-007). The legacy Mecenas v2.0 URL is HTTP-only and is not suitable as a production upstream.
+
 Set `AUTH_CONFIRM_EMAIL_FROM` and `AUTH_RESET_PASSWORD_EMAIL_FROM` to valid sender addresses. Configure the optional `SMTP_*` variables for a production mail provider. `TRUST_PROXY=true` is required for Express to emit secure session cookies behind Render's TLS proxy. Render supplies `PORT`; do not set it manually.
 
 After deployment, verify:
