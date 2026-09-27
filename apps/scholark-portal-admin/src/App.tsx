@@ -2,7 +2,6 @@ import { Button } from '@repo/ui/button';
 import {
 	BookOpen,
 	Building2,
-	ChevronDown,
 	ChevronLeft,
 	CreditCard,
 	Gamepad2,
@@ -13,6 +12,7 @@ import {
 	PanelLeftClose,
 	Settings2,
 	Tags,
+	TicketCheck,
 	Users,
 	X,
 } from 'lucide-react';
@@ -31,7 +31,19 @@ import {
 	useAdminAuth
 } from './auth/admin-auth-context';
 import { LoginPage } from './auth/login-page';
+import { getLoginReturnPath } from './auth/login-redirect';
+import { AcquisitionCodeDetailPage, AcquisitionCodeListPage } from './features/acquisition-codes/acquisition-code-pages';
+import { AcquisitionDetailPage, BillingListPage } from './features/billing/billing-pages';
+import { ClassroomGameDetailPage, ClassroomGameListPage } from './features/classroom-games/classroom-game-pages';
+import { ClassroomDetailPage, ClassroomListPage } from './features/classrooms/classroom-pages';
+import { CourseDetailPage, CourseListPage } from './features/courses/course-pages';
+import { GameOfferListPage } from './features/game-offers/game-offer-pages';
+import { GameDetailPage, GameListPage } from './features/games/game-pages';
 import { InstitutionDetailPage, InstitutionListPage } from './features/institutions/institution-pages';
+import { InstructorDetailPage, InstructorListPage } from './features/instructors/instructor-pages';
+import { PublisherDetailPage, PublisherListPage } from './features/publishers/publisher-pages';
+import { TaxonomyListPage } from './features/taxonomy/taxonomy-pages';
+import { UserListPage } from './features/users/user-pages';
 
 const navigation = [
 	{
@@ -46,6 +58,7 @@ const navigation = [
 			{ label: 'Classroom games', path: '/classroom-games', icon: Gamepad2 },
 			{ label: 'Courses', path: '/courses', icon: BookOpen },
 			{ label: 'Instructors', path: '/instructors', icon: Users },
+			{ label: 'Acquisition codes', path: '/acquisition-codes', icon: TicketCheck },
 		],
 	},
 	{
@@ -61,7 +74,7 @@ const navigation = [
 		label: 'Platform',
 		items: [
 			{ label: 'Users', path: '/users', icon: Users },
-			{ label: 'Billing & acquisitions', path: '/billing', icon: CreditCard },
+			{ label: 'Billing', path: '/billing', icon: CreditCard },
 		],
 	},
 ];
@@ -73,12 +86,13 @@ const pageDescriptions: Record<string, { eyebrow: string; title: string; detail:
 	'/classroom-games': { eyebrow: 'Education', title: 'Classroom games', detail: 'Review game assignments made available to classrooms.' },
 	'/courses': { eyebrow: 'Education', title: 'Courses', detail: 'Manage course records and institutional associations.' },
 	'/instructors': { eyebrow: 'Education', title: 'Instructors', detail: 'Review instructor accounts and institutional access.' },
+	'/acquisition-codes': { eyebrow: 'Education', title: 'Acquisition codes', detail: 'Generate institution-funded access codes and review their redemptions.' },
 	'/publishers': { eyebrow: 'Catalog', title: 'Publishers', detail: 'Manage publisher accounts and catalog ownership.' },
 	'/games': { eyebrow: 'Catalog', title: 'Games', detail: 'Review games, versions, and publication status.' },
 	'/game-offers': { eyebrow: 'Catalog', title: 'Game offers', detail: 'Manage institution-facing offers and availability.' },
 	'/taxonomy': { eyebrow: 'Catalog', title: 'Taxonomy', detail: 'Organize portal discovery categories and terms.' },
 	'/users': { eyebrow: 'Platform', title: 'Users', detail: 'Search portal accounts and review account status.' },
-	'/billing': { eyebrow: 'Platform', title: 'Billing & acquisitions', detail: 'Review acquisition activity and billing records.' },
+	'/billing': { eyebrow: 'Platform', title: 'Billing & acquisitions', detail: 'Review purchases, payment outcomes, and issued game licenses.' },
 };
 
 function AdminPage({ path }: { path: string }) {
@@ -117,7 +131,8 @@ function AdminRouter() {
 	const { logout, status, user } = useAdminAuth();
 	if (location.pathname === '/login') {
 		if (status === 'signed-in') {
-			return <Navigate replace to="/institutions"/>;
+			const destination = getLoginReturnPath(location.state);
+			return <Navigate replace to={destination}/>;
 		}
 
 		return <LoginPage/>;
@@ -149,7 +164,14 @@ function AdminShell({ user }: { user: AdminUser }) {
 	const [isCollapsed, setCollapsed] = useState(false);
 	const { logout } = useAdminAuth();
 	const activePage = pageDescriptions[location.pathname]
-		?? (location.pathname.startsWith('/institutions/') ? pageDescriptions['/institutions'] : pageDescriptions['/']);
+		?? (location.pathname.startsWith('/institutions/') ? pageDescriptions['/institutions']
+			: location.pathname.startsWith('/classrooms/') ? pageDescriptions['/classrooms']
+				: location.pathname.startsWith('/classroom-games/') ? pageDescriptions['/classroom-games']
+					: location.pathname.startsWith('/courses/') ? pageDescriptions['/courses']
+						: location.pathname.startsWith('/instructors/') ? pageDescriptions['/instructors']
+							: location.pathname.startsWith('/acquisition-codes/') ? pageDescriptions['/acquisition-codes']
+								: location.pathname.startsWith('/publishers/') ? pageDescriptions['/publishers']
+									: location.pathname.startsWith('/games/') ? pageDescriptions['/games'] : pageDescriptions['/']);
 	const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
 	const initials = displayName.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('');
 
@@ -162,11 +184,6 @@ function AdminShell({ user }: { user: AdminUser }) {
 					<div className="brand-copy"><strong>ScholArk</strong><span>PORTAL ADMIN</span></div>
 					<button className="icon-button mobile-close" aria-label="Close navigation" onClick={() => setSidebarOpen(false)}><X size={18}/></button>
 				</div>
-				<button className="workspace-switcher" type="button">
-					<span className="workspace-icon"><Building2 size={16}/></span>
-					<span className="workspace-copy"><strong>Portal workspace</strong><small>Administration</small></span>
-					<ChevronDown size={15}/>
-				</button>
 				<nav className="side-nav" aria-label="Admin sections">
 					{navigation.map((group) => (
 						<div className="nav-group" key={group.label}>
@@ -203,12 +220,31 @@ function AdminShell({ user }: { user: AdminUser }) {
 						<button className="icon-button menu-toggle" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={20}/></button>
 						<div className="breadcrumbs"><span>ScholArk Admin</span><span className="breadcrumb-divider">/</span><strong>{activePage.title}</strong></div>
 					</div>
-					<div className="topbar-trailing"><span className="environment-tag"><span/> LIVE PORTAL</span><button className="icon-button settings-button" aria-label="Settings"><Settings2 size={18}/></button></div>
+					<div className="topbar-trailing"><span className="environment-tag"><span/> LIVE PORTAL</span></div>
 				</header>
 				<Routes>
 					<Route element={<InstitutionListPage/>} path="/institutions"/>
 					<Route element={<InstitutionDetailPage/>} path="/institutions/:id"/>
-					{Object.keys(pageDescriptions).map((path) => <Route element={<AdminPage path={path}/>} key={path} path={path}/>)}
+					<Route element={<ClassroomListPage/>} path="/classrooms"/>
+					<Route element={<ClassroomDetailPage/>} path="/classrooms/:id"/>
+					<Route element={<ClassroomGameListPage/>} path="/classroom-games"/>
+					<Route element={<ClassroomGameDetailPage/>} path="/classroom-games/:id"/>
+					<Route element={<CourseListPage/>} path="/courses"/>
+					<Route element={<CourseDetailPage/>} path="/courses/:id"/>
+					<Route element={<InstructorListPage/>} path="/instructors"/>
+					<Route element={<AcquisitionCodeListPage/>} path="/acquisition-codes"/>
+					<Route element={<AcquisitionCodeDetailPage/>} path="/acquisition-codes/:id"/>
+					<Route element={<InstructorDetailPage/>} path="/instructors/:id"/>
+					<Route element={<PublisherListPage/>} path="/publishers"/>
+					<Route element={<PublisherDetailPage/>} path="/publishers/:id"/>
+					<Route element={<GameListPage/>} path="/games"/>
+					<Route element={<GameDetailPage/>} path="/games/:id"/>
+					<Route element={<GameOfferListPage/>} path="/game-offers"/>
+					<Route element={<TaxonomyListPage/>} path="/taxonomy"/>
+					<Route element={<UserListPage/>} path="/users"/>
+					<Route element={<BillingListPage/>} path="/billing"/>
+					<Route element={<AcquisitionDetailPage/>} path="/billing/acquisitions/:id"/>
+					{Object.keys(pageDescriptions).filter((path) => !['/institutions', '/classrooms', '/classroom-games', '/courses', '/instructors', '/acquisition-codes', '/publishers', '/games', '/game-offers', '/taxonomy', '/users', '/billing'].includes(path)).map((path) => <Route element={<AdminPage path={path}/>} key={path} path={path}/>) }
 					<Route element={<Navigate replace to="/institutions"/>} path="*"/>
 				</Routes>
 				<footer className="app-footer"><span>ScholArk Portal Administration</span><span>v0.1</span></footer>

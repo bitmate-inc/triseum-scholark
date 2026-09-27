@@ -12,6 +12,7 @@ import {
 } from 'react-router-dom';
 
 import { useAdminAuth } from './admin-auth-context';
+import { getLoginReturnPath } from './login-redirect';
 
 export function LoginPage() {
 	const { login, status } = useAdminAuth();
@@ -21,10 +22,10 @@ export function LoginPage() {
 	const [password, setPassword] = useState('');
 	const [error, setError] = useState<string>();
 	const [isSubmitting, setSubmitting] = useState(false);
-	const destination = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/institutions';
+	const destination = getLoginReturnPath(location.state);
 
 	if (status === 'signed-in') {
-		return <Navigate replace to="/institutions"/>;
+		return <Navigate replace to={destination}/>;
 	}
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {

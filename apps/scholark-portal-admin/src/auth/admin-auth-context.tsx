@@ -8,6 +8,8 @@ import {
 	useState,
 } from 'react';
 
+import { adminSessionExpiredEvent } from '../lib/admin-api';
+
 export interface AdminUser {
 	email: string;
 	firstName?: string;
@@ -67,6 +69,21 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
 		return () => controller.abort();
 	}, []);
+
+	useEffect(() => {
+		function handleSessionExpired(): void {
+			if (status !== 'signed-in') {
+				return;
+			}
+
+			requestSequence.current++;
+			setUser(undefined);
+			setStatus('signed-out');
+		}
+
+		window.addEventListener(adminSessionExpiredEvent, handleSessionExpired);
+		return () => window.removeEventListener(adminSessionExpiredEvent, handleSessionExpired);
+	}, [status]);
 
 	async function login(email: string, password: string): Promise<string | undefined> {
 		requestSequence.current++;
