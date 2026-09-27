@@ -40,7 +40,7 @@ Use these URL values after the Vercel project exists, replacing `<web-origin>` w
 
 | Variable | Value |
 | --- | --- |
-| `CORS_ORIGIN` | `<web-origin>` |
+| `CORS_ORIGIN` | `<web-origin>,<admin-origin>` |
 | `AUTH_COOKIE_SECURE` | `true` |
 | `AUTH_COOKIE_SAME_SITE` | `none` |
 | `TRUST_PROXY` | `true` |
@@ -79,6 +79,20 @@ Set these variables for Production and Preview as appropriate:
 Browser requests and Server Components call Render directly; the application does not define a Next.js API rewrite. Both variables must be absolute HTTPS origins without a trailing slash. Because authentication uses a cross-site session cookie, Render must use the exact Vercel origin for `CORS_ORIGIN`, enable credentials, and issue cookies with `Secure` and `SameSite=None`.
 
 For preview deployments, either use a stable custom preview domain or add the preview origin to Render's comma-separated `CORS_ORIGIN`. Production should use an exact origin rather than a wildcard.
+
+The Admin app can be deployed as a separate Vercel project from the same repository. Set its project root to `apps/scholark-portal-admin`, use the Vite framework preset, and use `dist` as the output directory. Keep workspace files outside the project root available during installation and build.
+
+Set this variable for Production and each Preview environment before building:
+
+| Variable | Value |
+| --- | --- |
+| `VITE_API_BASE_URL` | `https://triseum-skolark.onrender.com/api/v1` |
+
+Vite embeds `VITE_*` variables into the browser bundle at build time, so redeploy after changing this value. It must include the `/api/v1` prefix and omit a trailing slash. Do not put secrets in `VITE_*` variables. Add the Admin production origin to Render's `CORS_ORIGIN` alongside the web origin; for Preview, use a stable custom domain or allow that exact preview origin. Since the API uses cross-site browser sessions, Render must also issue cookies with `Secure` and `SameSite=None` as described above.
+
+For local development, the client defaults to `/api/v1`, which Vite proxies to `http://localhost:3001`. Set `API_SERVER_BASE_URL` in the Admin app's local environment to override that proxy target; it is an origin only, without `/api/v1`.
+
+Vercel's SPA rewrite serves React Router routes on direct navigation and refresh.
 
 ## 5. Release check
 

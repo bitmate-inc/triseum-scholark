@@ -8,7 +8,7 @@ import {
 	useState,
 } from 'react';
 
-import { adminSessionExpiredEvent } from '../lib/admin-api';
+import { adminSessionExpiredEvent, apiBaseUrl } from '../lib/admin-api';
 
 export interface AdminUser {
 	email: string;
@@ -26,7 +26,6 @@ interface AdminAuthContextValue {
 	user?: AdminUser;
 }
 
-const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 const AdminAuthContext = createContext<AdminAuthContextValue | undefined>(undefined);
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
@@ -37,7 +36,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		const controller = new AbortController();
 		const requestId = ++requestSequence.current;
-		fetch(`${apiBase}/admin/session`, { credentials: 'include', signal: controller.signal })
+		fetch(`${apiBaseUrl}/admin/session`, { credentials: 'include', signal: controller.signal })
 			.then(async (response) => {
 				if (requestId !== requestSequence.current) {
 					return;
@@ -89,7 +88,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 		requestSequence.current++;
 		setStatus('checking');
 		try {
-			const response = await fetch(`${apiBase}/auth/login`, {
+			const response = await fetch(`${apiBaseUrl}/auth/login`, {
 				body: JSON.stringify({ email, password }),
 				credentials: 'include',
 				headers: { 'Content-Type': 'application/json' },
@@ -100,7 +99,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 				return 'Those credentials could not be verified.';
 			}
 
-			const sessionResponse = await fetch(`${apiBase}/admin/session`, { credentials: 'include' });
+			const sessionResponse = await fetch(`${apiBaseUrl}/admin/session`, { credentials: 'include' });
 			if (sessionResponse.status === 403) {
 				setStatus('forbidden');
 				return 'This account does not have administrator access.';
@@ -122,7 +121,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 	async function logout(): Promise<void> {
 		requestSequence.current++;
 		try {
-			await fetch(`${apiBase}/auth/logout`, { credentials: 'include', method: 'POST' });
+			await fetch(`${apiBaseUrl}/auth/logout`, { credentials: 'include', method: 'POST' });
 		} finally {
 			setUser(undefined);
 			setStatus('signed-out');

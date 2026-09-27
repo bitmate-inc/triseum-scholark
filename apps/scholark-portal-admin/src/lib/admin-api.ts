@@ -1,4 +1,6 @@
-const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+export const apiBaseUrl = (configuredApiBaseUrl || '/api/v1').replace(/\/+$/, '');
+const apiBase = apiBaseUrl;
 export const adminSessionExpiredEvent = 'scholark-admin-session-expired';
 
 async function adminFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -487,7 +489,7 @@ export async function getInstitutionList(
 		searchParams.set('status', status);
 	}
 
-	const response = await adminFetch(`${apiBase}/admin/institutions?${searchParams}`, {
+	const response = await adminFetch(`${apiBaseUrl}/admin/institutions?${searchParams}`, {
 		credentials: 'include',
 		signal,
 	});
