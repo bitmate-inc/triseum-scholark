@@ -61,6 +61,14 @@ Configuration files under `src/config` are loaded automatically. Each file must 
 | `PORT` | Yes | - | HTTP listen port |
 | `ROUTER_BASE_URL` | No | `api` | Base URL used when generating API links |
 | `TRUST_PROXY` | No | `false` | Trust Express proxy headers |
+| `GAME_PROXY_PUBLIC_ORIGIN` | Production | None | HTTPS public origin routed to the API's `/api/v1/game/*` endpoints |
+| `GAME_PROXY_ALLOW_SAME_ORIGIN_DEV` | No | `false` | Allow the local API origin as the game origin outside production |
+| `GAME_PROXY_ALLOW_HTTP_UPSTREAM` | No | `false` | Explicitly allow unencrypted HTTP between the API proxy and game upstream |
+| `GAME_PROXY_COOKIE_NAME` | No | `scholark_game` | HttpOnly cookie name for game sessions |
+| `GAME_PROXY_TICKET_TTL_SECONDS` | No | `60` | Maximum one-time launch ticket lifetime (10-120 seconds) |
+| `GAME_PROXY_SESSION_TTL_SECONDS` | No | `3600` | Maximum game session lifetime, bounded by license expiry |
+
+The game origin serves the one-time ticket exchange and versioned runtime API at `/api/v1/game/launch/exchange`, `/api/v1/game/config`, `/api/v1/game/events`, and `/api/v1/game/state`, as well as proxied game content under `/api/v1/game/content/`. The proxy resolves its upstream from the licensed Game Version's admin-managed `runUrl`; publisher-domain verification and protection from internal-network destinations remain open security design work. HTTP upstreams are disabled by default; enabling them permits unencrypted API-to-game traffic and should be limited to legacy development/test builds.
 
 ## Validation
 

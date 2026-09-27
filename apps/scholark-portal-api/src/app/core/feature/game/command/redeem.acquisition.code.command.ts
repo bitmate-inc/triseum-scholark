@@ -11,13 +11,20 @@ import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { ValidationResult } from '../../../../../lib/validator/model/validation.result';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
 import { AcquisitionCode } from '../../education/model/acquisition.code.entity';
+import { digestAcquisitionCode } from '../../education/model/acquisition.code.util';
 import { ClassroomGame } from '../../education/model/classroom.game.entity';
 import { InstitutionGameOfferDesignatedPayor } from '../../education/model/institution.game.offer.entity';
 import { AcquisitionCodeRepository } from '../../education/repository/acquisition.code.repository';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
+import {
+	GameAcquisitionEvent,
+	GameAcquisitionEventActorType,
+	GameAcquisitionEventType
+} from '../model/game.acquisition.event.entity';
 import { GameLicense } from '../model/game.license.entity';
+import { GameAcquisitionEventRepository } from '../repository/game.acquisition.event.repository';
 import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
 
@@ -69,6 +76,7 @@ export class RedeemAcquisitionCodeCommand {
 		private readonly acquisitionCodeRepository: AcquisitionCodeRepository,
 		private readonly classroomGameRepository: ClassroomGameRepository,
 		private readonly gameAcquisitionRepository: GameAcquisitionRepository,
+		private readonly acquisitionEventRepository: GameAcquisitionEventRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
 		private readonly unitOfWork: MikroOrmUnitOfWork,
 		private readonly userRepository: UserEntityRepository,
@@ -86,7 +94,7 @@ export class RedeemAcquisitionCodeCommand {
 
 		const classroomGame = await this.classroomGameRepository.findForAcquisition(data.classroomGameId);
 		const user = await this.userRepository.findOneBy({ id: data.userId });
-		const acquisitionCode = await this.acquisitionCodeRepository.findForRedemption(data.code.trim());
+		const acquisitionCode = await this.acquisitionCodeRepository.findForRedemption(digestAcquisitionCode(data.code));
 
 		if (!classroomGame || !user || !classroomGame.isAvailable()) {
 			return RedeemAcquisitionCodeCommandResult.unavailableFail();
@@ -109,8 +117,8 @@ export class RedeemAcquisitionCodeCommand {
 			return RedeemAcquisitionCodeCommandResult.alreadyAcquiredFail();
 		}
 
-		const claimed = await this.acquisitionCodeRepository.claim(acquisitionCode, data.userId, now);
-		if (!claimed) {
+		const redemption = await this.acquisitionCodeRepository.claim(acquisitionCode, data.userId, now);
+		if (!redemption) {
 			return RedeemAcquisitionCodeCommandResult.invalidCodeFail();
 		}
 
@@ -124,12 +132,21 @@ export class RedeemAcquisitionCodeCommand {
 			},
 		));
 
-		await this.gameAcquisitionRepository.save(GameAcquisition.create({
+		const acquisition = await this.gameAcquisitionRepository.save(GameAcquisition.create({
+			codeRedemption: redemption,
 			institutionGameOffer: classroomGame.institutionGameOffer,
 			license,
 			mechanism: GameAcquisitionMechanism.INSTITUTION_FUNDED,
 			price: classroomGame.institutionGameOffer.price,
 			user,
+		}));
+		await this.acquisitionEventRepository.save(GameAcquisitionEvent.create({
+			acquisition,
+			acquisitionCode,
+			actorType: GameAcquisitionEventActorType.USER,
+			actorUser: user,
+			eventType: GameAcquisitionEventType.CODE_REDEEMED,
+			metadata: { redemptionId: redemption.id },
 		}));
 
 		return RedeemAcquisitionCodeCommandResult.success({ classroomGame, license });
@@ -140,7 +157,7 @@ export class RedeemAcquisitionCodeCommand {
 		acquisitionCode?: AcquisitionCode,
 	): acquisitionCode is AcquisitionCode {
 		return !!acquisitionCode
-			&& acquisitionCode.institutionGameOffer.id === classroomGame.institutionGameOffer.id
+			&& acquisitionCode.classroomGame?.id === classroomGame.id
 			&& classroomGame.institutionGameOffer.designatedPayor === InstitutionGameOfferDesignatedPayor.INSTITUTION;
 	}
 

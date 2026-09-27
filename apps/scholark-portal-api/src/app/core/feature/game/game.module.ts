@@ -5,8 +5,10 @@ import { GetUserLibraryQuery } from '../catalog/query/get.user.library.query';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { AcquirePublicOfferCommand } from './command/acquire.public.game.offer.command';
 import { CreateGameCheckoutCommand } from './command/create.game.checkout.command';
+import { CreateGameLaunchTicketCommand } from './command/create.game.launch.ticket.command';
 import { ProcessGamePaymentWebhookCommand } from './command/process.game.payment.webhook.command';
 import { GameAcquisition } from './model/game.acquisition.entity';
+import { GameAcquisitionEvent } from './model/game.acquisition.event.entity';
 import { GameCustomization } from './model/game.customization.entity';
 import { Game } from './model/game.entity';
 import { GameLicense } from './model/game.license.entity';
@@ -16,8 +18,8 @@ import { GameVariant } from './model/game.variant.entity';
 import { GameVersion } from './model/game.version.entity';
 import { PublicGameOffer } from './model/public.game.offer.entity';
 import { StripeWebhookEvent } from './model/stripe.webhook.event.entity';
-import { GetGameLaunchQuery } from './query/get.game.launch.query';
 import { GetGameListQuery } from './query/get.game.list.query';
+import { GameAcquisitionEventRepository } from './repository/game.acquisition.event.repository';
 import { GameAcquisitionRepository } from './repository/game.acquisition.repository';
 import { GameLicenseRepository } from './repository/game.license.repository';
 import { GamePaymentAttemptRepository } from './repository/game.payment.attempt.repository';
@@ -35,17 +37,19 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		GameLicenseRepository,
 		PublicGameOfferRepository,
 		GameAcquisitionRepository,
+		GameAcquisitionEventRepository,
 		GamePaymentAttemptRepository,
 		StripeWebhookEventRepository,
 		MikroOrmModule,
 		GetGameListQuery,
-		GetGameLaunchQuery,
+		CreateGameLaunchTicketCommand,
 		GetUserLibraryQuery,
 	],
 	imports: [
 		MikroOrmModule.forFeature([
 			Game,
 			GameAcquisition,
+			GameAcquisitionEvent,
 			GameCustomization,
 			GamePaymentAttempt,
 			StripeWebhookEvent,
@@ -64,12 +68,13 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		GameLicenseRepository,
 		PublicGameOfferRepository,
 		GameAcquisitionRepository,
+		GameAcquisitionEventRepository,
 		GamePaymentAttemptRepository,
 		StripeWebhookEventRepository,
 		GameRepository,
 		GameVersionRepository,
 		GetGameListQuery,
-		GetGameLaunchQuery,
+		CreateGameLaunchTicketCommand,
 		GetUserLibraryQuery,
 	],
 })

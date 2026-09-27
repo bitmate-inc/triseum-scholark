@@ -2,6 +2,7 @@ import type { EntityManager } from '@mikro-orm/core';
 import { Seeder } from '@mikro-orm/seeder';
 
 import { AcquisitionCode } from '../app/core/feature/education/model/acquisition.code.entity';
+import { digestAcquisitionCode, getAcquisitionCodeSuffix } from '../app/core/feature/education/model/acquisition.code.util';
 import { Classroom } from '../app/core/feature/education/model/classroom.entity';
 import { ClassroomGame } from '../app/core/feature/education/model/classroom.game.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
@@ -9,6 +10,11 @@ import { Institution } from '../app/core/feature/education/model/institution.ent
 import { InstitutionGameOffer } from '../app/core/feature/education/model/institution.game.offer.entity';
 import { Instructor } from '../app/core/feature/education/model/instructor.entity';
 import { GameAcquisition, GameAcquisitionMechanism } from '../app/core/feature/game/model/game.acquisition.entity';
+import {
+	GameAcquisitionEvent,
+	GameAcquisitionEventActorType,
+	GameAcquisitionEventType,
+} from '../app/core/feature/game/model/game.acquisition.event.entity';
 import { GameCustomization } from '../app/core/feature/game/model/game.customization.entity';
 import { Game } from '../app/core/feature/game/model/game.entity';
 import { GameLicense } from '../app/core/feature/game/model/game.license.entity';
@@ -394,26 +400,51 @@ export class DatabaseSeeder extends Seeder {
 			await transactionalEm.flush();
 
 			for (const acquisitionCodeSeed of acquisitionCodeSeedList) {
-				const publicOfferSeed = publicOfferSeedList.find((seed) => seed.id === acquisitionCodeSeed.publicOfferSeedId)!;
-				const institutionGameOffer = institutionGameOfferMap.get(
-					`${publicOfferSeed.id}:${acquisitionCodeSeed.designatedPayor}`,
-				);
-
-				if (!institutionGameOffer) {
-					throw new Error(`Missing seeded institution game offer for acquisition code: ${acquisitionCodeSeed.code}`);
+				const classroomGame = classroomGameSeedMap.get(acquisitionCodeSeed.classroomGameSeedId);
+				if (!classroomGame) {
+					throw new Error(`Missing seeded classroom game for acquisition code: ${acquisitionCodeSeed.code}`);
 				}
 
-				const acquisitionCode = await transactionalEm.findOne(AcquisitionCode, { code: acquisitionCodeSeed.code });
+				const codeDigest = digestAcquisitionCode(acquisitionCodeSeed.code);
+				const acquisitionCode = await transactionalEm.findOne(AcquisitionCode, { codeDigest });
 				if (!acquisitionCode) {
 					transactionalEm.create(AcquisitionCode, {
-						code: acquisitionCodeSeed.code,
-						institutionGameOffer,
+						codeDigest,
+						codeSuffix: getAcquisitionCodeSuffix(acquisitionCodeSeed.code),
+						classroomGame,
 						expiresAt: acquisitionCodeSeed.expiresAt,
 					});
 				} else {
 					transactionalEm.assign(acquisitionCode, {
-						institutionGameOffer,
+						classroomGame,
 						expiresAt: acquisitionCodeSeed.expiresAt,
+					});
+				}
+			}
+
+			await transactionalEm.flush();
+
+			for (const acquisitionCodeSeed of acquisitionCodeSeedList) {
+				const codeDigest = digestAcquisitionCode(acquisitionCodeSeed.code);
+				const acquisitionCode = await transactionalEm.findOne(AcquisitionCode, { codeDigest });
+				if (!acquisitionCode) {
+					throw new Error(`Missing seeded acquisition code: ${acquisitionCodeSeed.code}`);
+				}
+
+				const issuanceEvent = await transactionalEm.findOne(GameAcquisitionEvent, {
+					acquisitionCode,
+					eventType: GameAcquisitionEventType.CODE_ISSUED,
+				});
+				if (!issuanceEvent) {
+					transactionalEm.create(GameAcquisitionEvent, {
+						acquisitionCode,
+						actorType: GameAcquisitionEventActorType.SYSTEM,
+						eventType: GameAcquisitionEventType.CODE_ISSUED,
+						metadata: {
+							classroomGameId: acquisitionCodeSeed.classroomGameSeedId,
+							expiresAt: acquisitionCodeSeed.expiresAt.toISOString(),
+							source: 'seeder',
+						},
 					});
 				}
 			}

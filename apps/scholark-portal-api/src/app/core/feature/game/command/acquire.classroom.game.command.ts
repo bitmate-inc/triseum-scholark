@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Exclude } from 'class-transformer';
 import {
 	IsInt,
+	IsNotEmpty,
 	IsOptional,
 	IsUUID,
 	Min,
@@ -20,6 +21,7 @@ import { UserEntityRepository } from '../../user/repository/user.entity.reposito
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
 import { GameCustomization } from '../model/game.customization.entity';
 import { GameLicense } from '../model/game.license.entity';
+import { GamePaymentAttempt } from '../model/game.payment.attempt.entity';
 import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
 
@@ -30,6 +32,9 @@ export class AcquireClassroomGameCommandData extends StaticFactory {
 
 	@IsUUID()
 	classroomGameId!: string;
+
+	@IsNotEmpty()
+	paymentAttempt!: GamePaymentAttempt;
 
 	@IsInt()
 	@IsOptional()
@@ -47,6 +52,9 @@ export class AcquireClassroomGameCommandData extends StaticFactory {
 export class AcquireClassroomGameCommandResult extends CommandResult {
 
 	classroomGame?: ClassroomGame;
+
+	@Exclude()
+	acquisition?: GameAcquisition;
 
 	@Exclude()
 	license?: GameLicense;
@@ -153,15 +161,16 @@ export class AcquireClassroomGameCommand {
 
 		const acquisitionPrice = data.price ?? classroomGame.institutionGameOffer.price;
 
-		await this.gameAcquisitionRepository.save(GameAcquisition.create({
+		const acquisition = await this.gameAcquisitionRepository.save(GameAcquisition.create({
 			license,
 			mechanism: GameAcquisitionMechanism.USER_PAID,
+			paymentAttempt: data.paymentAttempt,
 			price: acquisitionPrice,
 			institutionGameOffer: classroomGame.institutionGameOffer,
 			user,
 		}));
 
-		return AcquireClassroomGameCommandResult.success({ classroomGame, license });
+		return AcquireClassroomGameCommandResult.success({ acquisition, classroomGame, license });
 	}
 
 }

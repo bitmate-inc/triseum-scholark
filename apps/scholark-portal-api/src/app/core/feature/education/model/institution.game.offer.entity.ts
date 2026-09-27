@@ -37,4 +37,11 @@ export class InstitutionGameOffer {
 	@Property()
 	licenseDurationDays!: number;
 
+	@Property({ nullable: true })
+	publishedAt?: Date;
+
+	isPublished(referenceDate: Date = new Date()): boolean {
+		return this.publishedAt != null && this.publishedAt <= referenceDate;
+	}
+
 }

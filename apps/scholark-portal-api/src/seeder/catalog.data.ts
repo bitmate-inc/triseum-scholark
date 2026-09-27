@@ -138,9 +138,7 @@ export interface UserGameLicenseSeed {
 
 export interface AcquisitionCodeSeed {
 	code: string;
-	publicOfferSeedId: string;
-	institutionSlug: string;
-	designatedPayor: InstitutionGameOfferDesignatedPayor;
+	classroomGameSeedId: string;
 	expiresAt: Date;
 }
 
@@ -407,7 +405,14 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		publisherVersion: '1.1.0',
 		runUrl: 'https://play.triseum.com/variant-limits',
 	}] : []),
-]);
+]).concat({
+	description: 'Enter into the high stakes world of renaissance Italy and become a Medici Banker. Buy, sell and trade your way to the top of political influence. Patronize the arts to curry favor with the church and rivals alike. Influence historical factions to your will.',
+	gameSlug: 'arte-mecenas',
+	id: '00000000-0000-4000-8000-000000000314',
+	publishedAt: new Date('2026-09-27T00:00:00.000Z'),
+	publisherVersion: '2.0',
+	runUrl: 'http://arte-web.triseum.com/2.0.5/',
+});
 
 const publicOfferLanguageList = ['en', 'es'];
 
@@ -784,9 +789,14 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 export const acquisitionCodeSeedList: AcquisitionCodeSeed[] = [
 	{
 		code: 'PINECREST-ARTE-2026-DEMO',
-		designatedPayor: InstitutionGameOfferDesignatedPayor.INSTITUTION,
+		classroomGameSeedId: classroomGameSeedList.find((classroomGame) =>
+			classroomGame.gameSlug === 'arte-mecenas'
+			&& classroomGame.designatedPayor === InstitutionGameOfferDesignatedPayor.INSTITUTION
+			&& classroomSeedList.some((classroom) =>
+				classroom.slug === classroomGame.classroomSlug
+				&& classroom.institutionSlug === 'pinecrest-community-college',
+			),
+		)!.id,
 		expiresAt: new Date('2027-12-31T23:59:59.999Z'),
-		institutionSlug: 'pinecrest-community-college',
-		publicOfferSeedId: publicOfferSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'arte-mecenas')!.id)!.id,
 	},
 ];

@@ -5,7 +5,7 @@ import {
 	Property,
 } from '@mikro-orm/decorators/legacy';
 
-import { InstitutionGameOffer } from './institution.game.offer.entity';
+import { ClassroomGame } from './classroom.game.entity';
 
 @Entity({ tableName: 'acquisition_code' })
 export class AcquisitionCode {
@@ -14,10 +14,13 @@ export class AcquisitionCode {
 	id?: string;
 
 	@Property({ unique: true })
-	code!: string;
+	codeDigest!: string;
 
-	@ManyToOne(() => InstitutionGameOffer, { deleteRule: 'restrict' })
-	institutionGameOffer!: InstitutionGameOffer;
+	@Property({ length: 4 })
+	codeSuffix!: string;
+
+	@ManyToOne(() => ClassroomGame, { nullable: true, deleteRule: 'restrict' })
+	classroomGame?: ClassroomGame;
 
 	@Property()
 	expiresAt!: Date;

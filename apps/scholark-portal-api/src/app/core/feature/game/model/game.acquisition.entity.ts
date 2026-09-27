@@ -8,9 +8,11 @@ import {
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Money } from '../../../shared/commerce/model/money.entity';
+import { AcquisitionCodeRedemption } from '../../education/model/acquisition.code.redemption.entity';
 import { InstitutionGameOffer } from '../../education/model/institution.game.offer.entity';
 import { User } from '../../user/model/user.entity';
 import { GameLicense } from './game.license.entity';
+import { GamePaymentAttempt } from './game.payment.attempt.entity';
 import { PublicGameOffer } from './public.game.offer.entity';
 
 export enum GameAcquisitionMechanism {
@@ -36,6 +38,12 @@ export class GameAcquisition extends StaticFactory {
 
 	@ManyToOne(() => GameLicense, { deleteRule: 'restrict' })
 	license!: GameLicense;
+
+	@ManyToOne(() => AcquisitionCodeRedemption, { deleteRule: 'restrict', nullable: true, unique: true })
+	codeRedemption?: AcquisitionCodeRedemption;
+
+	@ManyToOne(() => GamePaymentAttempt, { deleteRule: 'restrict', nullable: true, unique: true })
+	paymentAttempt?: GamePaymentAttempt;
 
 	@Property({ type: 'string' })
 	mechanism!: GameAcquisitionMechanism;

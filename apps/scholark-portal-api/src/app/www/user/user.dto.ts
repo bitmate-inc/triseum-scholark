@@ -48,7 +48,13 @@ export class GameLaunchResponseDto {
 	@ApiProperty({ format: 'uri' })
 	launchUrl!: string;
 
+	@ApiProperty()
+	launchTicket!: string;
+
 	@ApiProperty({ format: 'uuid' })
 	gameVersionId!: string;
+
+	@ApiProperty({ minimum: 1, maximum: 120 })
+	validForSeconds!: number;
 
 }

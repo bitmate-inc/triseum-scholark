@@ -40,6 +40,7 @@ export async function configureApp(app: NestExpressApplication): Promise<void> {
 	app.use(passport.initialize({ userProperty: REQUEST_AUTH_PROPERTY }));
 	app.use(passport.session());
 	app.useBodyParser('json', { limit: '50mb' });
+	app.useBodyParser('urlencoded', { extended: false });
 	app.useBodyParser('text', {
 		limit: '5mb',
 		type: ['application/xml', 'text/xml'],

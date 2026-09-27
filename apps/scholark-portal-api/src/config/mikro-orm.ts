@@ -46,6 +46,7 @@ export function createConfig() {
 		driverOptions: getPostgreSqlDriverOptions(clientUrl),
 		entities: ['./dist/app/core/**/*.entity.js'],
 		entitiesTs: ['./src/app/core/**/*.entity.ts'],
+		preferTs: process.env.NODE_ENV === 'test',
 		metadataProvider: ReflectMetadataProvider,
 		extensions: [Migrator],
 		migrations: {

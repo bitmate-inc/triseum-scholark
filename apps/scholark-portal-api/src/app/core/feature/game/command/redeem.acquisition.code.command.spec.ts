@@ -3,6 +3,8 @@ import { InstitutionGameOfferDesignatedPayor } from '../../education/model/insti
 import { AcquisitionCodeRepository } from '../../education/repository/acquisition.code.repository';
 import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
+import { GameAcquisitionEventType } from '../model/game.acquisition.event.entity';
+import { GameAcquisitionEventRepository } from '../repository/game.acquisition.event.repository';
 import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
 import { RedeemAcquisitionCodeCommand, RedeemAcquisitionCodeCommandData } from './redeem.acquisition.code.command';
@@ -27,14 +29,20 @@ function createDependencies() {
 		isAvailable: () => true,
 	};
 	const acquisitionCode = {
-		institutionGameOffer,
+		classroomGame,
 		expiresAt: new Date(Date.now() + 86_400_000),
 		id: '00000000-0000-4000-8000-000000000004',
 	};
 	const user = { id: userId };
+	const redemption = {
+		acquisitionCode,
+		id: '00000000-0000-4000-8000-000000000007',
+		redeemedAt: new Date(),
+		redeemedBy: user,
+	};
 	const dependencies = {
 		acquisitionCodeRepository: {
-			claim: jest.fn().mockResolvedValue(true),
+			claim: jest.fn().mockResolvedValue(redemption),
 			findForRedemption: jest.fn().mockResolvedValue(acquisitionCode),
 		} as unknown as AcquisitionCodeRepository,
 		classroomGameRepository: {
@@ -43,6 +51,9 @@ function createDependencies() {
 		gameAcquisitionRepository: {
 			save: jest.fn().mockImplementation(async (value) => value),
 		} as unknown as GameAcquisitionRepository,
+		acquisitionEventRepository: {
+			save: jest.fn().mockImplementation(async (value) => value),
+		} as unknown as GameAcquisitionEventRepository,
 		gameLicenseRepository: {
 			findByUserAndClassroomGame: jest.fn().mockResolvedValue(undefined),
 			save: jest.fn().mockImplementation(async (value) => value),
@@ -59,12 +70,13 @@ function createDependencies() {
 		dependencies.acquisitionCodeRepository,
 		dependencies.classroomGameRepository,
 		dependencies.gameAcquisitionRepository,
+		dependencies.acquisitionEventRepository,
 		dependencies.gameLicenseRepository,
 		dependencies.unitOfWork as never,
 		dependencies.userRepository,
 	);
 
-	return { command, dependencies, acquisitionCode, classroomGame };
+	return { command, dependencies, acquisitionCode, classroomGame, redemption };
 }
 
 describe(RedeemAcquisitionCodeCommand.name, () => {
@@ -82,7 +94,7 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 	});
 
 	it('creates an institution-funded license and claims the code', async () => {
-		const { command, dependencies, classroomGame } = createDependencies();
+		const { command, dependencies, classroomGame, redemption } = createDependencies();
 
 		const result = await command.execute(RedeemAcquisitionCodeCommandData.create({
 			classroomGameId,
@@ -99,7 +111,14 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 			expect.any(Date),
 		);
 		expect(dependencies.gameAcquisitionRepository.save).toHaveBeenCalledWith(
-			expect.objectContaining({ mechanism: 'institution_funded' }),
+			expect.objectContaining({ codeRedemption: redemption, mechanism: 'institution_funded' }),
+		);
+		expect(dependencies.acquisitionEventRepository.save).toHaveBeenCalledWith(
+			expect.objectContaining({
+				acquisitionCode: expect.objectContaining({ id: '00000000-0000-4000-8000-000000000004' }),
+				actorType: 'user',
+				eventType: GameAcquisitionEventType.CODE_REDEEMED,
+			}),
 		);
 	});
 
@@ -136,6 +155,26 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 		}));
 
 		expect(result.validationResult?.errorMessage).toContain('invalid or unavailable');
+	});
+
+	it('rejects a code used for a different classroom game with the same offer', async () => {
+		const { command, dependencies } = createDependencies();
+		const otherClassroomGameId = '00000000-0000-4000-8000-000000000006';
+		(dependencies.classroomGameRepository.findForAcquisition as jest.Mock).mockResolvedValue({
+			classroom: { institution: {} },
+			institutionGameOffer: { designatedPayor: InstitutionGameOfferDesignatedPayor.INSTITUTION, id: offerId },
+			id: otherClassroomGameId,
+			isAvailable: () => true,
+		});
+
+		const result = await command.execute(RedeemAcquisitionCodeCommandData.create({
+			classroomGameId: otherClassroomGameId,
+			code: 'VALID-CODE',
+			userId,
+		}));
+
+		expect(result.validationResult?.errorMessage).toContain('invalid or unavailable');
+		expect(dependencies.acquisitionCodeRepository.claim).not.toHaveBeenCalled();
 	});
 
 	it('rejects a code when this user cannot claim it', async () => {

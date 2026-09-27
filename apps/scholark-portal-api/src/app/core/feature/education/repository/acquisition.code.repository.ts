@@ -4,9 +4,10 @@ import { Injectable } from '@nestjs/common';
 
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
+import { User } from '../../user/model/user.entity';
 import { AcquisitionCode } from '../model/acquisition.code.entity';
 import { AcquisitionCodeRedemption } from '../model/acquisition.code.redemption.entity';
-import { InstitutionGameOffer } from '../model/institution.game.offer.entity';
+import { ClassroomGame } from '../model/classroom.game.entity';
 
 @Injectable()
 export class AcquisitionCodeRepository extends MikroOrmEntityRepository<AcquisitionCode> {
@@ -19,25 +20,33 @@ export class AcquisitionCodeRepository extends MikroOrmEntityRepository<Acquisit
 	}
 
 	create(data: {
-		code: string;
-		institutionGameOffer: InstitutionGameOffer;
+		codeDigest: string;
+		codeSuffix: string;
+		classroomGame: ClassroomGame;
 		expiresAt: Date;
 	}): AcquisitionCode {
 		return this.repository.create(data);
 	}
 
-	findForRedemption(code: string): Promise<AcquisitionCode | undefined> {
-		return this.findOneBy({ code }, { relations: { institutionGameOffer: true } });
+	findForRedemption(codeDigest: string): Promise<AcquisitionCode | undefined> {
+		return this.findOneBy({ codeDigest }, { relations: { classroomGame: true } });
 	}
 
-	async claim(code: AcquisitionCode, userId: string, redeemedAt: Date): Promise<boolean> {
+	async findForRevocation(id: string): Promise<AcquisitionCode | undefined> {
+		return (await this.repository.findOne(
+			{ id },
+			{ lockMode: LockMode.PESSIMISTIC_WRITE },
+		)) ?? undefined;
+	}
+
+	async claim(code: AcquisitionCode, userId: string, redeemedAt: Date): Promise<AcquisitionCodeRedemption | undefined> {
 		const entityManager = this.repository.getEntityManager();
 		const lockedCode = await this.repository.findOne(
 			{ id: code.id },
 			{ lockMode: LockMode.PESSIMISTIC_WRITE },
 		);
 		if (!lockedCode || lockedCode.revokedAt) {
-			return false;
+			return undefined;
 		}
 
 		const redemptionRepository = entityManager.getRepository(AcquisitionCodeRedemption);
@@ -46,15 +55,16 @@ export class AcquisitionCodeRepository extends MikroOrmEntityRepository<Acquisit
 			redeemedBy: userId,
 		});
 		if (existingRedemption) {
-			return false;
+			return undefined;
 		}
 
-		await entityManager.insert(AcquisitionCodeRedemption, {
-			acquisitionCode: lockedCode,
-			redeemedBy: userId,
-			redeemedAt,
-		});
-		return true;
+		const redemption = new AcquisitionCodeRedemption();
+		redemption.acquisitionCode = lockedCode;
+		redemption.redeemedBy = entityManager.getReference(User, userId);
+		redemption.redeemedAt = redeemedAt;
+		entityManager.persist(redemption);
+		await entityManager.flush();
+		return redemption;
 	}
 
 }

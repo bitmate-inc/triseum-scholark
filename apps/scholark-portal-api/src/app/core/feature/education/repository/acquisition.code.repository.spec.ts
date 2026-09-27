@@ -1,6 +1,7 @@
 import { EntityRepository } from '@mikro-orm/core';
 
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
+import { User } from '../../user/model/user.entity';
 import { AcquisitionCode } from '../model/acquisition.code.entity';
 import { AcquisitionCodeRedemption } from '../model/acquisition.code.redemption.entity';
 import { AcquisitionCodeRepository } from './acquisition.code.repository';
@@ -13,7 +14,9 @@ describe(AcquisitionCodeRepository.name, () => {
 		};
 		const entityManager = {
 			getRepository: jest.fn().mockReturnValue(redemptionRepository),
-			insert: jest.fn().mockResolvedValue('redemption-id'),
+			getReference: jest.fn((entity, id) => ({ entity, id })),
+			persist: jest.fn(),
+			flush: jest.fn().mockResolvedValue(undefined),
 		};
 		const codeRepository = {
 			findOne: jest.fn().mockResolvedValue(acquisitionCode),
@@ -28,18 +31,14 @@ describe(AcquisitionCodeRepository.name, () => {
 		);
 		const redeemedAt = new Date();
 
-		await expect(repository.claim(acquisitionCode, 'user-one', redeemedAt)).resolves.toBe(true);
-		await expect(repository.claim(acquisitionCode, 'user-two', redeemedAt)).resolves.toBe(true);
+		const firstRedemption = await repository.claim(acquisitionCode, 'user-one', redeemedAt);
+		const secondRedemption = await repository.claim(acquisitionCode, 'user-two', redeemedAt);
 
-		expect(entityManager.insert).toHaveBeenNthCalledWith(1, AcquisitionCodeRedemption, {
-			acquisitionCode,
-			redeemedBy: 'user-one',
-			redeemedAt,
-		});
-		expect(entityManager.insert).toHaveBeenNthCalledWith(2, AcquisitionCodeRedemption, {
-			acquisitionCode,
-			redeemedBy: 'user-two',
-			redeemedAt,
-		});
+		expect(firstRedemption).toBeInstanceOf(AcquisitionCodeRedemption);
+		expect(secondRedemption).toBeInstanceOf(AcquisitionCodeRedemption);
+		expect(firstRedemption).toMatchObject({ acquisitionCode, redeemedAt, redeemedBy: { entity: User, id: 'user-one' } });
+		expect(secondRedemption).toMatchObject({ acquisitionCode, redeemedAt, redeemedBy: { entity: User, id: 'user-two' } });
+		expect(entityManager.persist).toHaveBeenCalledTimes(2);
+		expect(entityManager.flush).toHaveBeenCalledTimes(2);
 	});
 });

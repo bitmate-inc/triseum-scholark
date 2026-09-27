@@ -34,7 +34,7 @@ describe('config loader', () => {
 		);
 		const validationSchema = buildValidationSchema(definitionList);
 
-		expect(definitionList).toHaveLength(10);
+		expect(definitionList).toHaveLength(11);
 		expect(
 			validationSchema?.validate({
 				CORS_ORIGIN: '',

@@ -9,8 +9,14 @@ import type Stripe from 'stripe';
 import stripeConfig from '../../../../../config/stripe';
 import { MikroOrmUnitOfWork } from '../../../../../lib/database/mikro.orm.unit.of.work';
 import { StripeClient } from '../../../infrastructure/stripe/stripe.module';
+import {
+	GameAcquisitionEvent,
+	GameAcquisitionEventActorType,
+	GameAcquisitionEventType
+} from '../model/game.acquisition.event.entity';
 import { GamePaymentAttempt, GamePaymentAttemptStatus } from '../model/game.payment.attempt.entity';
 import { StripeWebhookEvent, StripeWebhookEventStatus } from '../model/stripe.webhook.event.entity';
+import { GameAcquisitionEventRepository } from '../repository/game.acquisition.event.repository';
 import { GamePaymentAttemptRepository } from '../repository/game.payment.attempt.repository';
 import { StripeWebhookEventRepository } from '../repository/stripe.webhook.event.repository';
 import {
@@ -31,6 +37,7 @@ export class ProcessGamePaymentWebhookCommand {
 		@Inject(StripeClient()) private readonly stripe: Stripe,
 		@Inject(stripeConfig.KEY) private readonly config: ConfigType<typeof stripeConfig>,
 		private readonly paymentAttemptRepository: GamePaymentAttemptRepository,
+		private readonly acquisitionEventRepository: GameAcquisitionEventRepository,
 		private readonly webhookEventRepository: StripeWebhookEventRepository,
 		private readonly acquirePublicGameOfferCommand: AcquirePublicOfferCommand,
 		private readonly acquireClassroomGameCommand: AcquireClassroomGameCommand,
@@ -137,6 +144,7 @@ export class ProcessGamePaymentWebhookCommand {
 						classroomGameId: attempt.classroomGame.id!,
 						customization: attempt.customization,
 						licenseDurationDays: attempt.licenseDurationDays,
+						paymentAttempt: attempt,
 						price: attempt.price,
 						userId: attempt.user.id!,
 					}));
@@ -144,6 +152,7 @@ export class ProcessGamePaymentWebhookCommand {
 					result = await this.acquirePublicGameOfferCommand.execute(AcquirePublicOfferCommandData.create({
 						publicOfferId: attempt.publicOffer!.id!,
 						licenseDurationDays: attempt.licenseDurationDays,
+						paymentAttempt: attempt,
 						price: attempt.price,
 						userId: attempt.user.id!,
 					}));
@@ -151,6 +160,9 @@ export class ProcessGamePaymentWebhookCommand {
 
 				if (result.validationResult) {
 					throw new Error(result.validationResult.toString());
+				}
+				if (!result.acquisition) {
+					throw new Error('Acquisition was not created for the payment attempt');
 				}
 
 				attempt.status = GamePaymentAttemptStatus.FULFILLED;
@@ -164,6 +176,19 @@ export class ProcessGamePaymentWebhookCommand {
 				attempt.fulfilledAt = new Date();
 
 				await this.paymentAttemptRepository.save(attempt);
+
+				await this.acquisitionEventRepository.save(GameAcquisitionEvent.create({
+					acquisition: result.acquisition,
+					actorType: GameAcquisitionEventActorType.STRIPE,
+					correlationId: event.id,
+					eventType: GameAcquisitionEventType.PAYMENT_FULFILLED,
+					metadata: {
+						paymentAttemptId: attempt.id,
+						stripeCheckoutSessionId: session.id,
+						stripePaymentIntentId: paymentIntentId,
+					},
+					providerReference: session.id,
+				}));
 
 				const webhookEvent = await this.webhookEventRepository.findByStripeEventId(event.id);
 

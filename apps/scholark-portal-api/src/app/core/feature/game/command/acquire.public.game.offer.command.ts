@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Exclude } from 'class-transformer';
 import {
 	IsInt,
+	IsNotEmpty,
 	IsOptional,
 	IsUUID,
 	Min,
@@ -16,6 +17,7 @@ import { UserEntityRepository } from '../../user/repository/user.entity.reposito
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
 import { Game } from '../model/game.entity';
 import { GameLicense } from '../model/game.license.entity';
+import { GamePaymentAttempt } from '../model/game.payment.attempt.entity';
 import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
 import { PublicGameOfferRepository } from '../repository/public.game.offer.repository';
@@ -27,6 +29,9 @@ export class AcquirePublicOfferCommandData extends StaticFactory {
 
 	@IsUUID()
 	publicOfferId!: string;
+
+	@IsNotEmpty()
+	paymentAttempt!: GamePaymentAttempt;
 
 	@IsInt()
 	@IsOptional()
@@ -41,6 +46,9 @@ export class AcquirePublicOfferCommandData extends StaticFactory {
 export class AcquirePublicOfferCommandResult extends CommandResult {
 
 	game?: Game;
+
+	@Exclude()
+	acquisition?: GameAcquisition;
 
 	@Exclude()
 	license?: GameLicense;
@@ -119,15 +127,16 @@ export class AcquirePublicOfferCommand {
 
 		const acquisitionPrice = data.price ?? publicOffer.price;
 
-		await this.gameAcquisitionRepository.save(GameAcquisition.create({
+		const acquisition = await this.gameAcquisitionRepository.save(GameAcquisition.create({
 			license,
 			mechanism: GameAcquisitionMechanism.USER_PAID,
+			paymentAttempt: data.paymentAttempt,
 			price: acquisitionPrice,
 			publicOffer,
 			user,
 		}));
 
-		return AcquirePublicOfferCommandResult.success({ game, license });
+		return AcquirePublicOfferCommandResult.success({ acquisition, game, license });
 	}
 
 }

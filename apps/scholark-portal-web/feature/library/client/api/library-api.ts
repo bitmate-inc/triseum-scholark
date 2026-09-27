@@ -42,10 +42,13 @@ const libraryApi = api.injectEndpoints({
 			providesTags: ["Library"],
 			query: () => "/api/v1/user/me/library",
 		}),
-		launchGame: build.query<{ licenseId: string; launchUrl: string; gameVersionId: string }, string>({
-			query: (licenseId) => `/api/v1/user/me/library/${licenseId}/launch`,
+		launchGame: build.mutation<{ licenseId: string; launchUrl: string; launchTicket: string; gameVersionId: string; validForSeconds: number }, string>({
+			query: (licenseId) => ({
+				url: `/api/v1/user/me/library/${licenseId}/launch`,
+				method: "POST",
+			}),
 		}),
 	}),
 });
 
-export const { useGetUserLibraryQuery, useLaunchGameQuery } = libraryApi;
+export const { useGetUserLibraryQuery, useLaunchGameMutation } = libraryApi;
