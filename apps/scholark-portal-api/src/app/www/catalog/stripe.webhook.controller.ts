@@ -22,12 +22,7 @@ export class StripeWebhookController {
 		@Req() request: RawBodyRequest,
 		@Headers('stripe-signature') signature?: string,
 	): Promise<void> {
-		try{
-			await this.processGamePaymentWebhookCommand.execute(request.rawBody ?? Buffer.from(''), signature ?? '');
-		} catch (error) {
-			// Handle the error appropriately, e.g., log it
-			console.error('Error processing Stripe webhook:', error);
-		}
+		await this.processGamePaymentWebhookCommand.execute(request.rawBody ?? Buffer.from(''), signature ?? '');
 	}
 
 }

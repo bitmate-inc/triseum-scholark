@@ -7,7 +7,7 @@ export const api = createApi({
 		baseUrl: API_BASE_URL,
 		credentials: "include",
 	}),
-	tagTypes: ["Library"],
+	tagTypes: ["Library", "PaymentAttempts"],
 	endpoints: () => ({}),
 	reducerPath: "api",
 });

@@ -1,0 +1,46 @@
+.page { display: grid; width: min(1120px, calc(100% - 48px)); gap: 42px; margin: 0 auto; padding: 58px 0 96px; }
+.intro { display: grid; max-width: 700px; gap: 14px; }
+.kicker { color: #147a74; font-family: var(--font-geist-mono); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+.intro h1 { font-family: var(--font-display); font-size: 48px; font-weight: 400; line-height: 1; }
+.intro > p:last-child { max-width: 520px; color: var(--muted-foreground); font-size: 16px; line-height: 1.6; }
+.history { display: grid; gap: 18px; }
+.historyHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+.historyHeading h2, .state h2 { font-family: var(--font-display); font-size: 30px; font-weight: 400; line-height: 1.1; }
+.historyHeading > span { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 11px; text-transform: uppercase; }
+.list { display: grid; gap: 14px; }
+.attempt { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 20px; border: 1px solid var(--border); background: var(--card); padding: 20px; box-shadow: 5px 5px 0 var(--accent); }
+.attemptIcon { display: grid; place-items: center; width: 48px; aspect-ratio: 1; color: #147a74; background: #e6f0e8; }
+.attemptIcon svg { width: 22px; height: 22px; }
+.details { min-width: 0; }
+.titleLine { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.titleLine h3 { font-family: var(--font-display); font-size: 26px; font-weight: 400; line-height: 1.1; overflow-wrap: anywhere; }
+.status { display: inline-flex; align-items: center; min-height: 24px; border: 1px solid var(--border); padding: 2px 8px; color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.fulfilled { border-color: #147a74; color: #0f625d; background: #e6f0e8; }
+.failed { border-color: #c65039; color: #9f3725; background: #f8e9e3; }
+.pending { border-color: #45677a; color: #345364; background: #e8eef1; }
+.facts { display: flex; flex-wrap: wrap; gap: 20px 28px; margin-top: 14px; }
+.facts dt { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 10px; text-transform: uppercase; }
+.facts dd { margin-top: 4px; font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.revalidateButton { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 8px; border: 1px solid #147a74; padding: 0 12px; color: #fffdf7; background: #147a74; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.revalidateButton:hover:not(:disabled) { background: #0f625d; }
+.revalidateButton:focus-visible, .textButton:focus-visible { outline: 2px solid #147a74; outline-offset: 3px; }
+.revalidateButton:disabled { opacity: .6; cursor: wait; }
+.revalidateButton svg { width: 15px; height: 15px; }
+.feedback { margin-top: 12px; color: var(--muted-foreground); font-size: 13px; line-height: 1.5; }
+.state { display: flex; flex-direction: column; align-items: center; gap: 12px; border: 1px dashed var(--border); padding: 76px 20px; text-align: center; }
+.state > svg { width: 30px; height: 30px; color: #147a74; }
+.state > p { max-width: 460px; color: var(--muted-foreground); line-height: 1.5; }
+.textButton { margin-top: 4px; border-bottom: 1px solid currentColor; padding: 5px 0; font-size: 14px; font-weight: 700; cursor: pointer; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 700px) {
+	.page { width: min(100% - 32px, 1120px); gap: 34px; padding: 38px 0 68px; }
+	.intro h1 { font-size: 40px; }
+	.historyHeading h2 { font-size: 26px; }
+	.attempt { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 15px; }
+	.attemptIcon { width: 40px; }
+	.titleLine h3 { font-size: 23px; }
+	.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+	.facts dd { overflow-wrap: anywhere; }
+	.revalidateButton { grid-column: 2; justify-self: start; }
+}

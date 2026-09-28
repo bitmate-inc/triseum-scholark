@@ -1,7 +1,11 @@
 "use client";
 
 import { Button, buttonVariants } from "@repo/ui/button";
-import { LogOut, UserRound } from "lucide-react";
+import {
+	CreditCard,
+	LogOut,
+	UserRound
+} from "lucide-react";
 import Link from "next/link";
 
 import { useAuthGetSessionQuery, useAuthLogoutMutation } from "../../../api/client/api/generated-api";
@@ -28,6 +32,10 @@ export function AccountControl() {
 		<>
 			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/library">
 				Library
+			</Link>
+			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/billing">
+				<CreditCard data-icon="inline-start"/>
+				Billing
 			</Link>
 			<Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/profile">
 				<UserRound data-icon="inline-start"/>

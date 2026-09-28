@@ -6,7 +6,9 @@ import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { AcquirePublicOfferCommand } from './command/acquire.public.game.offer.command';
 import { CreateGameCheckoutCommand } from './command/create.game.checkout.command';
 import { CreateGameLaunchTicketCommand } from './command/create.game.launch.ticket.command';
+import { FulfillGamePaymentCommand } from './command/fulfill.game.payment.command';
 import { ProcessGamePaymentWebhookCommand } from './command/process.game.payment.webhook.command';
+import { RevalidateGamePaymentAttemptCommand } from './command/revalidate.game.payment.attempt.command';
 import { GameAcquisition } from './model/game.acquisition.entity';
 import { GameAcquisitionEvent } from './model/game.acquisition.event.entity';
 import { GameCustomization } from './model/game.customization.entity';
@@ -33,7 +35,9 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 	exports: [
 		AcquirePublicOfferCommand,
 		CreateGameCheckoutCommand,
+		FulfillGamePaymentCommand,
 		ProcessGamePaymentWebhookCommand,
+		RevalidateGamePaymentAttemptCommand,
 		GameLicenseRepository,
 		PublicGameOfferRepository,
 		GameAcquisitionRepository,
@@ -64,7 +68,9 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 	providers: [
 		AcquirePublicOfferCommand,
 		CreateGameCheckoutCommand,
+		FulfillGamePaymentCommand,
 		ProcessGamePaymentWebhookCommand,
+		RevalidateGamePaymentAttemptCommand,
 		GameLicenseRepository,
 		PublicGameOfferRepository,
 		GameAcquisitionRepository,

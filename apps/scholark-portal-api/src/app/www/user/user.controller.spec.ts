@@ -26,6 +26,7 @@ describe(UserController.name, () => {
 			{} as never,
 			{} as never,
 			{} as never,
+			{} as never,
 			launchCommand as unknown as CreateGameLaunchTicketCommand,
 			{} as never,
 		);
@@ -37,5 +38,41 @@ describe(UserController.name, () => {
 			licenseId: 'license-id',
 			validForSeconds: 75,
 		});
+	});
+
+	it('lists payment attempts for only the authenticated user', async () => {
+		const paymentAttemptRepository = { findAllByUserId: jest.fn().mockResolvedValue([]) };
+		const controller = new UserController(
+			{} as never,
+			{} as never,
+			{} as never,
+			paymentAttemptRepository as never,
+			{} as never,
+			{} as never,
+			{} as never,
+		);
+
+		await expect(controller.getPaymentAttempts({ user: { id: 'user-id' } } as never))
+			.resolves.toEqual({ itemList: [] });
+		expect(paymentAttemptRepository.findAllByUserId).toHaveBeenCalledWith('user-id');
+	});
+
+	it('revalidates using the authenticated user identity', async () => {
+		const revalidateCommand = { execute: jest.fn().mockResolvedValue('fulfilled') };
+		const controller = new UserController(
+			{} as never,
+			{} as never,
+			{} as never,
+			{} as never,
+			revalidateCommand as never,
+			{} as never,
+			{} as never,
+		);
+
+		await expect(controller.revalidatePaymentAttempt(
+			{ user: { id: 'user-id' } } as never,
+			'00000000-0000-4000-8000-000000000005',
+		)).resolves.toEqual({ status: 'fulfilled' });
+		expect(revalidateCommand.execute).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000005', 'user-id');
 	});
 });

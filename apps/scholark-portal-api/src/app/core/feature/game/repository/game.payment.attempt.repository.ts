@@ -1,4 +1,4 @@
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, LockMode } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Injectable } from '@nestjs/common';
 
@@ -27,6 +27,46 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 		return (await this.repository.findOne(
 			{ id },
 			{ populate: ['classroomGame', 'customization'] },
+		)) ?? undefined;
+	}
+
+	async findByIdForUpdate(id: string): Promise<GamePaymentAttempt | undefined> {
+		const attempt = await this.repository.findOne({ id }, { lockMode: LockMode.PESSIMISTIC_WRITE, refresh: true });
+		return attempt ? this.findById(id) : undefined;
+	}
+
+	async findByCheckoutSessionIdForUpdate(stripeCheckoutSessionId: string): Promise<GamePaymentAttempt | undefined> {
+		const attempt = await this.repository.findOne(
+			{ stripeCheckoutSessionId },
+			{ lockMode: LockMode.PESSIMISTIC_WRITE, refresh: true },
+		);
+		return attempt ? this.findByCheckoutSessionId(stripeCheckoutSessionId) : undefined;
+	}
+
+	async findAllByUserId(userId: string): Promise<GamePaymentAttempt[]> {
+		return this.repository.find(
+			{ user: userId },
+			{
+				orderBy: { createdAt: 'DESC' },
+				populate: [
+					'publicOffer.gameVariant.gameVersion.game',
+					'institutionGameOffer.gameVariant.gameVersion.game',
+					'classroomGame.institutionGameOffer.gameVariant.gameVersion.game',
+				],
+			},
+		);
+	}
+
+	async findByIdAndUser(id: string, userId: string): Promise<GamePaymentAttempt | undefined> {
+		return (await this.repository.findOne(
+			{ id, user: userId },
+			{
+				populate: [
+					'publicOffer.gameVariant.gameVersion.game',
+					'institutionGameOffer.gameVariant.gameVersion.game',
+					'classroomGame.institutionGameOffer.gameVariant.gameVersion.game',
+				],
+			},
 		)) ?? undefined;
 	}
 

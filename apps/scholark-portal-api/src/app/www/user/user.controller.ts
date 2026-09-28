@@ -26,6 +26,7 @@ import {
 import { ChangePasswordCommand, ChangePasswordCommandData } from '../../core/feature/account/command/auth/change.password.command';
 import { GetUserLibraryQuery } from '../../core/feature/catalog/query/get.user.library.query';
 import { CreateGameLaunchTicketCommand, CreateGameLaunchTicketCommandData } from '../../core/feature/game/command/create.game.launch.ticket.command';
+import { RevalidateGamePaymentAttemptCommand } from '../../core/feature/game/command/revalidate.game.payment.attempt.command';
 import { GamePaymentAttemptRepository } from '../../core/feature/game/repository/game.payment.attempt.repository';
 import { UpdateUserCommand, UpdateUserCommandData } from '../../core/feature/user/command/update.user.command';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
@@ -38,6 +39,8 @@ import {
 	GameCheckoutStatusResponseDto,
 	GameLaunchResponseDto,
 	UpdateProfileRequestDto,
+	UserPaymentAttemptListResponseDto,
+	UserPaymentAttemptResponseDto,
 } from './user.dto';
 import { UserLibraryResponseDto } from './user.library.dto';
 
@@ -52,6 +55,7 @@ export class UserController {
 		private readonly getUserQuery: GetUserQuery,
 		private readonly getUserLibraryQuery: GetUserLibraryQuery,
 		private readonly gamePaymentAttemptRepository: GamePaymentAttemptRepository,
+		private readonly revalidateGamePaymentAttemptCommand: RevalidateGamePaymentAttemptCommand,
 		private readonly createGameLaunchTicketCommand: CreateGameLaunchTicketCommand,
 		private readonly updateUserCommand: UpdateUserCommand,
 	) {
@@ -115,6 +119,27 @@ export class UserController {
 			throw new NotFoundException('Checkout session not found');
 		}
 		return { status: attempt.status };
+	}
+
+	@Get('payment-attempts')
+	@ApiOkResponse({ type: UserPaymentAttemptListResponseDto })
+	async getPaymentAttempts(@AuthSession() session: AuthSessionData): Promise<UserPaymentAttemptListResponseDto> {
+		const attemptList = await this.gamePaymentAttemptRepository.findAllByUserId(session.user.id);
+		return { itemList: attemptList.map(UserPaymentAttemptResponseDto.fromEntity) };
+	}
+
+	@Post('payment-attempts/:id/revalidate')
+	@HttpCode(HttpStatus.OK)
+	@ApiOkResponse({ type: GameCheckoutStatusResponseDto })
+	async revalidatePaymentAttempt(
+		@AuthSession() session: AuthSessionData,
+		@Param('id', ParseUUIDPipe) attemptId: string,
+	): Promise<GameCheckoutStatusResponseDto> {
+		const status = await this.revalidateGamePaymentAttemptCommand.execute(attemptId, session.user.id);
+		if (!status) {
+			throw new NotFoundException('Payment attempt not found');
+		}
+		return { status };
 	}
 
 	@Patch()
