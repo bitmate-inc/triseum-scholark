@@ -117,7 +117,6 @@ erDiagram
         uuid acquisitionCode_id FK
         uuid redeemedBy_id FK
         date redeemedAt
-        UK acquisitionCode_id_redeemedBy_id
     }
 
     GAME_PAYMENT_ATTEMPT {
@@ -261,6 +260,7 @@ erDiagram
 - `GameTaxonomyTerm(gameId, taxonomyTerm)` unique.
 - `InstitutionGameOffer(gameVariant, designatedPayor)` unique.
 - `AcquisitionCode.code` unique.
+- `AcquisitionCodeRedemption(acquisitionCode, redeemedBy)` unique.
 - `GamePaymentAttempt.stripeCheckoutSessionId` unique when present.
 - An expired license is retained as history. A later purchase or redemption creates a separate license through the ordinary acquisition path; licenses are not renewed.
 - Duplicate active classroom acquisition is enforced by application transactions, not a blanket `(user, classroomGame)` unique constraint.
