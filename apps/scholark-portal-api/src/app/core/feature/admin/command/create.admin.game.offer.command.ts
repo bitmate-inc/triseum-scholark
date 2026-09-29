@@ -43,6 +43,10 @@ export class CreateAdminGameOfferCommand {
 
 	async createPublic(data: CreateAdminPublicGameOfferCommandData): Promise<PublicGameOffer> {
 		const gameVariant = await this.findVariant(data.gameId, data.gameVariantId);
+		if (await this.publicGameOfferRepository.findOne({ gameVariant: gameVariant.id })) {
+			throw new ConflictException('A public offer already exists for this variant.');
+		}
+
 		const offer = this.publicGameOfferRepository.create({
 			gameVariant,
 			isAvailable: data.available,

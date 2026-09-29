@@ -226,7 +226,7 @@ export interface AdminGameProfile extends AdminGame {
 		variantList: {
 			id: string;
 			institutionOfferList: {
-				allocatedLicenseQuantity?: number;
+				allocatedLicenseQuantity?: number | null;
 				designatedPayor: 'student' | 'institution';
 				id: string;
 				licenseDurationDays: number;
@@ -310,7 +310,7 @@ export type UpdateAdminGameVersionInput = Partial<Omit<CreateAdminGameVersionInp
 };
 
 export interface AdminGameOffer {
-	allocatedLicenseQuantity?: number;
+	allocatedLicenseQuantity?: number | null;
 	available?: boolean;
 	designatedPayor?: 'student' | 'institution';
 	game: Pick<AdminGame, 'id' | 'slug' | 'title'>;

@@ -16,6 +16,7 @@ import {
 import {
 	type FormEvent,
 	useEffect,
+	useRef,
 	useState
 } from 'react';
 import {
@@ -317,7 +318,6 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 						version={version}
 					/>}
 					{version.description && <p className="game-version-description">{version.description}</p>}
-					<a className="game-run-link" href={version.runUrl} rel="noreferrer" target="_blank">Open runtime <ExternalLink size={13}/></a>
 					{version.variantList.length > 0 ? <div className="game-variant-list">{version.variantList.map((variant) => <GameVariantCard gameId={currentGame.id} key={variant.id} onSaved={setCurrentGame} variant={variant}/>)}</div> : <p className="game-empty-note">No variants for this version.</p>}
 				</section>)}</div> : <p>No versions have been added to this game.</p>}
 			</div>
@@ -406,26 +406,34 @@ function GameVariantCard({
 	onSaved: (game: AdminGameProfile) => void;
 	variant: AdminGameVariantProfile;
 }) {
-	const [activeForm, setActiveForm] = useState<{ type: 'public' | 'institution'; offerId?: string }>();
+	const [activeForm, setActiveForm] = useState<{ type: 'public' | 'institution'; offerId?: string; designatedPayor?: AdminGameInstitutionOfferProfile['designatedPayor'] }>();
+	const availableInstitutionPayorList = (['student', 'institution'] as const).filter((payor) => !variant.institutionOfferList.some((offer) => offer.designatedPayor === payor && offer.id !== activeForm?.offerId));
+	const publicOfferList = variant.publicOfferList;
+	const publicOffer = publicOfferList[0];
 
 	return (
 		<div className="game-variant">
 			<div className="game-variant-heading"><strong>{variant.language}</strong><span>{variant.mode.replaceAll('_', ' ')}</span></div>
-			<div className="game-offer-columns">
-				<div>
-					<div className="game-offer-title-row"><h3>Public offers</h3><button aria-label="Add public offer" className="game-offer-action" onClick={() => setActiveForm({ type: 'public' })} title="Add public offer" type="button"><Plus size={13}/></button></div>
-					{variant.publicOfferList.length > 0 ? <ul>{variant.publicOfferList.map((offer) => <li key={offer.id}>
-						<span>{formatPrice(offer.price)} · {offer.available ? 'Available' : 'Unavailable'}<small className={`publication-state state-${publicationState(offer.publishedAt)}`}>{publicationLabel(offer.publishedAt)}</small></span>
-						{!isPublished(offer.publishedAt) && <button aria-label={`Edit public offer ${formatPrice(offer.price)}`} className="game-offer-action" onClick={() => setActiveForm({ offerId: offer.id, type: 'public' })} title="Edit public offer" type="button"><Pencil size={12}/></button>}
-					</li>)}</ul> : <p>No public offers.</p>}
-				</div>
-				<div>
-					<div className="game-offer-title-row"><h3>Institution offers</h3><button aria-label="Add institution offer" className="game-offer-action" onClick={() => setActiveForm({ type: 'institution' })} title="Add institution offer" type="button"><Plus size={13}/></button></div>
-					{variant.institutionOfferList.length > 0 ? <ul>{variant.institutionOfferList.map((offer) => <li key={offer.id}>
-						<span>{offer.designatedPayor} · {formatPrice(offer.price)} · {offer.licenseDurationDays} days{offer.allocatedLicenseQuantity !== undefined ? ` · ${offer.allocatedLicenseQuantity} licenses` : ''}<small className={`publication-state state-${publicationState(offer.publishedAt)}`}>{publicationLabel(offer.publishedAt)}</small></span>
-						{!isPublished(offer.publishedAt) && <button aria-label={`Edit institution offer ${offer.designatedPayor}`} className="game-offer-action" onClick={() => setActiveForm({ offerId: offer.id, type: 'institution' })} title="Edit institution offer" type="button"><Pencil size={12}/></button>}
-					</li>)}</ul> : <p>No institution offers.</p>}
-				</div>
+			<div className="game-offer-slot-list" aria-label="Offers for this variant">
+				<GameOfferSlot
+					description="Individual learner checkout"
+					label="Public offer"
+					onAdd={() => setActiveForm({ type: 'public' })}
+					onEdit={publicOffer && !isPublished(publicOffer.publishedAt) ? () => setActiveForm({ offerId: publicOffer.id, type: 'public' }) : undefined}
+					offer={publicOffer}
+					duplicateCount={publicOfferList.length}
+				/>
+				{(['student', 'institution'] as const).map((payor) => {
+					const offer = variant.institutionOfferList.find((item) => item.designatedPayor === payor);
+					return <GameOfferSlot
+						description={payor === 'student' ? 'Student pays for access' : 'Institution pays for access'}
+						institutionOffer={offer}
+						key={payor}
+						label={`${payor === 'student' ? 'Student' : 'Institution'} offer`}
+						onAdd={() => setActiveForm({ designatedPayor: payor, type: 'institution' })}
+						onEdit={offer && !isPublished(offer.publishedAt) ? () => setActiveForm({ designatedPayor: payor, offerId: offer.id, type: 'institution' }) : undefined}
+					/>
+				})}
 			</div>
 			{activeForm && <GameOfferForm
 				gameId={gameId}
@@ -434,7 +442,9 @@ function GameVariantCard({
 					onSaved(game);
 					setActiveForm(undefined);
 				}}
-				publicOffer={activeForm.type === 'public' && activeForm.offerId ? variant.publicOfferList.find((offer) => offer.id === activeForm.offerId) : undefined}
+				initialDesignatedPayor={activeForm.designatedPayor}
+				availableInstitutionPayorList={availableInstitutionPayorList}
+				publicOffer={activeForm.type === 'public' && activeForm.offerId ? publicOffer : undefined}
 				institutionOffer={activeForm.type === 'institution' && activeForm.offerId ? variant.institutionOfferList.find((offer) => offer.id === activeForm.offerId) : undefined}
 				type={activeForm.type}
 				variantId={variant.id}
@@ -443,8 +453,48 @@ function GameVariantCard({
 	);
 }
 
+function GameOfferSlot({
+	description,
+	institutionOffer,
+	label,
+	onAdd,
+	onEdit,
+	offer,
+	duplicateCount = 1,
+}: {
+	description: string;
+	duplicateCount?: number;
+	institutionOffer?: AdminGameInstitutionOfferProfile;
+	label: string;
+	onAdd: () => void;
+	onEdit?: () => void;
+	offer?: AdminGamePublicOfferProfile;
+}) {
+	const currentOffer = offer ?? institutionOffer;
+	return (
+		<div className="game-offer-slot">
+			<div className="game-offer-slot-label"><strong>{label}</strong><small>{description}</small></div>
+			{currentOffer ? <>
+				<div className="game-offer-slot-value">
+					<strong>{formatPrice(currentOffer.price)}</strong>
+					{institutionOffer ? <small>{institutionOffer.licenseDurationDays} days{typeof institutionOffer.allocatedLicenseQuantity === 'number' ? ` · ${institutionOffer.allocatedLicenseQuantity} licenses` : ' · No quantity limit'}</small> : <small>{offer?.available ? 'Available to acquire' : 'Unavailable'}</small>}
+				</div>
+				<span className={`publication-state state-${publicationState(currentOffer.publishedAt)}`}>{publicationLabel(currentOffer.publishedAt)}</span>
+				{onEdit ? <Button onClick={onEdit} size="sm" type="button" variant="outline"><Pencil/> Edit</Button> : <span className="game-offer-slot-locked">Read-only</span>}
+				{duplicateCount > 1 && <p className="game-offer-duplicate-warning" role="alert">{duplicateCount} public offers exist for this variant; only one is allowed. Review the legacy duplicate before changing this slot.</p>}
+			</> : <>
+				<span className="game-offer-slot-empty">Not set up</span>
+				<span className="game-offer-slot-empty-state">No offer</span>
+				<Button onClick={onAdd} size="sm" type="button" variant="outline"><Plus/> Add offer</Button>
+			</>}
+		</div>
+	);
+}
+
 function GameOfferForm({
 	gameId,
+	initialDesignatedPayor,
+	availableInstitutionPayorList,
 	onCancel,
 	onSaved,
 	institutionOffer,
@@ -453,6 +503,8 @@ function GameOfferForm({
 	variantId,
 }: {
 	gameId: string;
+	initialDesignatedPayor?: AdminGameInstitutionOfferProfile['designatedPayor'];
+	availableInstitutionPayorList: AdminGameInstitutionOfferProfile['designatedPayor'][];
 	institutionOffer?: AdminGameInstitutionOfferProfile;
 	onCancel: () => void;
 	onSaved: (game: AdminGameProfile) => void;
@@ -461,14 +513,28 @@ function GameOfferForm({
 	variantId: string;
 }) {
 	const existingOffer = publicOffer ?? institutionOffer;
+	const dialogRef = useRef<HTMLDialogElement>(null);
 	const [price, setPrice] = useState(existingOffer ? (existingOffer.price.minorUnitAmount / 100).toFixed(2) : '');
 	const [available, setAvailable] = useState(publicOffer?.available ?? true);
 	const [publishedAt, setPublishedAt] = useState(toDateTimeInput(existingOffer?.publishedAt));
-	const [designatedPayor, setDesignatedPayor] = useState<AdminGameInstitutionOfferProfile['designatedPayor']>(institutionOffer?.designatedPayor ?? 'student');
+	const [designatedPayor, setDesignatedPayor] = useState<AdminGameInstitutionOfferProfile['designatedPayor']>(institutionOffer?.designatedPayor ?? initialDesignatedPayor ?? 'student');
 	const [licenseDurationDays, setLicenseDurationDays] = useState(String(institutionOffer?.licenseDurationDays ?? 120));
-	const [allocatedLicenseQuantity, setAllocatedLicenseQuantity] = useState(institutionOffer?.allocatedLicenseQuantity === undefined ? '' : String(institutionOffer.allocatedLicenseQuantity));
+	const [allocatedLicenseQuantity, setAllocatedLicenseQuantity] = useState(typeof institutionOffer?.allocatedLicenseQuantity === 'number' ? String(institutionOffer.allocatedLicenseQuantity) : '');
 	const [error, setError] = useState<string>();
 	const [isSaving, setSaving] = useState(false);
+
+	useEffect(() => {
+		const dialog = dialogRef.current;
+		if (!dialog) {
+			return;
+		}
+		dialog.showModal();
+		return () => {
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
+	}, []);
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
 		event.preventDefault();
@@ -521,26 +587,48 @@ function GameOfferForm({
 	}
 
 	return (
-		<form className="institution-form game-offer-form" onSubmit={handleSubmit}>
-			<div className="institution-form-fields">
-				<label>Price (USD)<input min="0" onChange={(event) => setPrice(event.target.value)} required step="0.01" type="number" value={price}/></label>
-				{type === 'public' ? <>
-					<label className="game-featured-toggle"><input checked={available} onChange={(event) => setAvailable(event.target.checked)} type="checkbox"/><span>Available to acquire</span></label>
-					<label>Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/></label>
-				</> : <>
-					<label>Designated payor<select onChange={(event) => setDesignatedPayor(event.target.value as AdminGameInstitutionOfferProfile['designatedPayor'])} value={designatedPayor}><option value="student">Student</option><option value="institution">Institution</option></select></label>
-					<label>License duration (days)<input min="1" onChange={(event) => setLicenseDurationDays(event.target.value)} required step="1" type="number" value={licenseDurationDays}/></label>
-					<label>License quantity<input min="0" onChange={(event) => setAllocatedLicenseQuantity(event.target.value)} step="1" type="number" value={allocatedLicenseQuantity}/></label>
-					<label>Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/></label>
-				</>}
+		<dialog aria-labelledby="game-offer-dialog-title" className="game-offer-dialog" onCancel={(event) => {
+			event.preventDefault();
+			onCancel();
+		}} ref={dialogRef}>
+			<div className="game-offer-dialog-content">
+				<div className="game-offer-dialog-heading">
+					<div><p className="eyebrow">{existingOffer ? 'Edit offer' : 'New offer'}</p><h2 id="game-offer-dialog-title">{type === 'public' ? 'Public offer' : `${designatedPayor === 'student' ? 'Student' : 'Institution'} offer`}</h2></div>
+					<Button aria-label="Close offer form" onClick={onCancel} size="icon" type="button" variant="outline"><X/></Button>
+				</div>
+				<form className="institution-form game-offer-form" onSubmit={handleSubmit}>
+					<div className="institution-form-fields">
+						<label>Price (USD)<input min="0" onChange={(event) => setPrice(event.target.value)} required step="0.01" type="number" value={price}/></label>
+						{type === 'public' ? <>
+							<label className="game-featured-toggle"><input checked={available} onChange={(event) => setAvailable(event.target.checked)} type="checkbox"/><span>Available to acquire</span></label>
+						</> : <>
+							{institutionOffer ? <label>Designated payor<select onChange={(event) => setDesignatedPayor(event.target.value as AdminGameInstitutionOfferProfile['designatedPayor'])} value={designatedPayor}>{availableInstitutionPayorList.map((payor) => <option key={payor} value={payor}>{payor === 'student' ? 'Student' : 'Institution'}</option>)}</select></label> : <div className="game-offer-readonly-field"><span>Designated payor</span><strong>{designatedPayor === 'student' ? 'Student' : 'Institution'}</strong></div>}
+							<label>License duration (days)<input min="1" onChange={(event) => setLicenseDurationDays(event.target.value)} required step="1" type="number" value={licenseDurationDays}/></label>
+							<label>License quantity<input min="0" onChange={(event) => setAllocatedLicenseQuantity(event.target.value)} step="1" type="number" value={allocatedLicenseQuantity}/></label>
+						</>}
+					</div>
+					<label className="game-offer-publication-field">Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/><span>Leave blank for a draft. Dates use your local time; published offers cannot be edited.</span></label>
+					<div aria-label="Publication date shortcuts" className="game-offer-date-shortcuts">
+						<Button onClick={() => setPublishedAt(toDateTimeInput(new Date().toISOString()))} size="sm" type="button" variant="outline">Set to now</Button>
+						<Button onClick={() => setPublishedAt(tomorrowAtNine())} size="sm" type="button" variant="outline">Tomorrow, 9:00 AM</Button>
+						<Button disabled={!publishedAt} onClick={() => setPublishedAt('')} size="sm" type="button" variant="outline">Clear</Button>
+					</div>
+					{error && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{error}</div>}
+					<div className="institution-form-actions">
+						<Button disabled={isSaving} onClick={onCancel} size="sm" type="button" variant="outline"><X size={14}/> Cancel</Button>
+						<Button disabled={isSaving} size="sm" type="submit"><Check size={14}/>{isSaving ? 'Saving...' : existingOffer ? 'Save offer' : 'Create offer'}</Button>
+					</div>
+				</form>
 			</div>
-			{error && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{error}</div>}
-			<div className="institution-form-actions">
-				<Button disabled={isSaving} onClick={onCancel} size="sm" type="button" variant="outline"><X size={14}/> Cancel</Button>
-				<Button disabled={isSaving} size="sm" type="submit"><Check size={14}/>{isSaving ? 'Saving...' : existingOffer ? 'Save offer' : 'Create offer'}</Button>
-			</div>
-		</form>
+		</dialog>
 	);
+}
+
+function tomorrowAtNine(): string {
+	const date = new Date();
+	date.setDate(date.getDate() + 1);
+	date.setHours(9, 0, 0, 0);
+	return toDateTimeInput(date.toISOString());
 }
 
 function toDateTimeInput(value?: string): string {

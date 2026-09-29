@@ -4,12 +4,14 @@ import {
 	ManyToOne,
 	PrimaryKey,
 	Property,
+	Unique,
 } from '@mikro-orm/decorators/legacy';
 
 import { Money } from '../../../shared/commerce/model/money.entity';
 import { GameVariant } from './game.variant.entity';
 
 @Entity({ tableName: 'public_game_offer' })
+@Unique({ properties: ['gameVariant'] })
 export class PublicGameOffer {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })

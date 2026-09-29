@@ -142,7 +142,7 @@ function GameOfferRow({ gameOffer }: { gameOffer: AdminGameOffer }) {
 					<small>{gameOffer.available ? 'Available' : 'Unavailable'}</small>
 				</> : <>
 					<span>{gameOffer.designatedPayor} pays</span>
-					<small>{gameOffer.licenseDurationDays} days{gameOffer.allocatedLicenseQuantity !== undefined ? ` · ${gameOffer.allocatedLicenseQuantity} licenses` : ''}</small>
+					<small>{gameOffer.licenseDurationDays} days{typeof gameOffer.allocatedLicenseQuantity === 'number' ? ` · ${gameOffer.allocatedLicenseQuantity} licenses` : ''}</small>
 				</>}
 			</div>
 			<Link aria-label={`Open ${gameOffer.game.title}`} className="row-open" to={`/games/${gameOffer.game.id}`}><ExternalLink size={15}/></Link>
