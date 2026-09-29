@@ -25,9 +25,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files (can opt-in for committing if needed)
+# Keep shared local defaults; ignore developer-specific env files.
 .env*
-!.env.example
+!.env
 
 # vercel
 .vercel

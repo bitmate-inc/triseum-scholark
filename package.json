@@ -12,6 +12,16 @@
     "docker:start": "docker compose -f .docker/docker-compose.yml up -d",
     "docker:start:clean": "run-s docker:remove docker:start",
     "docker:stop": "docker compose -f .docker/docker-compose.yml down",
+    "dev:api": "pnpm --filter scholark-portal-api dev",
+    "dev:portal": "pnpm --filter scholark-portal-web dev",
+    "dev:admin": "pnpm --filter scholark-portal-admin dev",
+    "db:schema:drop": "pnpm --filter scholark-portal-api mikro-orm schema:drop --run",
+    "db:schema:update": "pnpm --filter scholark-portal-api mikro-orm schema:update --safe --run",
+    "db:seed": "pnpm --filter scholark-portal-api seed",
+    "db:setup": "run-s db:schema:update db:seed",
+    "db:reset": "run-s db:schema:drop db:schema:update db:seed",
+    "stripe:login": "stripe login",
+    "stripe:listen": "stripe listen --forward-to http://localhost:3001/api/v1/stripe/webhook",
     "format": "turbo run format",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
@@ -20,6 +30,7 @@
     "turbo": "turbo"
   },
   "devDependencies": {
+    "@stripe/cli": "1.52.1",
     "syncpack": "14.3.0",
     "turbo": "^2.10.11",
     "typescript": "6.0.2"

@@ -63,7 +63,7 @@ Server-only modules import `server-only`, and client entry points use `"use clie
 
 ## API client
 
-Set `NEXT_PUBLIC_API_BASE_URL` to the NestJS API origin. It defaults to `http://localhost:3001` for local development and is used by generated RTK Query hooks and other browser requests. `API_SERVER_BASE_URL` provides the direct API origin for App Router server requests.
+The committed `.env` provides local API defaults: `NEXT_PUBLIC_API_BASE_URL` is used by browser requests and `API_SERVER_BASE_URL` by App Router server requests. Put per-developer overrides or secrets in the ignored `.env.local`.
 
 In Vercel, set both `NEXT_PUBLIC_API_BASE_URL` and `API_SERVER_BASE_URL` to `https://triseum-skolark.onrender.com`. Browser requests call Render directly; the application does not define a Next.js API rewrite. Render must allow the Vercel origin with credentialed CORS and issue cookies with `Secure` and `SameSite=None`.
 
@@ -75,25 +75,17 @@ pnpm generate:api
 
 The generated file is read-only; update the API contract and rerun the generator instead of editing it directly.
 
-## Getting Started
+## Local development
 
-First, run the development server:
+From the monorepo root, start the API and portal in separate terminals:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm dev:api
+pnpm dev:portal
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The portal is available at [http://localhost:3000](http://localhost:3000). See the [root onboarding guide](../../README.md) for Docker services, database setup, admin startup, and optional Stripe webhook forwarding.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
 
 ## Learn More
 

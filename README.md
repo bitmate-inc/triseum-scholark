@@ -1,133 +1,111 @@
-# Scholark
+# ScholArk
 
-Scholark is a TypeScript monorepo containing the Scholark portal, backend services, and shared packages.
+ScholArk is a TypeScript monorepo for the learner portal, administration portal, and API.
 
-## Applications and packages
+## Structure
 
-### Applications
+Workspace applications and shared packages:
 
-- `scholark-portal-web` — Next.js portal application
-- `scholark-portal-api` — NestJS portal services API
+```text
+apps/scholark-portal-admin/ Vite/React administration portal for education, catalog, and platform operations
+apps/scholark-portal-api/   NestJS API and business capabilities
+apps/scholark-portal-web/   Next.js learner portal
+packages/ui/                Shared React components
+packages/eslint-config/     Shared ESLint configuration
+packages/typescript-config/ Shared TypeScript configuration
+```
 
-### Shared packages
-
-- `@repo/ui` — shared React component library
-- `@repo/eslint-config` — shared ESLint configuration
-- `@repo/typescript-config` — shared TypeScript configuration
-
-## Technology stack
-
-- [Next.js](https://nextjs.org/)
-- [NestJS](https://nestjs.com/)
-- [React](https://react.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Turborepo](https://turborepo.com/)
-- [pnpm](https://pnpm.io/)
-- [ESLint](https://eslint.org/)
+The admin portal covers institutions, courses, classrooms, classroom games, instructors, acquisition codes, publishers, games, game offers, taxonomy, users, and billing/acquisitions. Some pages and workflows remain staged while their API workflows are defined or connected.
 
 ## Prerequisites
 
-Install the following tools before working with the project:
+- Node.js 24 or later
+- pnpm 11.23.0 (the version pinned by `package.json`)
+- Docker with Docker Compose
 
-- [Node.js](https://nodejs.org/)
-- [pnpm](https://pnpm.io/installation)
+The Stripe CLI is installed locally with the workspace dependencies; no global Stripe CLI installation is needed.
 
-## Getting started
+## Install and configure
 
-Clone the repository and install its dependencies:
+From the repository root:
 
 ```sh
-git clone <repository-url>
-cd scholark
 pnpm install
 ```
 
-## Development
+The API and portal have committed `.env` files with local defaults. Use an ignored `.env.local` beside either file for developer-specific overrides or secrets. The API uses `.env.local` before `.env`; the portal uses Next.js env-file loading. The admin portal needs no env file for local development; its `/api` requests are proxied to the API on port 3001.
 
-Start all applications and packages in development mode:
+For Stripe test flows, add your test API key to `apps/scholark-portal-api/.env.local`. The API's committed webhook secret is only a placeholder; replace it with the value printed by `pnpm stripe:listen`:
 
-```sh
-pnpm dev
+```dotenv
+STRIPE_API_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-Start only the portal web application:
+Never put personal Stripe credentials in a committed `.env` file.
+
+## Start local services and database
+
+Start PostgreSQL, Redis, MinIO, imgproxy, and Adminer:
 
 ```sh
-pnpm dev --filter=scholark-portal-web
+pnpm docker:start
 ```
 
-Start only the portal API:
+Create/update the local PostgreSQL schema and seed development fixtures:
 
 ```sh
-pnpm dev --filter=scholark-portal-api
+pnpm db:setup
 ```
 
-## Build
+Schema sync is for local development only. `pnpm db:seed` refreshes fixture data without resetting the database. `pnpm db:reset` drops and recreates the PostgreSQL schema, then seeds it; this is destructive to PostgreSQL data but preserves MinIO and other Docker volumes. The `docker:remove` and `docker:start:clean` commands remove all Compose volumes and are not database-only reset commands.
 
-Build the entire monorepo:
+## Run apps
+
+Run each process in its own terminal from the repository root:
+
+```sh
+pnpm dev:api
+```
+
+```sh
+pnpm dev:portal
+```
+
+```sh
+pnpm dev:admin
+```
+
+The API is at `http://localhost:3001`; health endpoints are `/api/v1/health/alive` and `/api/v1/health/status`. API documentation is at `/api/v1/doc`. The learner portal is at `http://localhost:3000`, and the admin portal is at `http://localhost:3002`.
+
+Stop an app with Ctrl+C. Stop local services with:
+
+```sh
+pnpm docker:stop
+```
+
+## Optional Stripe listener
+
+Authenticate once with the project-local CLI:
+
+```sh
+pnpm stripe:login
+```
+
+In another terminal, start webhook forwarding:
+
+```sh
+pnpm stripe:listen
+```
+
+Copy the printed `whsec_...` value into the API's ignored `.env.local` as `STRIPE_WEBHOOK_SECRET`, then restart the API. The listener is only needed for local payment/webhook testing.
+
+## Build and checks
 
 ```sh
 pnpm build
-```
-
-Build a specific application:
-
-```sh
-pnpm build --filter=scholark-portal-web
-pnpm build --filter=scholark-portal-api
-```
-
-## Linting
-
-Lint all applications and packages:
-
-```sh
 pnpm lint
-```
-
-Lint a specific application:
-
-```sh
-pnpm lint --filter=scholark-portal-web
-pnpm lint --filter=scholark-portal-api
-```
-
-## Type checking
-
-Run TypeScript checks across the monorepo:
-
-```sh
 pnpm check-types
 ```
 
-## Project structure
-
-```text
-scholark/
-├── apps/
-│   ├── scholark-portal-web/    # Next.js portal
-│   └── scholark-portal-api/    # NestJS API
-├── packages/
-│   ├── ui/                    # Shared React components
-│   ├── eslint-config/         # Shared ESLint configuration
-│   └── typescript-config/     # Shared TypeScript configuration
-├── package.json
-├── pnpm-workspace.yaml
-└── turbo.json
-```
-
-## Running filtered tasks
-
-Turborepo filters can be used to run any supported task for one application or package:
-
-```sh
-pnpm exec turbo <task> --filter=<package-name>
-```
-
-For example:
-
-```sh
-pnpm exec turbo build --filter=scholark-portal-web
-```
-
-Refer to the [Turborepo filtering documentation](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters) for additional filtering options.
+Run a task for one workspace package with `pnpm exec turbo <task> --filter=<package-name>`.

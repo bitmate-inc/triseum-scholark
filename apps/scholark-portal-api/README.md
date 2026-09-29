@@ -4,15 +4,25 @@ NestJS modular monolith providing ScholArk portal business capabilities and HTTP
 
 ## Structure
 
+API layers:
+
 ```text
-src/app/www/                   Web delivery: HTTP, WebSocket, and related transports
-src/app/core/feature/game/     Authoritative game aggregate and general-purpose use cases
-src/app/core/feature/taxonomy/ Standalone taxonomy terms and classification capabilities
-src/app/core/feature/catalog/  Published catalog discovery and frontend-oriented queries
-src/app/core/infrastructure/   Database and external-system adapters
-src/app/core/shared/           Cross-cutting app utilities, added only when needed
-src/lib/                       Adapted, app-local reusable primitives
+src/app/www/                   HTTP, WebSocket, and other delivery transports
+src/app/core/feature/           Business capabilities, described below
+src/app/core/infrastructure/    Database and external-system adapters
+src/app/core/shared/            Cross-cutting app utilities, added only when needed
+src/lib/                        Adapted, app-local reusable primitives
 ```
+
+- `account/` — Account identities and authentication, including registration, email verification, password workflows, and auth tokens.
+- `admin/` — Administrative identity plus read/write use cases for managing education records, catalog data, acquisition codes, and billing.
+- `catalog/` — Learner-facing game discovery, featured games, user-library reads, and institution/course/classroom catalog queries.
+- `education/` — Institutions, courses, classrooms, instructors, classroom game assignments, institution offers, and acquisition codes.
+- `game/` — Games, versions and customizations; acquisition, checkout, payment/webhook processing, licenses, launch tickets, play events, and game state.
+- `media/` — Shared media metadata for image and video assets.
+- `publisher/` — Publisher records and publisher membership.
+- `taxonomy/` — Classification terms used to organize and discover games.
+- `user/` — Portal user records and user profile read/update operations.
 
 Controllers remain thin and delegate to one-use-case command or query classes. Features own their models and repositories. Infrastructure exposes technical capabilities and must not contain business workflows.
 
@@ -22,11 +32,13 @@ Collection properties and variables use a singular noun followed by `List`, such
 
 ## Local Setup
 
-Update the provided `.env` for your local environment, then run commands from the repository root:
+The repository includes a committed `.env` with safe local defaults. Put developer-specific overrides and secrets in the ignored `.env.local`; it takes precedence over `.env`. Run the local services, prepare the database, and start the API from the repository root:
 
 ```bash
 pnpm install
-pnpm --filter scholark-portal-api start:dev
+pnpm docker:start
+pnpm db:setup
+pnpm dev:api
 ```
 
 The HTTP API listens on the configured `PORT`. Its liveness endpoint is `GET /api/v1/health/alive`, and its dependency health endpoint is `GET /api/v1/health/status`.
@@ -37,7 +49,7 @@ Swagger UI is available at `http://localhost:3001/api/v1/doc`. The OpenAPI JSON 
 
 Environment variables are validated at startup and exposed through namespaced Nest configuration.
 
-The committed `.env` provides local defaults. Set `NODE_ENV=stage` to load the ignored `.env.stage` before `.env`; this applies to both the NestJS application and MikroORM CLI commands.
+The committed `.env` provides local defaults. `.env.local` overrides it for both the NestJS application and MikroORM CLI commands. Set `NODE_ENV=stage` to load `.env.stage.local`, then `.env.stage`, followed by `.env.local` and `.env`.
 
 Print a complete dotenv payload with `.env.stage` overlaid on `.env` for deployment import:
 
@@ -51,6 +63,9 @@ Configuration files under `src/config` are loaded automatically. Each file must 
 | --- | --- | --- | --- |
 | `MIKRO_ORM_DATABASE_URL` | Yes | - | PostgreSQL connection URL |
 | `MIKRO_ORM_DEBUG` | No | `false` | Enable MikroORM debug logging |
+| `STRIPE_API_KEY` | Yes | Local placeholder | Stripe API key; use a test-mode key for local development |
+| `STRIPE_PORTAL_URL` | Yes | `http://localhost:3000` | Portal origin used for Stripe redirects |
+| `STRIPE_WEBHOOK_SECRET` | Yes | Local placeholder | Webhook signing secret; replace with the value printed by `pnpm stripe:listen` |
 | `REDIS_URL` | Yes | - | Redis connection URL for browser-session storage |
 | `AUTH_SESSION_SECRET` | Yes | - | Secret used to sign browser-session cookies |
 | `AUTH_JWT_SECRET` | Yes | - | Secret used by the available JWT auth transport |
@@ -81,16 +96,17 @@ pnpm --filter scholark-portal-api build
 
 ## Database
 
-Populate or refresh the local catalog with the game, contract game-version, and taxonomy fixture data:
+Prepare a local database by safely adding/updating its schema from the current entities and running the fixture seeder. The schema update does not drop existing tables or columns:
 
 ```bash
-pnpm --filter scholark-portal-api seed
+pnpm db:setup
 ```
 
-The seed is idempotent: it updates the seven fixture games and their taxonomy
-associations without deleting unrelated games or taxonomy terms.
+The seed is idempotent and refreshes the development fixtures without resetting the database. To seed again without changing the schema, run `pnpm db:seed`.
 
-Do not enable automatic schema synchronization in production.
+To discard and rebuild local PostgreSQL data, run `pnpm db:reset`. This drops the PostgreSQL schema before recreating it and reseeding; it preserves MinIO and other Docker volumes. Do not run this against a database containing data you need.
+
+Schema synchronization is for local development only. Do not use it as a production schema deployment process.
 
 See the [portal deployment guide](../../doc/deployment.md) for the Vercel, Render, Neon, and Upstash configuration.
 
