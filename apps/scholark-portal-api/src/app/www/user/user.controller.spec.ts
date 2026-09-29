@@ -58,7 +58,8 @@ describe(UserController.name, () => {
 	});
 
 	it('revalidates using the authenticated user identity', async () => {
-		const revalidateCommand = { execute: jest.fn().mockResolvedValue('fulfilled') };
+		const result = { checkoutUrl: 'https://checkout.stripe.test/session', status: 'pending' };
+		const revalidateCommand = { execute: jest.fn().mockResolvedValue(result) };
 		const controller = new UserController(
 			{} as never,
 			{} as never,
@@ -72,7 +73,7 @@ describe(UserController.name, () => {
 		await expect(controller.revalidatePaymentAttempt(
 			{ user: { id: 'user-id' } } as never,
 			'00000000-0000-4000-8000-000000000005',
-		)).resolves.toEqual({ status: 'fulfilled' });
+		)).resolves.toEqual(result);
 		expect(revalidateCommand.execute).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000005', 'user-id');
 	});
 });

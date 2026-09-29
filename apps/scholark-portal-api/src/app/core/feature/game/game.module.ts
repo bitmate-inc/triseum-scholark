@@ -6,6 +6,7 @@ import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { AcquirePublicOfferCommand } from './command/acquire.public.game.offer.command';
 import { CreateGameCheckoutCommand } from './command/create.game.checkout.command';
 import { CreateGameLaunchTicketCommand } from './command/create.game.launch.ticket.command';
+import { ExpireGamePaymentAttemptCommand } from './command/expire.game.payment.attempt.command';
 import { FulfillGamePaymentCommand } from './command/fulfill.game.payment.command';
 import { ProcessGamePaymentWebhookCommand } from './command/process.game.payment.webhook.command';
 import { RevalidateGamePaymentAttemptCommand } from './command/revalidate.game.payment.attempt.command';
@@ -47,6 +48,7 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		MikroOrmModule,
 		GetGameListQuery,
 		CreateGameLaunchTicketCommand,
+		ExpireGamePaymentAttemptCommand,
 		GetUserLibraryQuery,
 	],
 	imports: [
@@ -81,6 +83,7 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		GameVersionRepository,
 		GetGameListQuery,
 		CreateGameLaunchTicketCommand,
+		ExpireGamePaymentAttemptCommand,
 		GetUserLibraryQuery,
 	],
 })

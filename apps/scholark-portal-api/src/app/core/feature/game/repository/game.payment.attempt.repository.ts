@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
-import { GamePaymentAttempt } from '../model/game.payment.attempt.entity';
+import { GamePaymentAttempt, GamePaymentAttemptStatus } from '../model/game.payment.attempt.entity';
 
 @Injectable()
 export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GamePaymentAttempt> {
@@ -78,6 +78,31 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 			{ stripeCheckoutSessionId, user: userId },
 			{ populate: ['classroomGame', 'customization'] },
 		)) ?? undefined;
+	}
+
+	async findPendingByUserAndPublicOffer(userId: string, publicOfferId: string): Promise<GamePaymentAttempt | undefined> {
+		return (await this.repository.findOne(
+			{ publicOffer: publicOfferId, status: GamePaymentAttemptStatus.PENDING, user: userId },
+			{ orderBy: { createdAt: 'DESC' }, populate: ['user', 'publicOffer'] },
+		)) ?? undefined;
+	}
+
+	async findPendingByUserAndClassroomGame(userId: string, classroomGameId: string): Promise<GamePaymentAttempt | undefined> {
+		return (await this.repository.findOne(
+			{ classroomGame: classroomGameId, status: GamePaymentAttemptStatus.PENDING, user: userId },
+			{ orderBy: { createdAt: 'DESC' }, populate: ['user', 'classroomGame', 'institutionGameOffer'] },
+		)) ?? undefined;
+	}
+
+	async markPendingAsFailed(id: string, stripeCheckoutSessionId?: string): Promise<boolean> {
+		const condition: { id: string; status: GamePaymentAttemptStatus; stripeCheckoutSessionId?: string } = {
+			id,
+			status: GamePaymentAttemptStatus.PENDING,
+		};
+		if (stripeCheckoutSessionId) {
+			condition.stripeCheckoutSessionId = stripeCheckoutSessionId;
+		}
+		return await this.repository.nativeUpdate(condition, { status: GamePaymentAttemptStatus.FAILED }) === 1;
 	}
 
 }

@@ -40,6 +40,9 @@ export class GameCheckoutStatusResponseDto {
 	@ApiProperty({ enum: ['pending', 'fulfilled', 'failed'] })
 	status!: 'pending' | 'fulfilled' | 'failed';
 
+	@ApiPropertyOptional({ type: String, format: 'uri' })
+	checkoutUrl?: string;
+
 }
 
 export class UserPaymentAttemptResponseDto {

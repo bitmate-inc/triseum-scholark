@@ -10,6 +10,7 @@ import stripeConfig from '../../../../../config/stripe';
 import { StripeClient } from '../../../infrastructure/stripe/stripe.module';
 import { StripeWebhookEvent, StripeWebhookEventStatus } from '../model/stripe.webhook.event.entity';
 import { StripeWebhookEventRepository } from '../repository/stripe.webhook.event.repository';
+import { ExpireGamePaymentAttemptCommand } from './expire.game.payment.attempt.command';
 import { FulfillGamePaymentCommand } from './fulfill.game.payment.command';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class ProcessGamePaymentWebhookCommand {
 		@Inject(StripeClient()) private readonly stripe: Stripe,
 		@Inject(stripeConfig.KEY) private readonly config: ConfigType<typeof stripeConfig>,
 		private readonly webhookEventRepository: StripeWebhookEventRepository,
+		private readonly expireGamePaymentAttemptCommand: ExpireGamePaymentAttemptCommand,
 		private readonly fulfillGamePaymentCommand: FulfillGamePaymentCommand,
 	) {}
 
@@ -35,13 +37,23 @@ export class ProcessGamePaymentWebhookCommand {
 			throw new BadRequestException('Invalid Stripe webhook signature');
 		}
 
-		if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) {
+		if (![
+			'checkout.session.completed',
+			'checkout.session.async_payment_succeeded',
+			'checkout.session.expired',
+		].includes(event.type)) {
 			return;
 		}
 
 		const session = event.data.object as Stripe.Checkout.Session;
 
-		if (session.payment_status !== 'paid' || !session.id) {
+		if (!session.id) {
+			return;
+		}
+		if (event.type === 'checkout.session.expired' && session.status !== 'expired') {
+			return;
+		}
+		if (event.type !== 'checkout.session.expired' && session.payment_status !== 'paid') {
 			return;
 		}
 
@@ -84,7 +96,11 @@ export class ProcessGamePaymentWebhookCommand {
 		}
 
 		try {
-			await this.fulfillGamePaymentCommand.execute(session, event.id, 'webhook');
+			if (event.type === 'checkout.session.expired') {
+				await this.expireGamePaymentAttemptCommand.execute(session.id, session.metadata?.attemptId);
+			} else {
+				await this.fulfillGamePaymentCommand.execute(session, event.id, 'webhook');
+			}
 			const webhookEvent = await this.webhookEventRepository.findByStripeEventId(event.id);
 
 			if (!webhookEvent) {

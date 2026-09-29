@@ -52,6 +52,10 @@ export function BillingPageContent() {
 		setFeedback(undefined);
 		try {
 			const result = await revalidate(attempt.id).unwrap();
+			if (result.checkoutUrl) {
+				window.location.assign(result.checkoutUrl);
+				return;
+			}
 			const message = result.status === "fulfilled"
 				? "Payment confirmed. Your game is ready in the library."
 				: result.status === "failed"
@@ -103,7 +107,7 @@ export function BillingPageContent() {
 								</div>
 								{attempt.canRevalidate ? (
 									<button className={styles.revalidateButton} disabled={revalidation.isLoading} onClick={() => void handleRevalidate(attempt)} type="button">
-										<RefreshCw aria-hidden="true"/>{revalidation.isLoading ? "Checking..." : "Recheck payment"}
+										<RefreshCw aria-hidden="true"/>{revalidation.isLoading ? "Checking..." : "Check / resume checkout"}
 									</button>
 								) : null}
 							</article>

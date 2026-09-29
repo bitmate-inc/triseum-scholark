@@ -3,7 +3,10 @@ import type Stripe from 'stripe';
 import { StripeWebhookEventStatus } from '../model/stripe.webhook.event.entity';
 import { ProcessGamePaymentWebhookCommand } from './process.game.payment.webhook.command';
 
-function createCommand(purchaseType: 'public' | 'classroom') {
+function createCommand(
+	purchaseType: 'public' | 'classroom',
+	eventType: Stripe.Event.Type = 'checkout.session.completed',
+) {
 	const user = { id: '00000000-0000-4000-8000-000000000001' };
 	const session = {
 		client_reference_id: user.id,
@@ -21,7 +24,7 @@ function createCommand(purchaseType: 'public' | 'classroom') {
 	const stripeEvent = {
 		data: { object: session },
 		id: 'evt_test_789',
-		type: 'checkout.session.completed',
+		type: eventType,
 	} as unknown as Stripe.Event;
 	const webhookEvent = { status: StripeWebhookEventStatus.PENDING };
 	const stripe = {
@@ -34,15 +37,20 @@ function createCommand(purchaseType: 'public' | 'classroom') {
 	const fulfillGamePaymentCommand = {
 		execute: jest.fn().mockResolvedValue(undefined),
 	};
+	const expireGamePaymentAttemptCommand = {
+		execute: jest.fn().mockResolvedValue(undefined),
+	};
 	const command = new ProcessGamePaymentWebhookCommand(
 		stripe,
 		{ webhookSecret: 'whsec_test' } as never,
 		webhookEventRepository as never,
+		expireGamePaymentAttemptCommand as never,
 		fulfillGamePaymentCommand as never,
 	);
 
 	return {
 		command,
+		expireGamePaymentAttemptCommand,
 		fulfillGamePaymentCommand,
 		purchaseType,
 		stripe,
@@ -80,5 +88,19 @@ describe(ProcessGamePaymentWebhookCommand.name, () => {
 
 		expect(context.fulfillGamePaymentCommand.execute).toHaveBeenCalledTimes(1);
 		expect(pendingEvent.status).toBe(StripeWebhookEventStatus.PROCESSED);
+	});
+
+	it('marks an unfinished attempt failed when Stripe expires its Checkout session', async () => {
+		const context = createCommand('public', 'checkout.session.expired');
+		(context.stripeEvent.data.object as Stripe.Checkout.Session).status = 'expired';
+
+		await context.command.execute(Buffer.from('{}'), 'signature');
+
+		expect(context.expireGamePaymentAttemptCommand.execute).toHaveBeenCalledWith(
+			'cs_test_123',
+			'00000000-0000-4000-8000-000000000005',
+		);
+		expect(context.fulfillGamePaymentCommand.execute).not.toHaveBeenCalled();
+		expect(context.webhookEvent.status).toBe(StripeWebhookEventStatus.PROCESSED);
 	});
 });

@@ -22,7 +22,7 @@ const billingApi = api.injectEndpoints({
 			providesTags: ["PaymentAttempts"],
 			query: () => ({ url: "/api/v1/user/me/payment-attempts" }),
 		}),
-		revalidatePaymentAttempt: build.mutation<{ status: PaymentAttemptStatus }, string>({
+		revalidatePaymentAttempt: build.mutation<{ checkoutUrl?: string; status: PaymentAttemptStatus }, string>({
 			invalidatesTags: ["PaymentAttempts"],
 			query: (attemptId) => ({
 				method: "POST",

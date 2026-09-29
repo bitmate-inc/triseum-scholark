@@ -25,13 +25,13 @@ export class RevalidateGamePaymentAttemptCommand {
 		private readonly unitOfWork: MikroOrmUnitOfWork,
 	) {}
 
-	async execute(attemptId: string, userId: string): Promise<GamePaymentAttemptStatus | undefined> {
+	async execute(attemptId: string, userId: string): Promise<{ checkoutUrl?: string; status: GamePaymentAttemptStatus } | undefined> {
 		const attempt = await this.paymentAttemptRepository.findByIdAndUser(attemptId, userId);
 		if (!attempt) {
 			return undefined;
 		}
 		if (attempt.status !== GamePaymentAttemptStatus.PENDING || !attempt.stripeCheckoutSessionId) {
-			return attempt.status;
+			return { status: attempt.status };
 		}
 		const cooldown = await this.redisClient.set(
 			`scholark:billing:payment-revalidation:${attempt.id}`,
@@ -47,6 +47,7 @@ export class RevalidateGamePaymentAttemptCommand {
 		if (session.id !== checkoutSessionId) {
 			throw new Error('Stripe Checkout session does not match the payment attempt');
 		}
+		this.assertSessionMatchesAttempt(session, attempt);
 
 		if (session.payment_status === 'paid') {
 			await this.fulfillGamePaymentCommand.execute(session, `revalidation:${attempt.id}`, 'revalidation');
@@ -54,7 +55,34 @@ export class RevalidateGamePaymentAttemptCommand {
 			await this.markFailed(attempt.id!, userId, checkoutSessionId);
 		}
 
-		return (await this.paymentAttemptRepository.findByIdAndUser(attemptId, userId))?.status;
+		const updatedAttempt = await this.paymentAttemptRepository.findByIdAndUser(attemptId, userId);
+		if (!updatedAttempt) {
+			return undefined;
+		}
+		const checkoutUrl = updatedAttempt.status === GamePaymentAttemptStatus.PENDING && session.status === 'open'
+			? session.url ?? undefined
+			: undefined;
+		return { checkoutUrl, status: updatedAttempt.status };
+	}
+
+	private assertSessionMatchesAttempt(session: Stripe.Checkout.Session, attempt: NonNullable<Awaited<ReturnType<GamePaymentAttemptRepository['findByIdAndUser']>>>): void {
+		const purchaseType = attempt.classroomGame ? 'classroom' : 'public';
+		const expectedOfferId = attempt.publicOffer?.id ?? attempt.institutionGameOffer?.id;
+		const metadata = session.metadata ?? {};
+		const metadataMatchesAttempt =
+			metadata.attemptId === attempt.id
+			&& metadata.userId === attempt.user.id
+			&& metadata.purchaseType === purchaseType
+			&& metadata.offerId === expectedOfferId
+			&& (purchaseType !== 'classroom' || metadata.classroomGameId === attempt.classroomGame?.id)
+			&& session.client_reference_id === attempt.user.id;
+		if (!metadataMatchesAttempt) {
+			throw new Error('Stripe Checkout metadata does not match the payment attempt');
+		}
+		if (session.amount_total !== attempt.price.minorUnitAmount
+			|| session.currency !== attempt.price.currency.toLowerCase()) {
+			throw new Error('Stripe Checkout amount does not match the payment attempt');
+		}
 	}
 
 	private async isTerminalFailure(session: Stripe.Checkout.Session): Promise<boolean> {

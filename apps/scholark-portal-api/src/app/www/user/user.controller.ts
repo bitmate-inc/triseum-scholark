@@ -135,11 +135,11 @@ export class UserController {
 		@AuthSession() session: AuthSessionData,
 		@Param('id', ParseUUIDPipe) attemptId: string,
 	): Promise<GameCheckoutStatusResponseDto> {
-		const status = await this.revalidateGamePaymentAttemptCommand.execute(attemptId, session.user.id);
-		if (!status) {
+		const result = await this.revalidateGamePaymentAttemptCommand.execute(attemptId, session.user.id);
+		if (!result) {
 			throw new NotFoundException('Payment attempt not found');
 		}
-		return { status };
+		return result;
 	}
 
 	@Patch()
