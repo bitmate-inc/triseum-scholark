@@ -17,17 +17,19 @@ import {
 	SlidersHorizontal,
 	X
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import styles from "../../../../asset/style/site.module.css";
+import { useRouter } from "../../../../i18n/navigation";
 import { useGameGetGameListQuery } from "../../../api/client/api/generated-api";
 import { GameCard } from "../../shared/component/game-card";
 import { CATALOG_PAGE_SIZE } from "../../shared/model/catalog";
 import type { GetGameListResponse } from "../../shared/model/game";
 import { useDebouncedValue } from "../hook/use-debounced-value";
 
-const filterLabelList = ["Subject", "Skill level", "Play mode"];
+const filterKeyList = ["subject", "skillLevel", "playMode"] as const;
 const SEARCH_DEBOUNCE_MS = 300;
 
 type CatalogSearchProps = {
@@ -67,6 +69,7 @@ function getPaginationItemList(
 }
 
 export function CatalogSearch({ initialGameListResponse, initialPage, initialQuery }: CatalogSearchProps) {
+	const t = useTranslations("catalog");
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const searchParamString = searchParams.toString();
@@ -158,14 +161,14 @@ export function CatalogSearch({ initialGameListResponse, initialPage, initialQue
 			<div className={styles.searchBar}>
 				<Search aria-hidden="true"/>
 				<label className={styles.srOnly} htmlFor="game-search">
-					Search games by title
+					{t("searchGamesByTitle")}
 				</label>
 				<Input
 					id="game-search"
 					type="search"
 					value={query}
 					onChange={(event) => updateQuery(event.target.value)}
-					placeholder="Search by game title..."
+					placeholder={t("searchByGameTitle")}
 					autoComplete="off"
 				/>
 				{query ? (
@@ -174,33 +177,33 @@ export function CatalogSearch({ initialGameListResponse, initialPage, initialQue
 						size="icon"
 						type="button"
 						onClick={() => updateQuery("")}
-						aria-label="Clear search"
+						aria-label={t("clearSearch")}
 					>
 						<X/>
 					</Button>
 				) : null}
 			</div>
-			<div className={styles.filterRow} aria-label="Catalog filters">
+			<div className={styles.filterRow} aria-label={t("filtersLabel")}>
 				<SlidersHorizontal aria-hidden="true"/>
-				{filterLabelList.map((label) => (
-					<Button key={label} variant="outline" size="sm" type="button" disabled>
-						{label}
-						<Badge variant="secondary">Soon</Badge>
+				{filterKeyList.map((key) => (
+					<Button key={key} variant="outline" size="sm" type="button" disabled>
+						{t(key)}
+						<Badge variant="secondary">{t("soon")}</Badge>
 					</Button>
 				))}
 			</div>
 			<div className={styles.resultsHeader}>
 				<p aria-live="polite">
-					<strong>{totalItemCount}</strong> {totalItemCount === 1 ? "game" : "games"}
+					{t("gameCount", { count: totalItemCount })}
 				</p>
-				<span>{isPending ? "Updating results…" : normalizedQuery ? `Matching “${normalizedQuery}”` : `Page ${page} of ${totalPageCount}`}</span>
+				<span>{isPending ? t("updatingResults") : normalizedQuery ? t("matchingQuery", { query: normalizedQuery }) : t("pageStatus", { page, total: totalPageCount })}</span>
 			</div>
 			{error ? (
 				<div className={styles.emptyState} role="alert">
-					<h2>Couldn’t load games</h2>
-					<p>The catalog request failed. Try loading this page again.</p>
+					<h2>{t("couldNotLoadGames")}</h2>
+					<p>{t("catalogRequestFailed")}</p>
 					<Button variant="outline" type="button" onClick={() => void refetch()}>
-						Retry
+						{t("retry")}
 					</Button>
 				</div>
 			) : gameList.length ? (
@@ -220,6 +223,7 @@ export function CatalogSearch({ initialGameListResponse, initialPage, initialQue
 								<PaginationItem>
 									<PaginationPrevious
 										type="button"
+										aria-label={t("previousPage")}
 										disabled={page === 1 || isFetching}
 										onClick={() => updatePage(page - 1)}
 									/>
@@ -243,6 +247,7 @@ export function CatalogSearch({ initialGameListResponse, initialPage, initialQue
 								<PaginationItem>
 									<PaginationNext
 										type="button"
+										aria-label={t("nextPage")}
 										disabled={page === totalPageCount || isFetching}
 										onClick={() => updatePage(page + 1)}
 									/>
@@ -254,10 +259,10 @@ export function CatalogSearch({ initialGameListResponse, initialPage, initialQue
 			) : (
 				<div className={styles.emptyState}>
 					<Search aria-hidden="true"/>
-					<h2>No games found</h2>
-					<p>Try a different title or clear the search.</p>
+					<h2>{t("noGamesFound")}</h2>
+					<p>{t("differentTitleOrClear")}</p>
 					<Button variant="outline" type="button" onClick={() => updateQuery("")}>
-						Clear search
+						{t("clearSearch")}
 					</Button>
 				</div>
 			)}

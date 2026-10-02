@@ -11,6 +11,7 @@ import {
 	KeyRound,
 	LoaderCircle,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 
 import styles from "../../../../asset/style/site.module.css";
@@ -24,6 +25,7 @@ export function ClassroomGameCodeRedemption({
 	classroomGameId: string;
 	onCancel: () => void;
 }) {
+	const t = useTranslations("acquisition");
 	const [code, setCode] = useState("");
 	const [redeem, redemption] = useRedeemAcquisitionCodeMutation();
 
@@ -41,29 +43,29 @@ export function ClassroomGameCodeRedemption({
 		return (
 			<Alert>
 				<CheckCircle2 data-icon="inline-start"/>
-				<AlertTitle>Game added to your library</AlertTitle>
-				<AlertDescription>Your institution-funded access is now active.</AlertDescription>
+				<AlertTitle>{t("codeRedeemed")}</AlertTitle>
+				<AlertDescription>{t("institutionAccessActive")}</AlertDescription>
 			</Alert>
 		);
 	}
 
 	return (
 		<form className={styles.classroomGameAction} onSubmit={submit}>
-			<label htmlFor={`acquisition-code-${classroomGameId}`}>Acquisition code</label>
+			<label htmlFor={`acquisition-code-${classroomGameId}`}>{t("acquisitionCode")}</label>
 			<input
-				aria-label="Acquisition code"
+				aria-label={t("acquisitionCode")}
 				id={`acquisition-code-${classroomGameId}`}
 				onChange={(event) => setCode(event.target.value)}
-				placeholder="Enter code"
+				placeholder={t("enterCode")}
 				value={code}
 			/>
-			{redemption.error ? <Alert variant="destructive"><AlertTitle>Code could not be redeemed</AlertTitle><AlertDescription>{getApiErrorMessage(redemption.error)}</AlertDescription></Alert> : null}
+			{redemption.error ? <Alert variant="destructive"><AlertTitle>{t("codeRedemptionFailed")}</AlertTitle><AlertDescription>{getApiErrorMessage(redemption.error, { generic: t("genericApiError"), request: t("requestApiError") })}</AlertDescription></Alert> : null}
 			<div>
 				<Button disabled={redemption.isLoading || !code.trim()} size="sm" type="submit">
 					{redemption.isLoading ? <LoaderCircle className="animate-spin" data-icon="inline-start"/> : <KeyRound data-icon="inline-start"/>}
-					Redeem
+					{t("redeem")}
 				</Button>
-				<Button disabled={redemption.isLoading} onClick={onCancel} size="sm" type="button" variant="outline">Cancel</Button>
+				<Button disabled={redemption.isLoading} onClick={onCancel} size="sm" type="button" variant="outline">{t("cancel")}</Button>
 			</div>
 		</form>
 	);

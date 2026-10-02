@@ -27,8 +27,7 @@ import {
 	CheckCircle2,
 	LoaderCircle
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
 	type FormEvent,
 	type ReactNode,
@@ -38,6 +37,11 @@ import {
 } from "react";
 
 import styles from "../../../../asset/style/account.module.css";
+import {
+	getPathname,
+	Link,
+	useRouter
+} from "../../../../i18n/navigation";
 import {
 	useAuthConfirmEmailMutation,
 	useAuthLoginMutation,
@@ -70,12 +74,14 @@ function FormCard({ children, description, footer, title }: {
 }
 
 function Feedback({ error, success }: { error?: unknown; success?: string }) {
+	const t = useTranslations("auth");
+
 	if (error) {
 		return (
 			<Alert variant="destructive">
 				<AlertCircle/>
-				<AlertTitle>Unable to continue</AlertTitle>
-				<AlertDescription>{getApiErrorMessage(error)}</AlertDescription>
+				<AlertTitle>{t("unableToContinue")}</AlertTitle>
+				<AlertDescription>{getApiErrorMessage(error, { generic: t("genericApiError"), request: t("requestApiError") })}</AlertDescription>
 			</Alert>
 		);
 	}
@@ -84,7 +90,7 @@ function Feedback({ error, success }: { error?: unknown; success?: string }) {
 		return (
 			<Alert>
 				<CheckCircle2/>
-				<AlertTitle>Done</AlertTitle>
+				<AlertTitle>{t("done")}</AlertTitle>
 				<AlertDescription>{success}</AlertDescription>
 			</Alert>
 		);
@@ -107,6 +113,8 @@ function isUnauthorized(error: unknown): boolean {
 }
 
 export function LoginForm({ backTo }: { backTo?: string }) {
+	const locale = useLocale();
+	const t = useTranslations("auth");
 	const [login, result] = useAuthLoginMutation();
 
 	async function submit(event: FormEvent<HTMLFormElement>) {
@@ -118,27 +126,29 @@ export function LoginForm({ backTo }: { backTo?: string }) {
 				password: String(data.get("password")),
 			} 
 		});
-		if ("data" in response) window.location.assign(backTo ?? "/library");
+		if ("data" in response) {
+			window.location.assign(getPathname({ locale, href: backTo ?? "/library" }));
+		}
 	}
 
 	return (
 		<FormCard
-			title="Sign in"
-			description="Use your confirmed email address and password."
-			footer={<><Link href="/auth/register">Create account</Link><Link href="/auth/forgot-password">Forgot password?</Link></>}
+			title={t("signInTitle")}
+			description={t("signInDescription")}
+			footer={<><Link href="/auth/register">{t("createAccount")}</Link><Link href="/auth/forgot-password">{t("forgotPassword")}</Link></>}
 		>
 			<form onSubmit={submit}>
 				<FieldGroup>
 					<Feedback error={result.error}/>
 					<Field>
-						<FieldLabel htmlFor="email">Email</FieldLabel>
+						<FieldLabel htmlFor="email">{t("email")}</FieldLabel>
 						<Input autoComplete="email" id="email" name="email" required type="email"/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="password">Password</FieldLabel>
+						<FieldLabel htmlFor="password">{t("password")}</FieldLabel>
 						<Input autoComplete="current-password" id="password" minLength={8} name="password" required type="password"/>
 					</Field>
-					<SubmitButton pending={result.isLoading}>Sign in</SubmitButton>
+					<SubmitButton pending={result.isLoading}>{t("signIn")}</SubmitButton>
 				</FieldGroup>
 			</form>
 		</FormCard>
@@ -146,6 +156,7 @@ export function LoginForm({ backTo }: { backTo?: string }) {
 }
 
 export function RegisterForm() {
+	const t = useTranslations("auth");
 	const [register, result] = useAuthRegisterMutation();
 	const [formError, setFormError] = useState<string>();
 
@@ -156,7 +167,7 @@ export function RegisterForm() {
 		const password = String(data.get("password"));
 
 		if (password !== String(data.get("confirmPassword"))) {
-			setFormError("Passwords do not match.");
+			setFormError(t("passwordMismatch"));
 			return;
 		}
 
@@ -171,20 +182,20 @@ export function RegisterForm() {
 	}
 
 	return (
-		<FormCard title="Create your account" description="Your account becomes active after email confirmation." footer={<Link href="/auth/login">Already have an account?</Link>}>
+		<FormCard title={t("registerTitle")} description={t("registerDescription")} footer={<Link href="/auth/login">{t("alreadyHaveAccount")}</Link>}>
 			{result.isSuccess ? (
-				<Feedback success="Check your inbox for the confirmation link, then return to sign in."/>
+				<Feedback success={t("registrationSuccess")}/>
 			) : (
 				<form onSubmit={submit}>
 					<FieldGroup>
 						<Feedback error={result.error}/>
 						{formError ? <FieldError>{formError}</FieldError> : null}
-						<Field><FieldLabel htmlFor="firstName">First name</FieldLabel><Input autoComplete="given-name" id="firstName" name="firstName" required/></Field>
-						<Field><FieldLabel htmlFor="lastName">Last name</FieldLabel><Input autoComplete="family-name" id="lastName" name="lastName" required/></Field>
-						<Field><FieldLabel htmlFor="email">Email</FieldLabel><Input autoComplete="email" id="email" name="email" required type="email"/></Field>
-						<Field><FieldLabel htmlFor="password">Password</FieldLabel><Input autoComplete="new-password" id="password" minLength={8} name="password" required type="password"/><FieldDescription>Use at least 8 characters.</FieldDescription></Field>
-						<Field><FieldLabel htmlFor="confirmPassword">Confirm password</FieldLabel><Input autoComplete="new-password" id="confirmPassword" minLength={8} name="confirmPassword" required type="password"/></Field>
-						<SubmitButton pending={result.isLoading}>Create account</SubmitButton>
+						<Field><FieldLabel htmlFor="firstName">{t("firstName")}</FieldLabel><Input autoComplete="given-name" id="firstName" name="firstName" required/></Field>
+						<Field><FieldLabel htmlFor="lastName">{t("lastName")}</FieldLabel><Input autoComplete="family-name" id="lastName" name="lastName" required/></Field>
+						<Field><FieldLabel htmlFor="email">{t("email")}</FieldLabel><Input autoComplete="email" id="email" name="email" required type="email"/></Field>
+						<Field><FieldLabel htmlFor="password">{t("password")}</FieldLabel><Input autoComplete="new-password" id="password" minLength={8} name="password" required type="password"/><FieldDescription>{t("passwordHint")}</FieldDescription></Field>
+						<Field><FieldLabel htmlFor="confirmPassword">{t("confirmPassword")}</FieldLabel><Input autoComplete="new-password" id="confirmPassword" minLength={8} name="confirmPassword" required type="password"/></Field>
+						<SubmitButton pending={result.isLoading}>{t("createAccount")}</SubmitButton>
 					</FieldGroup>
 				</form>
 			)}
@@ -193,6 +204,7 @@ export function RegisterForm() {
 }
 
 export function VerifyEmailForm() {
+	const t = useTranslations("auth");
 	const [resend, result] = useAuthResendVerificationMutation();
 
 	async function submit(event: FormEvent<HTMLFormElement>) {
@@ -202,12 +214,12 @@ export function VerifyEmailForm() {
 	}
 
 	return (
-		<FormCard title="Resend confirmation" description="Enter your email and we will issue a fresh confirmation link." footer={<Link href="/auth/login">Back to sign in</Link>}>
+		<FormCard title={t("resendConfirmationTitle")} description={t("resendConfirmationDescription")} footer={<Link href="/auth/login">{t("backToSignIn")}</Link>}>
 			<form onSubmit={submit}>
 				<FieldGroup>
 					<Feedback error={result.error} success={result.data?.message}/>
-					<Field><FieldLabel htmlFor="email">Email</FieldLabel><Input autoComplete="email" id="email" name="email" required type="email"/></Field>
-					<SubmitButton pending={result.isLoading}>Send confirmation</SubmitButton>
+					<Field><FieldLabel htmlFor="email">{t("email")}</FieldLabel><Input autoComplete="email" id="email" name="email" required type="email"/></Field>
+					<SubmitButton pending={result.isLoading}>{t("sendConfirmation")}</SubmitButton>
 				</FieldGroup>
 			</form>
 		</FormCard>
@@ -215,6 +227,7 @@ export function VerifyEmailForm() {
 }
 
 export function ConfirmEmail({ token }: { token?: string }) {
+	const t = useTranslations("auth");
 	const [confirm, result] = useAuthConfirmEmailMutation();
 	const started = useRef(false);
 
@@ -225,15 +238,16 @@ export function ConfirmEmail({ token }: { token?: string }) {
 	}, [confirm, token]);
 
 	return (
-		<FormCard title="Confirm your email" description="We are validating your confirmation link." footer={<Link href="/auth/login">Continue to sign in</Link>}>
-			{!token ? <Feedback error={{ status: 400, data: { message: "The confirmation link is missing its token." } }}/> : null}
-			{result.isLoading || (!result.isSuccess && !result.error && token) ? <p>Confirming your email address...</p> : null}
+		<FormCard title={t("confirmEmailTitle")} description={t("confirmEmailDescription")} footer={<Link href="/auth/login">{t("continueToSignIn")}</Link>}>
+			{!token ? <Feedback error={{ status: 400, data: { message: t("missingConfirmationToken") } }}/> : null}
+			{result.isLoading || (!result.isSuccess && !result.error && token) ? <p>{t("confirmingEmail")}</p> : null}
 			<Feedback error={result.error} success={result.data?.message}/>
 		</FormCard>
 	);
 }
 
 export function ForgotPasswordForm() {
+	const t = useTranslations("auth");
 	const [requestReset, result] = useAuthRequestPasswordResetMutation();
 
 	async function submit(event: FormEvent<HTMLFormElement>) {
@@ -243,12 +257,12 @@ export function ForgotPasswordForm() {
 	}
 
 	return (
-		<FormCard title="Reset your password" description="We will email a single-use reset link if the account exists." footer={<Link href="/auth/login">Back to sign in</Link>}>
+		<FormCard title={t("forgotPasswordTitle")} description={t("forgotPasswordDescription")} footer={<Link href="/auth/login">{t("backToSignIn")}</Link>}>
 			<form onSubmit={submit}>
 				<FieldGroup>
 					<Feedback error={result.error} success={result.data?.message}/>
-					<Field><FieldLabel htmlFor="email">Email</FieldLabel><Input autoComplete="email" id="email" name="email" required type="email"/></Field>
-					<SubmitButton pending={result.isLoading}>Send reset link</SubmitButton>
+					<Field><FieldLabel htmlFor="email">{t("email")}</FieldLabel><Input autoComplete="email" id="email" name="email" required type="email"/></Field>
+					<SubmitButton pending={result.isLoading}>{t("sendResetLink")}</SubmitButton>
 				</FieldGroup>
 			</form>
 		</FormCard>
@@ -256,6 +270,7 @@ export function ForgotPasswordForm() {
 }
 
 export function ResetPasswordForm({ token }: { token?: string }) {
+	const t = useTranslations("auth");
 	const [resetPassword, result] = useAuthResetPasswordMutation();
 	const [formError, setFormError] = useState<string>();
 
@@ -265,23 +280,23 @@ export function ResetPasswordForm({ token }: { token?: string }) {
 		const data = new FormData(event.currentTarget);
 		const password = String(data.get("password"));
 		if (password !== String(data.get("confirmPassword"))) {
-			setFormError("Passwords do not match.");
+			setFormError(t("passwordMismatch"));
 			return;
 		}
 		await resetPassword({ resetPasswordRequestDto: { password, token: token! } });
 	}
 
 	return (
-		<FormCard title="Choose a new password" description="Using this link will revoke existing sessions." footer={<Link href="/auth/login">Back to sign in</Link>}>
-			{result.isSuccess ? <Feedback success="Your password has been updated. You can now sign in."/> : (
+		<FormCard title={t("choosePasswordTitle")} description={t("choosePasswordDescription")} footer={<Link href="/auth/login">{t("backToSignIn")}</Link>}>
+			{result.isSuccess ? <Feedback success={t("passwordUpdated")}/> : (
 				<form onSubmit={submit}>
 					<FieldGroup>
-						{!token ? <FieldError>The reset link is missing its token.</FieldError> : null}
+						{!token ? <FieldError>{t("missingResetToken")}</FieldError> : null}
 						<Feedback error={result.error}/>
 						{formError ? <FieldError>{formError}</FieldError> : null}
-						<Field><FieldLabel htmlFor="password">New password</FieldLabel><Input autoComplete="new-password" id="password" minLength={8} name="password" required type="password"/></Field>
-						<Field><FieldLabel htmlFor="confirmPassword">Confirm password</FieldLabel><Input autoComplete="new-password" id="confirmPassword" minLength={8} name="confirmPassword" required type="password"/></Field>
-						<SubmitButton pending={result.isLoading || !token}>Update password</SubmitButton>
+						<Field><FieldLabel htmlFor="password">{t("newPassword")}</FieldLabel><Input autoComplete="new-password" id="password" minLength={8} name="password" required type="password"/></Field>
+						<Field><FieldLabel htmlFor="confirmPassword">{t("confirmPassword")}</FieldLabel><Input autoComplete="new-password" id="confirmPassword" minLength={8} name="confirmPassword" required type="password"/></Field>
+						<SubmitButton pending={result.isLoading || !token}>{t("updatePassword")}</SubmitButton>
 					</FieldGroup>
 				</form>
 			)}
@@ -290,6 +305,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
 }
 
 export function ProfileForm() {
+	const t = useTranslations("auth");
 	const router = useRouter();
 	const user = useUserGetOwnUserQuery();
 	const [updateProfile, update] = useUserUpdateProfileMutation();
@@ -310,16 +326,16 @@ export function ProfileForm() {
 	}
 
 	return (
-		<FormCard title="Your profile" description="Manage the personal details attached to your account." footer={<Link href="/profile/password">Change password</Link>}>
-			{user.isLoading ? <p>Loading your profile...</p> : null}
+		<FormCard title={t("profileTitle")} description={t("profileDescription")} footer={<Link href="/profile/password">{t("changePassword")}</Link>}>
+			{user.isLoading ? <p>{t("loadingProfile")}</p> : null}
 			{user.data ? (
 				<form onSubmit={submit}>
 					<FieldGroup>
-						<Feedback error={update.error} success={update.isSuccess ? "Your profile has been updated." : undefined}/>
+						<Feedback error={update.error} success={update.isSuccess ? t("profileUpdated") : undefined}/>
 						<p className={styles.profileMeta}>{user.data.email}</p>
-						<Field><FieldLabel htmlFor="firstName">First name</FieldLabel><Input defaultValue={user.data.firstName ?? ""} id="firstName" name="firstName" required/></Field>
-						<Field><FieldLabel htmlFor="lastName">Last name</FieldLabel><Input defaultValue={user.data.lastName ?? ""} id="lastName" name="lastName" required/></Field>
-						<SubmitButton pending={update.isLoading}>Save profile</SubmitButton>
+						<Field><FieldLabel htmlFor="firstName">{t("firstName")}</FieldLabel><Input defaultValue={user.data.firstName ?? ""} id="firstName" name="firstName" required/></Field>
+						<Field><FieldLabel htmlFor="lastName">{t("lastName")}</FieldLabel><Input defaultValue={user.data.lastName ?? ""} id="lastName" name="lastName" required/></Field>
+						<SubmitButton pending={update.isLoading}>{t("saveProfile")}</SubmitButton>
 					</FieldGroup>
 				</form>
 			) : null}
@@ -328,6 +344,7 @@ export function ProfileForm() {
 }
 
 export function ChangePasswordForm() {
+	const t = useTranslations("auth");
 	const router = useRouter();
 	const user = useUserGetOwnUserQuery();
 	const [changePassword, result] = useUserChangePasswordMutation();
@@ -343,7 +360,7 @@ export function ChangePasswordForm() {
 		const data = new FormData(event.currentTarget);
 		const password = String(data.get("password"));
 		if (password !== String(data.get("confirmPassword"))) {
-			setFormError("Passwords do not match.");
+			setFormError(t("passwordMismatch"));
 			return;
 		}
 		await changePassword({
@@ -355,19 +372,19 @@ export function ChangePasswordForm() {
 	}
 
 	return (
-		<FormCard title="Change password" description="Confirm your current password before choosing a new one." footer={<Link href="/profile">Back to profile</Link>}>
+		<FormCard title={t("changePasswordTitle")} description={t("changePasswordDescription")} footer={<Link href="/profile">{t("backToProfile")}</Link>}>
 			{user.data ? (
 				<form onSubmit={submit}>
 					<FieldGroup>
 						<Feedback error={result.error} success={result.data?.message}/>
 						{formError ? <FieldError>{formError}</FieldError> : null}
-						<Field><FieldLabel htmlFor="currentPassword">Current password</FieldLabel><Input autoComplete="current-password" id="currentPassword" name="currentPassword" required type="password"/></Field>
-						<Field><FieldLabel htmlFor="password">New password</FieldLabel><Input autoComplete="new-password" id="password" minLength={8} name="password" required type="password"/></Field>
-						<Field><FieldLabel htmlFor="confirmPassword">Confirm new password</FieldLabel><Input autoComplete="new-password" id="confirmPassword" minLength={8} name="confirmPassword" required type="password"/></Field>
-						<SubmitButton pending={result.isLoading}>Update password</SubmitButton>
+						<Field><FieldLabel htmlFor="currentPassword">{t("currentPassword")}</FieldLabel><Input autoComplete="current-password" id="currentPassword" name="currentPassword" required type="password"/></Field>
+						<Field><FieldLabel htmlFor="password">{t("newPassword")}</FieldLabel><Input autoComplete="new-password" id="password" minLength={8} name="password" required type="password"/></Field>
+						<Field><FieldLabel htmlFor="confirmPassword">{t("confirmNewPassword")}</FieldLabel><Input autoComplete="new-password" id="confirmPassword" minLength={8} name="confirmPassword" required type="password"/></Field>
+						<SubmitButton pending={result.isLoading}>{t("updatePassword")}</SubmitButton>
 					</FieldGroup>
 				</form>
-			) : <p>Loading your account...</p>}
+			) : <p>{t("loadingAccount")}</p>}
 		</FormCard>
 	);
 }

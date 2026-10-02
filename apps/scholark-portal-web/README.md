@@ -61,6 +61,16 @@ server ──▶ shared ◀── client
 
 Server-only modules import `server-only`, and client entry points use `"use client"`.
 
+## Language support
+
+English and Spanish are active locales, with English as the default. The locale list and URL behavior live in `i18n/routing.ts`; English uses `as-needed`, so existing URLs remain unprefixed while Spanish URLs use `/es`. To add another language:
+
+- Add its locale code to `localeList` in `i18n/routing.ts` and provide a matching loader in `i18n/request.ts`.
+- Add `messages/<locale>.json` with the same message structure as `messages/en.json`. The `next-intl` message typing reports missing or invalid keys at compile time.
+- Use `useTranslations` in client components and `getTranslations` in server routes. Use navigation helpers from `i18n/navigation` for links, redirects, and generated paths.
+- Keep dates, numbers, currencies, and language names formatted with the active locale. Preserve API-provided game, course, and institution content and API error messages as received; their localization requires a separate API contract.
+- Run `pnpm --filter scholark-portal-web check-types`, `pnpm --filter scholark-portal-web lint`, and `pnpm --filter scholark-portal-web build` from the monorepo root.
+
 ## API client
 
 The committed `.env` provides local API defaults: `NEXT_PUBLIC_API_BASE_URL` is used by browser requests and `API_SERVER_BASE_URL` by App Router server requests. Put per-developer overrides or secrets in the ignored `.env.local`.

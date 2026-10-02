@@ -3,8 +3,8 @@ export type Money = {
 	currency: string;
 }
 
-export function formatMoney(money: Money): string {
-	return new Intl.NumberFormat('en-US', {
+export function formatMoney(money: Money, locale: string): string {
+	return new Intl.NumberFormat(locale, {
 		style: 'currency',
 		currency: money.currency,
 		minimumFractionDigits: 0,

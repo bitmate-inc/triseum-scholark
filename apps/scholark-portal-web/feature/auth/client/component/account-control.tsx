@@ -6,24 +6,27 @@ import {
 	LogOut,
 	UserRound
 } from "lucide-react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
+import { getPathname, Link } from "../../../../i18n/navigation";
 import { useAuthGetSessionQuery, useAuthLogoutMutation } from "../../../api/client/api/generated-api";
 
 export function AccountControl() {
+	const locale = useLocale();
+	const t = useTranslations("account");
 	const user = useAuthGetSessionQuery();
 	const [logout, logoutResult] = useAuthLogoutMutation();
 
 	async function signOut() {
 		const response = await logout();
-		if ("data" in response) window.location.assign("/");
+		if ("data" in response) window.location.assign(getPathname({ locale, href: "/" }));
 	}
 
 	if (!user.data) {
 		return (
 			<Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/auth/login">
 				<UserRound data-icon="inline-start"/>
-				Sign in
+				{t("signIn")}
 			</Link>
 		);
 	}
@@ -31,17 +34,17 @@ export function AccountControl() {
 	return (
 		<>
 			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/library">
-				Library
+				{t("library")}
 			</Link>
 			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/billing">
 				<CreditCard data-icon="inline-start"/>
-				Billing
+				{t("billing")}
 			</Link>
 			<Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/profile">
 				<UserRound data-icon="inline-start"/>
-				Profile
+				{t("profile")}
 			</Link>
-			<Button aria-label="Sign out" disabled={logoutResult.isLoading} onClick={signOut} size="icon" variant="ghost">
+			<Button aria-label={t("signOut")} disabled={logoutResult.isLoading} onClick={signOut} size="icon" variant="ghost">
 				<LogOut/>
 			</Button>
 		</>

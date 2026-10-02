@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 
+import { useRouter } from "../../../../i18n/navigation";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 
 export function ProtectedLibrary({ children }: { children: ReactNode }) {

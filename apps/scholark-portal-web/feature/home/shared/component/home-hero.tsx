@@ -6,34 +6,37 @@ import {
 	Play
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import styles from "../../../../asset/style/site.module.css";
+import { Link } from "../../../../i18n/navigation";
 import { type Game,getGameEyebrow } from "../../../catalog/shared/model/game";
 
 export function HomeHero({ featuredGame }: { featuredGame?: Game }) {
+	const t = useTranslations("home");
+
 	const hero = featuredGame ? {
-		badge: "Featured learning experience",
+		badge: t("featuredBadge"),
 		eyebrow: getGameEyebrow(featuredGame),
 		title: featuredGame.title,
-		copy: featuredGame.summary ?? "Discover a learning experience built around meaningful decisions and lasting consequences.",
+		copy: featuredGame.summary ?? t("featuredFallback"),
 		primaryHref: `/game/${featuredGame.slug}`,
-		primaryLabel: "Explore the game",
+		primaryLabel: t("exploreGame"),
 		secondaryHref: "#featured",
-		secondaryLabel: "Browse highlights",
+		secondaryLabel: t("browseHighlights"),
 		index: "01",
-		caption: "Curated for the curious",
+		caption: t("featuredCaption"),
 	} : {
-		badge: "Games for serious learning",
-		eyebrow: "Learn through play",
+		badge: t("defaultBadge"),
+		eyebrow: t("defaultEyebrow"),
 		title: "ScholArk",
-		copy: "Discover educational games built around meaningful decisions, lasting consequences, and ideas worth exploring.",
+		copy: t("defaultCopy"),
 		primaryHref: "/catalog",
-		primaryLabel: "Browse the catalog",
+		primaryLabel: t("browseCatalog"),
 		secondaryHref: "#subjects",
-		secondaryLabel: "Explore subjects",
+		secondaryLabel: t("exploreSubjects"),
 		index: "SK",
-		caption: "Built for curious minds",
+		caption: t("defaultCaption"),
 	};
 
 	return (

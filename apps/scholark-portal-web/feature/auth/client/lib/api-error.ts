@@ -1,8 +1,8 @@
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
-export function getApiErrorMessage(error: unknown): string {
+export function getApiErrorMessage(error: unknown, fallback: { generic: string; request: string }): string {
 	if (!isFetchBaseQueryError(error)) {
-		return "Something went wrong. Please try again.";
+		return fallback.generic;
 	}
 
 	if (typeof error.data === "object" && error.data !== null) {
@@ -15,7 +15,7 @@ export function getApiErrorMessage(error: unknown): string {
 		}
 	}
 
-	return "The request could not be completed. Please try again.";
+	return fallback.request;
 }
 
 function getValidationMessage(data: Record<string, unknown>): string | undefined {

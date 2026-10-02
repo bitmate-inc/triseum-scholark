@@ -6,6 +6,9 @@
 .primaryNav a { padding: 10px 14px; color: #4d514b; font-size: 14px; font-weight: 600; }
 .primaryNav a:hover { color: var(--foreground); }
 .headerActions { justify-content: flex-end; }
+.languageSwitch { display: inline-flex; align-items: center; gap: 7px; padding: 9px 10px; border: 1px solid var(--border); color: #4d514b; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.languageSwitch:hover { color: var(--foreground); background: var(--secondary); }
+.languageSwitch svg { width: 16px; height: 16px; }
 .mobileActions { display: none; justify-content: flex-end; align-items: center; gap: 4px; }
 .mobileMenu { position: relative; }
 .mobileMenu summary { display: grid; place-items: center; width: 36px; aspect-ratio: 1; border-radius: 4px; cursor: pointer; list-style: none; }
@@ -15,6 +18,7 @@
 .mobileMenuPanel { position: absolute; top: calc(100% + 18px); right: 0; z-index: 20; width: min(320px, calc(100vw - 40px)); padding: 22px; border: 1px solid var(--border); background: var(--card); box-shadow: 8px 8px 0 var(--accent); }
 .mobileMenuPanel nav { display: flex; flex-direction: column; }
 .mobileMenuPanel nav a { padding: 13px 0; border-bottom: 1px solid var(--border); font-size: 16px; font-weight: 700; }
+.mobileMenuPanel .languageSwitch { margin-top: 16px; }
 .mobileAccount { display: flex; align-items: center; gap: 6px; margin-top: 18px; }
 
 .hero { position: relative; display: flex; align-items: flex-end; min-height: clamp(560px, 72vh, 760px); overflow: hidden; isolation: isolate; color: #fffdf7; background: #292d27; }

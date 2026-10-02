@@ -3,6 +3,7 @@
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import styles from "../../../../asset/style/site.module.css";
@@ -18,7 +19,6 @@ type AcademicSearchProps = {
 	initialItemList: AcademicItem[];
 	initialTotalItemCount: number;
 	filters?: Record<string, string>;
-	label: string;
 };
 
 function getResponseList(response: Record<string, unknown>, resource: AcademicResource): AcademicItem[] {
@@ -30,8 +30,10 @@ export function AcademicSearch({
 	initialItemList,
 	initialTotalItemCount,
 	filters = {},
-	label,
 }: AcademicSearchProps) {
+	const t = useTranslations("catalog");
+	const singularResource = t(`resource.${resource}`);
+	const pluralResource = t(`resources.${resource}`);
 	const [query, setQuery] = useState("");
 	const [itemList, setItemList] = useState(initialItemList);
 	const [totalItemCount, setTotalItemCount] = useState(initialTotalItemCount);
@@ -79,33 +81,33 @@ export function AcademicSearch({
 		<div className={styles.academicSearch}>
 			<div className={styles.searchBar}>
 				<Search aria-hidden="true"/>
-				<label className={styles.srOnly} htmlFor={`${resource}-search`}>Search {label.toLowerCase()}</label>
+				<label className={styles.srOnly} htmlFor={`${resource}-search`}>{t("searchResourceLabel", { resource: pluralResource })}</label>
 				<Input
 					id={`${resource}-search`}
 					type="search"
 					value={query}
 					onChange={(event) => setQuery(event.target.value)}
-					placeholder={`Search ${label.toLowerCase()}...`}
+					placeholder={t("searchResourcePlaceholder", { resource: pluralResource })}
 					autoComplete="off"
 				/>
 				{query ? (
-					<Button variant="ghost" size="icon" type="button" onClick={() => setQuery("")} aria-label="Clear search">
+					<Button variant="ghost" size="icon" type="button" onClick={() => setQuery("")} aria-label={t("clearSearch")}>
 						<X/>
 					</Button>
 				) : null}
 			</div>
 			<div className={styles.resultsHeader}>
-				<p aria-live="polite"><strong>{totalItemCount}</strong> {label.toLowerCase()}</p>
-				<span>{isFetching ? "Updating results…" : debouncedQuery ? `Matching “${debouncedQuery}”` : "All available"}</span>
+				<p aria-live="polite">{t("resourceCount", { count: totalItemCount, resource: totalItemCount === 1 ? singularResource : pluralResource })}</p>
+				<span>{isFetching ? t("updatingResults") : debouncedQuery ? t("matchingQuery", { query: debouncedQuery }) : t("allAvailable")}</span>
 			</div>
 			{error ? (
-				<div className={styles.emptyState} role="alert"><h3>Couldn’t load {label.toLowerCase()}</h3><p>Try your search again.</p></div>
+				<div className={styles.emptyState} role="alert"><h3>{t("couldNotLoadResource", { resource: pluralResource })}</h3><p>{t("trySearchAgain")}</p></div>
 			) : itemList.length ? (
 				<div className={styles.gameGrid}>
 					{itemList.map((item) => <AcademicCard item={item} resource={resource} key={item.id}/>)}
 				</div>
 			) : (
-				<div className={styles.emptyState}><Search aria-hidden="true"/><h3>No {label.toLowerCase()} found</h3><p>Try another search.</p></div>
+				<div className={styles.emptyState}><Search aria-hidden="true"/><h3>{t("noResourceFound", { resource: pluralResource })}</h3><p>{t("tryAnotherSearch")}</p></div>
 			)}
 		</div>
 	);

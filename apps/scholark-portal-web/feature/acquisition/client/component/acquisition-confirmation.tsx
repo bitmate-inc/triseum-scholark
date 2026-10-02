@@ -12,11 +12,11 @@ import {
 	LoaderCircle,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 import styles from "../../../../asset/style/acquisition.module.css";
+import { Link , useRouter } from "../../../../i18n/navigation";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { getApiErrorMessage } from "../../../auth/client/lib/api-error";
 import {
@@ -30,6 +30,8 @@ import { useGetUserLibraryQuery } from "../../../library/client/api/library-api"
 import { useAcquireGameMutation } from "../api/acquisition-api";
 
 export function AcquisitionConfirmation({ game, gameVersion, publicOffer }: { game: Game; gameVersion: GameVersion; publicOffer: PublicGameOffer }) {
+	const locale = useLocale();
+	const t = useTranslations("acquisition");
 	const router = useRouter();
 	const session = useAuthGetSessionQuery();
 	const library = useGetUserLibraryQuery(undefined, { skip: !session.data });
@@ -59,36 +61,36 @@ export function AcquisitionConfirmation({ game, gameVersion, publicOffer }: { ga
 	}
 
 	if (session.isLoading || !session.data || library.isLoading) {
-		return <main className={styles.page}><p>Checking your account...</p></main>;
+		return <main className={styles.page}><p>{t("checkingAccount")}</p></main>;
 	}
 
 	if (activeLicense) {
 		return (
 			<main className={styles.page}>
-				<p className={styles.kicker}>Already acquired</p>
-				<h1>{game.title} is already in your library.</h1>
-				<p className={styles.detail}>This version has an active license in your library.</p>
-				<Link className={buttonVariants({ size: "lg" })} href="/library"><Library data-icon="inline-start"/>Go to your library</Link>
+				<p className={styles.kicker}>{t("alreadyAcquired")}</p>
+				<h1>{t("gameAlreadyInLibrary", { gameTitle: game.title })}</h1>
+				<p className={styles.detail}>{t("activeGameLicense")}</p>
+				<Link className={buttonVariants({ size: "lg" })} href="/library"><Library data-icon="inline-start"/>{t("goToLibrary")}</Link>
 			</main>
 		);
 	}
 
 	return (
 		<main className={styles.page}>
-			<p className={styles.kicker}>Acquire game</p>
-			<h1>Ready to add this game to your library?</h1>
+			<p className={styles.kicker}>{t("acquireGame")}</p>
+			<h1>{t("readyToAddGame")}</h1>
 			<section className={styles.summary}>
 				{game.cover ? <div className={styles.cover}><Image alt="" fill sizes="180px" src={game.cover.src}/></div> : null}
-				<div><p className={styles.kicker}>Selected game</p><h2>{game.title}</h2><p>{game.summary}</p><p>Version {gameVersion.publisherVersion}</p><p>{publicOffer.language} · {formatOfferMode(publicOffer.mode)} · {formatOfferPrice(publicOffer)}</p></div>
+				<div><p className={styles.kicker}>{t("selectedGame")}</p><h2>{game.title}</h2><p>{game.summary}</p><p>{t("version", { version: gameVersion.publisherVersion })}</p><p>{publicOffer.language} · {formatOfferMode(publicOffer.mode)} · {formatOfferPrice(publicOffer, locale)}</p></div>
 			</section>
-			<p className={styles.detail}>You will complete payment securely with Stripe before this game is added to your library.</p>
-			{acquisition.error ? <Alert variant="destructive"><AlertTitle>Unable to acquire game</AlertTitle><AlertDescription>{getApiErrorMessage(acquisition.error)}</AlertDescription></Alert> : null}
+			<p className={styles.detail}>{t("gameStripeDetail")}</p>
+			{acquisition.error ? <Alert variant="destructive"><AlertTitle>{t("gameAcquireError")}</AlertTitle><AlertDescription>{getApiErrorMessage(acquisition.error, { generic: t("genericApiError"), request: t("requestApiError") })}</AlertDescription></Alert> : null}
 			<div className={styles.actions}>
 				<Button disabled={acquisition.isLoading} onClick={confirm} size="lg" type="button">
 					{acquisition.isLoading ? <LoaderCircle className="animate-spin" data-icon="inline-start"/> : <CheckCircle2 data-icon="inline-start"/>}
-					Confirm acquisition
+					{t("confirmAcquisition")}
 				</Button>
-				<Button onClick={() => router.replace(`/game/${game.slug}`)} type="button" variant="outline">Cancel</Button>
+				<Button onClick={() => router.replace(`/game/${game.slug}`)} type="button" variant="outline">{t("cancel")}</Button>
 			</div>
 		</main>
 	);

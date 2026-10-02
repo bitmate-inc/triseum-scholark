@@ -13,9 +13,10 @@ import {
 	Building2
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import styles from "../../../../asset/style/site.module.css";
+import { Link } from "../../../../i18n/navigation";
 import type {
 	AcademicItem,
 	AcademicResource,
@@ -29,14 +30,15 @@ type AcademicCardProps = {
 };
 
 export function AcademicCard({ item, resource }: AcademicCardProps) {
+	const t = useTranslations("academic");
 	const course = resource === "course" ? item as Course : undefined;
 	const classroom = resource === "classroom" ? item as Classroom : undefined;
 	const eyebrow = course?.code
 		?? classroom?.code
-		?? (resource === "institution" ? "Institution" : resource);
+		?? t(`resourceTypes.${resource}`);
 	const meta = course?.institution.name
 		?? classroom?.institution.name
-		?? "Explore courses and classrooms";
+		?? t("exploreCoursesAndClassrooms");
 
 	return (
 		<Link className={styles.cardLink} href={`/${resource}/${item.slug}`}>

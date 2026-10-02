@@ -9,9 +9,10 @@ import {
 } from "@repo/ui/card";
 import { ArrowUpRight, Clock3 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import styles from "../../../../asset/style/site.module.css";
+import { Link } from "../../../../i18n/navigation";
 import {
 	formatEstimatedLength,
 	type Game,
@@ -20,6 +21,8 @@ import {
 } from "../model/game";
 
 export function GameCard({ game, href = `/game/${game.slug}` }: { game: Game; href?: string }) {
+	const locale = useLocale();
+	const t = useTranslations("catalog");
 	return (
 		<Link className={styles.cardLink} href={href}>
 			<Card className={styles.gameCard}>
@@ -45,7 +48,7 @@ export function GameCard({ game, href = `/game/${game.slug}` }: { game: Game; hr
 				</CardContent>
 				<CardFooter className={styles.cardMeta}>
 					<Clock3 aria-hidden="true"/>
-					{formatEstimatedLength(game)}
+					{formatEstimatedLength(game, locale) ?? t("lengthVaries")}
 				</CardFooter>
 			</Card>
 		</Link>

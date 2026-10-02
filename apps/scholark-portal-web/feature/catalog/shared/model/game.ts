@@ -86,25 +86,27 @@ export function getGameEyebrow(game: Game): string {
 	return getGameTagList(game).slice(0, 2).join(" · ");
 }
 
-export function formatEstimatedLength(game: Game): string {
+export function formatEstimatedLength(game: Game, locale: string): string | undefined {
 	const { estimatedLengthMinutesMin: min, estimatedLengthMinutesMax: max } = game;
-	if (min === undefined || max === undefined) return "Length varies";
+	if (min === undefined || max === undefined) return undefined;
 
-	if (min % 60 === 0 && max % 60 === 0) {
-		return `${min / 60}–${max / 60} hours`;
-	}
+	const useHours = min % 60 === 0 && max % 60 === 0;
+	const unit = useHours ? "hour" : "minute";
+	const formatter = new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" });
+	const minValue = useHours ? min / 60 : min;
+	const maxValue = useHours ? max / 60 : max;
 
-	return `${min}–${max} minutes`;
+	return `${formatter.format(minValue)}–${formatter.format(maxValue)}`;
 }
 
-export function formatOfferPrice(offer: PublicGameOffer): string {
-	return new Intl.NumberFormat(undefined, {
+export function formatOfferPrice(offer: PublicGameOffer, locale: string): string {
+	return new Intl.NumberFormat(locale, {
 		currency: offer.price.currency,
 		style: "currency",
 	}).format(offer.price.minorUnitAmount / 100);
 }
 
-export function formatOfferPriceRange(offerList: PublicGameOffer[]): string {
+export function formatOfferPriceRange(offerList: PublicGameOffer[], locale: string): string {
 	const offerListByCurrency = new Map<string, PublicGameOffer[]>();
 	for (const offer of offerList) {
 		const currencyOfferList = offerListByCurrency.get(offer.price.currency) ?? [];
@@ -116,16 +118,16 @@ export function formatOfferPriceRange(offerList: PublicGameOffer[]): string {
 		const amountList = currencyOfferList.map((offer) => offer.price.minorUnitAmount);
 		const minAmount = Math.min(...amountList) / 100;
 		const maxAmount = Math.max(...amountList) / 100;
-		const formatter = new Intl.NumberFormat(undefined, { currency, style: "currency" });
+		const formatter = new Intl.NumberFormat(locale, { currency, style: "currency" });
 		const minPrice = formatter.format(minAmount);
 		return minAmount === maxAmount ? minPrice : `${minPrice}–${formatter.format(maxAmount)}`;
 	}).join(" · ");
 }
 
-export function formatOfferLanguage(language: string): string {
+export function formatOfferLanguage(language: string, locale: string): string {
 	const languageTag = language.replaceAll("_", "-");
 	try {
-		return new Intl.DisplayNames(["en"], { type: "language" }).of(languageTag) ?? language.toUpperCase();
+		return new Intl.DisplayNames([locale], { type: "language" }).of(languageTag) ?? language.toUpperCase();
 	} catch {
 		return language.toUpperCase();
 	}

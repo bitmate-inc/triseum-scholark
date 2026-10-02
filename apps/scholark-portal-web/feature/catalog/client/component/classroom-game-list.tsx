@@ -8,28 +8,36 @@ import {
 	KeyRound,
 	MonitorPlay,
 } from "lucide-react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import styles from "../../../../asset/style/site.module.css";
+import { Link } from "../../../../i18n/navigation";
 import { ClassroomGameCodeRedemption } from "../../../acquisition/client/component/classroom-game-code-redemption";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { useGetUserLibraryQuery } from "../../../library/client/api/library-api";
 import type { ClassroomGame } from "../../shared/model/education";
-import { formatEstimatedLength, getGameTagList } from "../../shared/model/game";
+import {
+	formatEstimatedLength,
+	formatOfferLanguage,
+	formatOfferMode,
+	getGameTagList
+} from "../../shared/model/game";
 
-function formatDateTime(value: string): string {
-	return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+function formatDateTime(value: string, locale: string): string {
+	return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 
-function formatPrice(price?: ClassroomGame["price"]): string | undefined {
+function formatPrice(price: ClassroomGame["price"] | undefined, locale: string): string | undefined {
 	if (!price) return undefined;
 
-	return new Intl.NumberFormat("en-US", { currency: price.currency, style: "currency" }).format(price.minorUnitAmount / 100);
+	return new Intl.NumberFormat(locale, { currency: price.currency, style: "currency" }).format(price.minorUnitAmount / 100);
 }
 
 export function ClassroomGameList({ classroomGameList }: { classroomGameList: ClassroomGame[] }) {
+	const locale = useLocale();
+	const t = useTranslations("library");
 	const [redeemingClassroomGameId, setRedeemingClassroomGameId] = useState<string>();
 	const session = useAuthGetSessionQuery();
 	const library = useGetUserLibraryQuery(undefined, { skip: !session.data });
@@ -57,23 +65,23 @@ export function ClassroomGameList({ classroomGameList }: { classroomGameList: Cl
 								{getGameTagList(classroomGame.game).map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}
 							</div>
 							<div className={styles.classroomGameFacts}>
-								<span><Clock3 aria-hidden="true"/>{formatEstimatedLength(classroomGame.game)}</span>
-								<span>{(classroomGame.language ?? "en").toUpperCase()} · {(classroomGame.mode ?? "default").replaceAll("_", " ")}</span>
-								<span>{institutionFunded ? "Institution-funded" : `Student-paid${formatPrice(classroomGame.price) ? ` · ${formatPrice(classroomGame.price)}` : ""}`}</span>
-								<span>Valid {formatDateTime(classroomGame.startAt)} – {formatDateTime(classroomGame.endAt)}</span>
+								<span><Clock3 aria-hidden="true"/>{formatEstimatedLength(classroomGame.game, locale) ?? t("lengthVaries")}</span>
+								<span>{formatOfferLanguage(classroomGame.language ?? "en", locale)} · {formatOfferMode(classroomGame.mode ?? "default")}</span>
+								<span>{institutionFunded ? t("institutionFunded") : t("studentPaid")}{!institutionFunded && formatPrice(classroomGame.price, locale) ? ` · ${formatPrice(classroomGame.price, locale)}` : ""}</span>
+								<span>{t("validRange", { start: formatDateTime(classroomGame.startAt, locale), end: formatDateTime(classroomGame.endAt, locale) })}</span>
 							</div>
 						</div>
 						<div className={styles.classroomGameAction}>
 							{redeemingClassroomGameId === classroomGame.id ? <ClassroomGameCodeRedemption classroomGameId={classroomGame.id} onCancel={() => setRedeemingClassroomGameId(undefined)}/> : null}
-							{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>In Library</Badge> : licenseList.length ? <Badge variant="outline">In Library (Expired)</Badge> : null}
+							{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>{t("inLibrary")}</Badge> : licenseList.length ? <Badge variant="outline">{t("inLibraryExpired")}</Badge> : null}
 							{!activeLicense && licenseStateReady && institutionFunded ? (
 								<Button onClick={() => setRedeemingClassroomGameId(classroomGame.id)} size="sm" type="button" variant="outline">
-									<KeyRound data-icon="inline-start"/>Redeem code
+									<KeyRound data-icon="inline-start"/>{t("redeemCode")}
 								</Button>
 							) : null}
 							{!activeLicense && licenseStateReady && !institutionFunded ? (
 								<Link className={buttonVariants({ size: "sm" })} href={`/classroom-game/${classroomGame.id}/acquire`}>
-									<MonitorPlay data-icon="inline-start"/>Acquire
+									<MonitorPlay data-icon="inline-start"/>{t("acquire")}
 								</Link>
 							) : null}
 						</div>
