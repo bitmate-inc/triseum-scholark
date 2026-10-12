@@ -107,6 +107,8 @@ export interface ClassroomSeed {
 	institutionSlug: string;
 	name: string;
 	code: string;
+	language: string;
+	courseType: 'standard' | 'game-based';
 	slug: string;
 	cover?: Media;
 	summary?: string;
@@ -629,6 +631,7 @@ function createAdditionalClassroomSeedList(): ClassroomSeed[] {
 
 		return Array.from({ length: classroomCount }, (_, classroomIndex) => ({
 			code: `${institution.slug.slice(0, 8).toUpperCase()}-${classroomIndex + 1}`,
+			courseType: 'standard' as const,
 			courseSlugList: [
 				institutionCourseList[classroomIndex % institutionCourseList.length].slug,
 				...(classroomIndex % 2 === 0 && institutionCourseList.length > 1
@@ -639,6 +642,7 @@ function createAdditionalClassroomSeedList(): ClassroomSeed[] {
 			id: `00000000-0000-4000-8000-${String(550 + institutionIndex * 10 + classroomIndex).padStart(12, '0')}`,
 			institutionSlug: institution.slug,
 			instructorSlugList: [...institution.instructorSlugList],
+			language: 'en',
 			name: `${institution.name} ${classroomIndex + 1}`,
 			slug: `${institution.slug}-classroom-${classroomIndex + 1}`,
 			status: EducationCatalogStatus.ACTIVE,
@@ -651,6 +655,7 @@ function createAdditionalClassroomSeedList(): ClassroomSeed[] {
 export const classroomSeedList: ClassroomSeed[] = [
 	{
 		code: 'FLORENCE-01',
+		courseType: 'game-based',
 		cover: {
 			alt: 'Florence skyline and cathedral',
 			src: 'https://images.unsplash.com/photo-1541370976299-4d24ebbc9077?auto=format&fit=crop&w=1600&q=85',
@@ -660,6 +665,7 @@ export const classroomSeedList: ClassroomSeed[] = [
 		id: '00000000-0000-4000-8000-000000000221',
 		institutionSlug: 'northbridge-university',
 		instructorSlugList: ['elena-rossi', 'marcus-chen'],
+		language: 'en',
 		name: 'Florence Seminar',
 		description: 'A cross-listed seminar using game-based inquiry to connect art history with the political and social life of Renaissance Florence.',
 		slug: 'florence-seminar-fall-2026',
@@ -672,6 +678,7 @@ export const classroomSeedList: ClassroomSeed[] = [
 	},
 	{
 		code: 'LIMITS-01',
+		courseType: 'game-based',
 		cover: {
 			alt: 'Students collaborating on mathematics',
 			src: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=85',
@@ -681,6 +688,7 @@ export const classroomSeedList: ClassroomSeed[] = [
 		id: '00000000-0000-4000-8000-000000000222',
 		institutionSlug: 'riverside-college',
 		instructorSlugList: ['priya-shah'],
+		language: 'en',
 		name: 'Limits Lab',
 		description: 'A guided lab where students investigate limits through visual models, collaborative problems, and game-based practice.',
 		slug: 'limits-lab-fall-2026',

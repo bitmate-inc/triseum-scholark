@@ -174,7 +174,7 @@ function ClassroomRow({ classroom }: { classroom: Classroom }) {
 		<div className="institution-row classroom-row">
 			<div className="institution-name-cell">
 				<div className="institution-row-mark"><GraduationCap size={17}/></div>
-				<div><Link to={`/classrooms/${classroom.id}`}>{classroom.name}</Link><span>{classroom.code} · {classroom.slug}</span></div>
+				<div><Link to={`/classrooms/${classroom.id}`}>{classroom.name}</Link><span>{classroom.code} · {classroom.slug} · {classroom.language} · {classroom.courseType === 'game-based' ? 'Game-based' : 'Standard'}</span></div>
 			</div>
 			<Link className="classroom-institution-link" to={`/institutions/${classroom.institution.id}`}>{classroom.institution.name}</Link>
 			<span className={`status-badge status-${classroom.status}`}>{classroom.status}</span>
@@ -275,6 +275,8 @@ function ClassroomDetails({
 					<div><dt>Status</dt><dd>{classroom.status}</dd></div>
 					<div><dt>Classroom code</dt><dd>{classroom.code}</dd></div>
 					<div><dt>Slug</dt><dd>{classroom.slug}</dd></div>
+					<div><dt>Language</dt><dd>{classroom.language}</dd></div>
+					<div><dt>Course type</dt><dd>{classroom.courseType === 'game-based' ? 'Game-based' : 'Standard'}</dd></div>
 					<div><dt>Summary</dt><dd>{classroom.summary || 'No summary provided.'}</dd></div>
 					<div><dt>Description</dt><dd>{classroom.description || 'No description provided.'}</dd></div>
 				</dl>
@@ -321,6 +323,8 @@ function ClassroomForm({
 	const [taxonomyTermIdList, setTaxonomyTermIdList] = useState(classroom?.taxonomyTermList.map((term) => term.id) ?? []);
 	const [name, setName] = useState(classroom?.name ?? '');
 	const [code, setCode] = useState(classroom?.code ?? '');
+	const [language, setLanguage] = useState(classroom?.language ?? 'en');
+	const [courseType, setCourseType] = useState<Classroom['courseType']>(classroom?.courseType ?? 'standard');
 	const [slug, setSlug] = useState(classroom?.slug ?? '');
 	const [slugEdited, setSlugEdited] = useState(Boolean(classroom));
 	const [summary, setSummary] = useState(classroom?.summary ?? '');
@@ -394,9 +398,11 @@ function ClassroomForm({
 			await onSubmit({
 				code: code.trim(),
 				courseIdList,
+				courseType,
 				description: description.trim() || undefined,
 				institutionId,
 				instructorIdList,
+				language: language.trim(),
 				name: name.trim(),
 				slug: slug.trim(),
 				summary: summary.trim() || undefined,
@@ -420,6 +426,11 @@ function ClassroomForm({
 					}
 				}} required value={name}/></label>
 				<label>Classroom code<input maxLength={100} onChange={(event) => setCode(event.target.value)} required value={code}/></label>
+				<label>Language<input autoComplete="off" maxLength={35} onChange={(event) => setLanguage(event.target.value)} required value={language}/></label>
+				<label>Course type<select onChange={(event) => setCourseType(event.target.value as Classroom['courseType'])} required value={courseType}>
+					<option value="standard">Standard</option>
+					<option value="game-based">Game-based</option>
+				</select></label>
 				<label>Slug<input aria-label="Classroom slug" maxLength={160} onChange={(event) => {
 					setSlugEdited(true);
 					setSlug(event.target.value.toLowerCase().trim().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, ''));

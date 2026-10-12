@@ -26,6 +26,8 @@ export type Course = {
 	name: string;
 	code: string;
 	slug: string;
+	language: string;
+	courseType: 'standard' | 'game-based';
 	cover?: Media;
 	summary?: string;
 	description?: string;

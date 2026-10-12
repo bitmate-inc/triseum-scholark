@@ -3,6 +3,7 @@ import {
 	ArrayUnique,
 	IsArray,
 	IsEnum,
+	IsIn,
 	IsOptional,
 	IsString,
 	IsUUID,
@@ -22,6 +23,10 @@ export class CreateAdminClassroomRequestDto {
 	@Matches(/\S/)
 	code!: string;
 
+	@ApiProperty({ enum: ['standard', 'game-based'] })
+	@IsIn(['standard', 'game-based'])
+	courseType!: 'standard' | 'game-based';
+
 	@ApiPropertyOptional({ type: [String], format: 'uuid' })
 	@IsOptional()
 	@IsArray()
@@ -38,6 +43,13 @@ export class CreateAdminClassroomRequestDto {
 	@ApiProperty({ format: 'uuid' })
 	@IsUUID()
 	institutionId!: string;
+
+	@ApiProperty({ maxLength: 35, minLength: 1 })
+	@IsString()
+	@MinLength(1)
+	@MaxLength(35)
+	@Matches(/\S/)
+	language!: string;
 
 	@ApiPropertyOptional({ type: [String], format: 'uuid' })
 	@IsOptional()
@@ -84,6 +96,11 @@ export class UpdateAdminClassroomRequestDto {
 	@Matches(/\S/)
 	code?: string;
 
+	@ApiPropertyOptional({ enum: ['standard', 'game-based'] })
+	@IsOptional()
+	@IsIn(['standard', 'game-based'])
+	courseType?: 'standard' | 'game-based';
+
 	@ApiPropertyOptional({ type: [String], format: 'uuid' })
 	@IsOptional()
 	@IsArray()
@@ -101,6 +118,14 @@ export class UpdateAdminClassroomRequestDto {
 	@IsOptional()
 	@IsUUID()
 	institutionId?: string;
+
+	@ApiPropertyOptional({ maxLength: 35, minLength: 1 })
+	@IsOptional()
+	@IsString()
+	@MinLength(1)
+	@MaxLength(35)
+	@Matches(/\S/)
+	language?: string;
 
 	@ApiPropertyOptional({ type: [String], format: 'uuid' })
 	@IsOptional()

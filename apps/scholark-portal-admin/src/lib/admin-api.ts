@@ -38,11 +38,13 @@ export type UpdateInstitutionInput = Partial<CreateInstitutionInput> & { status?
 
 export interface Classroom {
 	code: string;
+	courseType: 'standard' | 'game-based';
 	courseList: { code: string; id: string; name: string; slug: string }[];
 	description?: string;
 	id: string;
 	institution: Institution;
 	instructorList: { id: string; name: string; slug: string }[];
+	language: string;
 	name: string;
 	slug: string;
 	status: 'active' | 'inactive';
@@ -58,9 +60,11 @@ export interface ClassroomListResponse {
 export interface CreateClassroomInput {
 	code: string;
 	courseIdList: string[];
+	courseType: Classroom['courseType'];
 	description?: string;
 	institutionId: string;
 	instructorIdList: string[];
+	language: string;
 	name: string;
 	slug: string;
 	summary?: string;

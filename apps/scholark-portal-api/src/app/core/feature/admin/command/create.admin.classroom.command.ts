@@ -16,9 +16,11 @@ import { TaxonomyTerm } from '../../taxonomy/model/taxonomy.term.entity';
 export interface CreateAdminClassroomCommandData {
 	code: string;
 	courseIdList?: string[];
+	courseType: 'standard' | 'game-based';
 	description?: string;
 	institutionId: string;
 	instructorIdList?: string[];
+	language: string;
 	name: string;
 	slug: string;
 	summary?: string;
@@ -61,8 +63,10 @@ export class CreateAdminClassroomCommand {
 
 		const classroom = this.classroomRepository.create({
 			code,
+			courseType: data.courseType,
 			description: data.description?.trim() || undefined,
 			institution,
+			language: data.language.trim(),
 			name: data.name.trim(),
 			slug,
 			status: EducationCatalogStatus.ACTIVE,

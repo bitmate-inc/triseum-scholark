@@ -184,6 +184,8 @@ erDiagram
         string name
         string code
         string slug UK
+        string language
+        string courseType
         json cover
         text summary
         text description

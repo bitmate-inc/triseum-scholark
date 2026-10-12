@@ -109,6 +109,12 @@ export class ClassroomResponseDto {
 	@ApiProperty()
 	slug!: string;
 
+	@ApiProperty()
+	language!: string;
+
+	@ApiProperty({ enum: ['standard', 'game-based'] })
+	courseType!: 'standard' | 'game-based';
+
 	@ApiPropertyOptional({ type: MediaResponseDto })
 	cover?: MediaResponseDto;
 
@@ -143,12 +149,14 @@ export class ClassroomResponseDto {
 			description: classroom.description,
 			id: classroom.id!,
 			institution: InstitutionResponseDto.fromEntity(classroom.institution),
+			language: classroom.language,
 			instructorList: classroom.instructorList.getItems().map((instructor) => ({
 				id: instructor.id!,
 				name: instructor.name,
 				slug: instructor.slug,
 			})),
 			name: classroom.name,
+			courseType: classroom.courseType,
 			slug: classroom.slug,
 			status: classroom.status,
 			summary: classroom.summary,

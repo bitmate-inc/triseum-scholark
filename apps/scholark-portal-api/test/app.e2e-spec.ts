@@ -297,23 +297,27 @@ describe('AppController (e2e)', () => {
 
 			const createResponse = await agent
 				.post('/api/v1/admin/classrooms')
-				.send({ code: 'E2E-CLASSROOM', courseIdList: [courseId], institutionId, name: 'E2E Classroom', slug: classroomSlug })
+				.send({ code: 'E2E-CLASSROOM', courseIdList: [courseId], courseType: 'game-based', institutionId, language: 'en', name: 'E2E Classroom', slug: classroomSlug })
 				.expect(201);
 			const classroomId = createResponse.body.classroom.id;
+			expect(createResponse.body.classroom.courseType).toBe('game-based');
+			expect(createResponse.body.classroom.language).toBe('en');
 			expect(createResponse.body.classroom.courseList).toEqual(
 				expect.arrayContaining([expect.objectContaining({ id: courseId })]),
 			);
 
 			await agent
 				.post('/api/v1/admin/classrooms')
-				.send({ code: 'E2E-OTHER-CLASS', institutionId, name: 'Duplicate Classroom', slug: classroomSlug })
+				.send({ code: 'E2E-OTHER-CLASS', courseType: 'standard', institutionId, language: 'en', name: 'Duplicate Classroom', slug: classroomSlug })
 				.expect(409);
 
 			const updateResponse = await agent
 				.patch(`/api/v1/admin/classrooms/${classroomId}`)
-				.send({ courseIdList: [courseId], instructorIdList: [], name: 'Updated E2E Classroom', taxonomyTermIdList: [] })
+				.send({ courseIdList: [courseId], courseType: 'standard', instructorIdList: [], language: 'es', name: 'Updated E2E Classroom', taxonomyTermIdList: [] })
 				.expect(200);
 			expect(updateResponse.body.classroom.name).toBe('Updated E2E Classroom');
+			expect(updateResponse.body.classroom.courseType).toBe('standard');
+			expect(updateResponse.body.classroom.language).toBe('es');
 			expect(updateResponse.body.classroom.courseList).toEqual(
 				expect.arrayContaining([expect.objectContaining({ id: courseId })]),
 			);
@@ -816,7 +820,9 @@ describe('AppController (e2e)', () => {
 		const suffix = `${Date.now()}`;
 		const classroom = entityManager.create(Classroom, {
 			code: `LEDGER-${suffix}`,
+			courseType: 'standard',
 			institution: seedClassroomGame!.classroom.institution,
+			language: 'en',
 			name: `Ledger test ${suffix}`,
 			slug: `ledger-test-${suffix}`,
 			status: EducationCatalogStatus.ACTIVE,

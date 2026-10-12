@@ -34,6 +34,12 @@ export class Classroom {
 	@Property({ unique: true })
 	slug!: string;
 
+	@Property()
+	language!: string;
+
+	@Property({ type: 'string' })
+	courseType!: 'standard' | 'game-based';
+
 	@Property({ nullable: true, type: 'json' })
 	cover?: Media;
 

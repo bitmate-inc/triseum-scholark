@@ -17,9 +17,11 @@ import { TaxonomyTerm } from '../../taxonomy/model/taxonomy.term.entity';
 export interface UpdateAdminClassroomCommandData {
 	code?: string;
 	courseIdList?: string[];
+	courseType?: 'standard' | 'game-based';
 	description?: string;
 	institutionId?: string;
 	instructorIdList?: string[];
+	language?: string;
 	name?: string;
 	slug?: string;
 	status?: EducationCatalogStatus;
@@ -96,6 +98,12 @@ export class UpdateAdminClassroomCommand {
 
 		if (typeof data.name !== 'undefined') {
 			classroom.name = data.name.trim();
+		}
+		if (typeof data.language !== 'undefined') {
+			classroom.language = data.language.trim();
+		}
+		if (typeof data.courseType !== 'undefined') {
+			classroom.courseType = data.courseType;
 		}
 		classroom.code = nextCode;
 		classroom.institution = institution;

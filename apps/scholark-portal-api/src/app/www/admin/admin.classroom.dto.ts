@@ -21,6 +21,12 @@ export class AdminClassroomListItemResponseDto {
 	@ApiProperty()
 	slug!: string;
 
+	@ApiProperty()
+	language!: string;
+
+	@ApiProperty({ enum: ['standard', 'game-based'] })
+	courseType!: 'standard' | 'game-based';
+
 	@ApiProperty({ enum: EducationCatalogStatus, enumName: 'EducationCatalogStatus' })
 	status!: EducationCatalogStatus;
 
@@ -29,7 +35,9 @@ export class AdminClassroomListItemResponseDto {
 			code: classroom.code,
 			id: classroom.id!,
 			institution: InstitutionResponseDto.fromEntity(classroom.institution),
+			language: classroom.language,
 			name: classroom.name,
+			courseType: classroom.courseType,
 			slug: classroom.slug,
 			status: classroom.status,
 		};
