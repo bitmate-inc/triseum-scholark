@@ -19,14 +19,14 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 	async findByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
 			{ stripeCheckoutSessionId },
-			{ populate: ['classroomGame'] },
+			{ populate: ['classroomGameListing'] },
 		)) ?? undefined;
 	}
 
 	async findById(id: string): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
 			{ id },
-			{ populate: ['classroomGame', 'customization'] },
+			{ populate: ['classroomGameListing', 'customization'] },
 		)) ?? undefined;
 	}
 
@@ -49,9 +49,8 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 			{
 				orderBy: { createdAt: 'DESC' },
 				populate: [
-					'publicOffer.gameVariant.gameVersion.game',
-					'institutionGameOffer.gameVariant.gameVersion.game',
-					'classroomGame.institutionGameOffer.gameVariant.gameVersion.game',
+					'publicListing.gameVariant.gameVersion.game',
+					'classroomGameListing.gameVariant.gameVersion.game',
 				],
 			},
 		);
@@ -62,9 +61,8 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 			{ id, user: userId },
 			{
 				populate: [
-					'publicOffer.gameVariant.gameVersion.game',
-					'institutionGameOffer.gameVariant.gameVersion.game',
-					'classroomGame.institutionGameOffer.gameVariant.gameVersion.game',
+					'publicListing.gameVariant.gameVersion.game',
+					'classroomGameListing.gameVariant.gameVersion.game',
 				],
 			},
 		)) ?? undefined;
@@ -76,21 +74,21 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 	): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
 			{ stripeCheckoutSessionId, user: userId },
-			{ populate: ['classroomGame', 'customization'] },
+			{ populate: ['classroomGameListing', 'customization'] },
 		)) ?? undefined;
 	}
 
-	async findPendingByUserAndPublicOffer(userId: string, publicOfferId: string): Promise<GamePaymentAttempt | undefined> {
+	async findPendingByUserAndPublicListing(userId: string, publicListingId: string): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
-			{ publicOffer: publicOfferId, status: GamePaymentAttemptStatus.PENDING, user: userId },
-			{ orderBy: { createdAt: 'DESC' }, populate: ['user', 'publicOffer'] },
+			{ publicListing: publicListingId, status: GamePaymentAttemptStatus.PENDING, user: userId },
+			{ orderBy: { createdAt: 'DESC' }, populate: ['user', 'publicListing'] },
 		)) ?? undefined;
 	}
 
-	async findPendingByUserAndClassroomGame(userId: string, classroomGameId: string): Promise<GamePaymentAttempt | undefined> {
+	async findPendingByUserAndClassroomGameListing(userId: string, classroomGameListingId: string): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
-			{ classroomGame: classroomGameId, status: GamePaymentAttemptStatus.PENDING, user: userId },
-			{ orderBy: { createdAt: 'DESC' }, populate: ['user', 'classroomGame', 'institutionGameOffer'] },
+			{ classroomGameListing: classroomGameListingId, status: GamePaymentAttemptStatus.PENDING, user: userId },
+			{ orderBy: { createdAt: 'DESC' }, populate: ['user', 'classroomGameListing'] },
 		)) ?? undefined;
 	}
 

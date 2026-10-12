@@ -1,7 +1,7 @@
 import { Validator } from '../../../infrastructure/validation/validator/validator';
-import { InstitutionGameOfferDesignatedPayor } from '../../education/model/institution.game.offer.entity';
+import { ClassroomGameListingDesignatedPayor } from '../../education/model/classroom.game.listing.entity';
 import { AcquisitionCodeRepository } from '../../education/repository/acquisition.code.repository';
-import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
+import { ClassroomGameListingRepository } from '../../education/repository/classroom.game.listing.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameAcquisitionEventType } from '../model/game.acquisition.event.entity';
 import { GameAcquisitionEventRepository } from '../repository/game.acquisition.event.repository';
@@ -10,26 +10,20 @@ import { GameLicenseRepository } from '../repository/game.license.repository';
 import { RedeemAcquisitionCodeCommand, RedeemAcquisitionCodeCommandData } from './redeem.acquisition.code.command';
 
 const userId = '00000000-0000-4000-8000-000000000001';
-const classroomGameId = '00000000-0000-4000-8000-000000000002';
-const offerId = '00000000-0000-4000-8000-000000000003';
+const classroomGameListingId = '00000000-0000-4000-8000-000000000002';
 
 function createDependencies() {
-	const institutionGameOffer = {
-		designatedPayor: InstitutionGameOfferDesignatedPayor.INSTITUTION,
-		gameVariant: {},
-		id: offerId,
-		licenseDurationDays: 30,
-		price: {},
-	};
-	const classroomGame = {
+	const classroomGameListing = {
 		classroom: { institution: {} },
-		institutionGameOffer,
-		customization: undefined,
-		id: classroomGameId,
+		designatedPayor: ClassroomGameListingDesignatedPayor.INSTITUTION,
+		gameVariant: {},
+		id: classroomGameListingId,
 		isAvailable: () => true,
+		licenseDurationDays: 30,
+		price: undefined,
 	};
 	const acquisitionCode = {
-		classroomGame,
+		classroomGameListing,
 		expiresAt: new Date(Date.now() + 86_400_000),
 		id: '00000000-0000-4000-8000-000000000004',
 	};
@@ -45,9 +39,9 @@ function createDependencies() {
 			claim: jest.fn().mockResolvedValue(redemption),
 			findForRedemption: jest.fn().mockResolvedValue(acquisitionCode),
 		} as unknown as AcquisitionCodeRepository,
-		classroomGameRepository: {
-			findForAcquisition: jest.fn().mockResolvedValue(classroomGame),
-		} as unknown as ClassroomGameRepository,
+		classroomGameListingRepository: {
+			findForAcquisition: jest.fn().mockResolvedValue(classroomGameListing),
+		} as unknown as ClassroomGameListingRepository,
 		gameAcquisitionRepository: {
 			save: jest.fn().mockImplementation(async (value) => value),
 		} as unknown as GameAcquisitionRepository,
@@ -55,7 +49,7 @@ function createDependencies() {
 			save: jest.fn().mockImplementation(async (value) => value),
 		} as unknown as GameAcquisitionEventRepository,
 		gameLicenseRepository: {
-			findByUserAndClassroomGame: jest.fn().mockResolvedValue(undefined),
+			findByUserAndClassroomGameListing: jest.fn().mockResolvedValue(undefined),
 			save: jest.fn().mockImplementation(async (value) => value),
 		} as unknown as GameLicenseRepository,
 		unitOfWork: {
@@ -68,7 +62,7 @@ function createDependencies() {
 	const command = new RedeemAcquisitionCodeCommand(
 		new Validator(),
 		dependencies.acquisitionCodeRepository,
-		dependencies.classroomGameRepository,
+		dependencies.classroomGameListingRepository,
 		dependencies.gameAcquisitionRepository,
 		dependencies.acquisitionEventRepository,
 		dependencies.gameLicenseRepository,
@@ -76,7 +70,7 @@ function createDependencies() {
 		dependencies.userRepository,
 	);
 
-	return { command, dependencies, acquisitionCode, classroomGame, redemption };
+	return { command, dependencies, acquisitionCode, classroomGameListing, redemption };
 }
 
 describe(RedeemAcquisitionCodeCommand.name, () => {
@@ -84,26 +78,26 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 		const { command, dependencies } = createDependencies();
 
 		const result = await command.execute(RedeemAcquisitionCodeCommandData.create({
-			classroomGameId: 'not-a-classroom-id',
+			classroomGameListingId: 'not-a-classroom-id',
 			code: '',
 			userId: 'not-a-user-id',
 		}));
 
 		expect(result.validationResult?.errorList).toBeDefined();
-		expect(dependencies.classroomGameRepository.findForAcquisition).not.toHaveBeenCalled();
+		expect(dependencies.classroomGameListingRepository.findForAcquisition).not.toHaveBeenCalled();
 	});
 
 	it('creates an institution-funded license and claims the code', async () => {
-		const { command, dependencies, classroomGame, redemption } = createDependencies();
+		const { command, dependencies, classroomGameListing, redemption } = createDependencies();
 
 		const result = await command.execute(RedeemAcquisitionCodeCommandData.create({
-			classroomGameId,
+			classroomGameListingId,
 			code: 'VALID-CODE',
 			userId,
 		}));
 
 		expect(result.isSuccess()).toBe(true);
-		expect(result.classroomGame).toBe(classroomGame);
+		expect(result.classroomGameListing).toBe(classroomGameListing);
 		expect(result.license).toBeDefined();
 		expect(dependencies.acquisitionCodeRepository.claim).toHaveBeenCalledWith(
 			expect.objectContaining({ id: '00000000-0000-4000-8000-000000000004' }),
@@ -127,13 +121,13 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 		const otherUserId = '00000000-0000-4000-8000-000000000005';
 
 		const firstResult = await command.execute(RedeemAcquisitionCodeCommandData.create({
-			classroomGameId,
+			classroomGameListingId,
 			code: 'VALID-CODE',
 			userId,
 		}));
 		(dependencies.userRepository.findOneBy as jest.Mock).mockResolvedValue({ id: otherUserId });
 		const secondResult = await command.execute(RedeemAcquisitionCodeCommandData.create({
-			classroomGameId,
+			classroomGameListingId,
 			code: 'VALID-CODE',
 			userId: otherUserId,
 		}));
@@ -145,11 +139,11 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 	});
 
 	it('rejects a code for a student-funded assignment', async () => {
-		const { command, classroomGame } = createDependencies();
-		classroomGame.institutionGameOffer.designatedPayor = InstitutionGameOfferDesignatedPayor.STUDENT;
+		const { command, classroomGameListing } = createDependencies();
+		classroomGameListing.designatedPayor = ClassroomGameListingDesignatedPayor.STUDENT;
 
 		const result = await command.execute(RedeemAcquisitionCodeCommandData.create({
-			classroomGameId,
+			classroomGameListingId,
 			code: 'VALID-CODE',
 			userId,
 		}));
@@ -157,18 +151,16 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 		expect(result.validationResult?.errorMessage).toContain('invalid or unavailable');
 	});
 
-	it('rejects a code used for a different classroom game with the same offer', async () => {
-		const { command, dependencies } = createDependencies();
-		const otherClassroomGameId = '00000000-0000-4000-8000-000000000006';
-		(dependencies.classroomGameRepository.findForAcquisition as jest.Mock).mockResolvedValue({
-			classroom: { institution: {} },
-			institutionGameOffer: { designatedPayor: InstitutionGameOfferDesignatedPayor.INSTITUTION, id: offerId },
-			id: otherClassroomGameId,
-			isAvailable: () => true,
+	it('rejects a code used for a different classroom listing', async () => {
+		const { command, dependencies, classroomGameListing } = createDependencies();
+		const otherClassroomGameListingId = '00000000-0000-4000-8000-000000000006';
+		(dependencies.classroomGameListingRepository.findForAcquisition as jest.Mock).mockResolvedValue({
+			...classroomGameListing,
+			id: otherClassroomGameListingId,
 		});
 
 		const result = await command.execute(RedeemAcquisitionCodeCommandData.create({
-			classroomGameId: otherClassroomGameId,
+			classroomGameListingId: otherClassroomGameListingId,
 			code: 'VALID-CODE',
 			userId,
 		}));
@@ -182,7 +174,7 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 		(dependencies.acquisitionCodeRepository.claim as jest.Mock).mockResolvedValue(false);
 
 		const result = await command.execute(RedeemAcquisitionCodeCommandData.create({
-			classroomGameId,
+			classroomGameListingId,
 			code: 'VALID-CODE',
 			userId,
 		}));

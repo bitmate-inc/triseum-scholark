@@ -8,7 +8,7 @@ import { GetOneFilterByDto, IncludeDto } from '../../../../../lib/entity/query/q
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Game } from '../../game/model/game.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
-import { PublicGameOffer } from '../../game/model/public.game.offer.entity';
+import { PublicGameListing } from '../../game/model/public.game.listing.entity';
 
 export class GetGameFilterByDto extends GetOneFilterByDto {
 
@@ -38,7 +38,7 @@ export class GetGameQueryResult extends StaticFactory {
 
 	game?: Game;
 	gameVersionList: GameVersion[] = [];
-	publicOfferList: PublicGameOffer[] = [];
+	publicListingList: PublicGameListing[] = [];
 
 }
 
@@ -50,8 +50,8 @@ export class GetGameQuery {
 		private readonly gameRepository: EntityRepository<Game>,
 		@InjectRepository(GameVersion)
 		private readonly gameVersionRepository: EntityRepository<GameVersion>,
-		@InjectRepository(PublicGameOffer)
-		private readonly publicOfferRepository: EntityRepository<PublicGameOffer>,
+		@InjectRepository(PublicGameListing)
+		private readonly publicListingRepository: EntityRepository<PublicGameListing>,
 	) {}
 
 	async execute(data: GetGameQueryData): Promise<GetGameQueryResult> {
@@ -94,7 +94,7 @@ export class GetGameQuery {
 			{ orderBy: { publishedAt: 'desc' } },
 		);
 
-		const publicOfferList = await this.publicOfferRepository.find(
+		const publicListingList = await this.publicListingRepository.find(
 			{
 				gameVariant: { gameVersion: { $in: gameVersionList } },
 				isAvailable: true,
@@ -104,7 +104,7 @@ export class GetGameQuery {
 		);
 
 		return GetGameQueryResult.create({ 
-			game, gameVersionList, publicOfferList 
+			game, gameVersionList, publicListingList
 		});
 	}
 

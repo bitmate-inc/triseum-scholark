@@ -69,7 +69,7 @@ class UserLibraryItemResponseDto {
 	classroom?: UserLibraryClassroomResponseDto;
 
 	@ApiPropertyOptional()
-	classroomGameId?: string;
+	classroomGameListingId?: string;
 
 	@ApiProperty()
 	startAt!: Date;
@@ -101,15 +101,15 @@ export class UserLibraryResponseDto {
 
 		return {
 			itemList: result.map(({ license, acquisition }) => {
-				const classroomGame = license.classroomGame;
+				const classroomGameListing = license.classroomGameListing;
 
 				return {
-					classroom: classroomGame ? {
-						id: classroomGame.classroom.id!,
-						name: classroomGame.classroom.name,
-						slug: classroomGame.classroom.slug,
+					classroom: classroomGameListing ? {
+						id: classroomGameListing.classroom.id!,
+						name: classroomGameListing.classroom.name,
+						slug: classroomGameListing.classroom.slug,
 					} : undefined,
-					classroomGameId: classroomGame?.id,
+					classroomGameListingId: classroomGameListing?.id,
 					customizationId: license.customization?.id,
 					endAt: license.endAt,
 					createdAt: license.createdAt!,

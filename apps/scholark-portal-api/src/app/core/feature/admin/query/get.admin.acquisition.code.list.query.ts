@@ -35,11 +35,10 @@ export class GetAdminAcquisitionCodeListQuery {
 	async execute(data: GetAdminAcquisitionCodeListQueryData): Promise<GetAdminAcquisitionCodeListQueryResult> {
 		const queryBuilder = this.acquisitionCodeRepository.createQueryBuilder('acquisitionCode');
 		queryBuilder
-			.leftJoinAndSelect('acquisitionCode.classroomGame', 'classroomGame')
-			.leftJoinAndSelect('classroomGame.classroom', 'classroom')
+			.leftJoinAndSelect('acquisitionCode.classroomGameListing', 'classroomGameListing')
+			.leftJoinAndSelect('classroomGameListing.classroom', 'classroom')
 			.leftJoinAndSelect('classroom.institution', 'institution')
-			.leftJoinAndSelect('classroomGame.institutionGameOffer', 'institutionGameOffer')
-			.leftJoinAndSelect('institutionGameOffer.gameVariant', 'gameVariant')
+			.leftJoinAndSelect('classroomGameListing.gameVariant', 'gameVariant')
 			.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
 			.leftJoinAndSelect('gameVersion.game', 'game');
 
@@ -47,7 +46,7 @@ export class GetAdminAcquisitionCodeListQuery {
 			queryBuilder.andWhere({ id: data.filterBy.id });
 		}
 		if (data.filterBy?.institutionId) {
-			queryBuilder.andWhere({ classroomGame: { classroom: { institution: data.filterBy.institutionId } } });
+			queryBuilder.andWhere({ classroomGameListing: { classroom: { institution: data.filterBy.institutionId } } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();

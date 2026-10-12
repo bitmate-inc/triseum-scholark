@@ -7,7 +7,7 @@ import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.or
 import { User } from '../../user/model/user.entity';
 import { AcquisitionCode } from '../model/acquisition.code.entity';
 import { AcquisitionCodeRedemption } from '../model/acquisition.code.redemption.entity';
-import { ClassroomGame } from '../model/classroom.game.entity';
+import { ClassroomGameListing } from '../model/classroom.game.listing.entity';
 
 @Injectable()
 export class AcquisitionCodeRepository extends MikroOrmEntityRepository<AcquisitionCode> {
@@ -22,14 +22,14 @@ export class AcquisitionCodeRepository extends MikroOrmEntityRepository<Acquisit
 	create(data: {
 		codeDigest: string;
 		codeSuffix: string;
-		classroomGame: ClassroomGame;
+		classroomGameListing: ClassroomGameListing;
 		expiresAt: Date;
 	}): AcquisitionCode {
 		return this.repository.create(data);
 	}
 
 	findForRedemption(codeDigest: string): Promise<AcquisitionCode | undefined> {
-		return this.findOneBy({ codeDigest }, { relations: { classroomGame: true } });
+		return this.findOneBy({ codeDigest }, { relations: { classroomGameListing: true } });
 	}
 
 	async findForRevocation(id: string): Promise<AcquisitionCode | undefined> {

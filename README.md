@@ -15,7 +15,7 @@ packages/eslint-config/     Shared ESLint configuration
 packages/typescript-config/ Shared TypeScript configuration
 ```
 
-The admin portal covers institutions, courses, classrooms, classroom games, instructors, acquisition codes, publishers, games, game offers, taxonomy, users, and billing/acquisitions. Some pages and workflows remain staged while their API workflows are defined or connected.
+The admin portal covers institutions, courses, classrooms, classroom game listings, instructors, acquisition codes, publishers, games, game listings, taxonomy, users, and billing/acquisitions. Some pages and workflows remain staged while their API workflows are defined or connected.
 
 ## Prerequisites
 

@@ -22,8 +22,8 @@ export class GetUserLibraryQuery {
 				populate: [
 					'gameVariant.gameVersion.game',
 					'customization',
-					'classroomGame.classroom',
-					'classroomGame.customization',
+					'classroomGameListing.classroom',
+					'classroomGameListing.customization',
 				],
 				orderBy: { endAt: 'desc' },
 			},

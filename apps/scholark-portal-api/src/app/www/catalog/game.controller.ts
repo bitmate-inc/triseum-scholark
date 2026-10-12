@@ -56,7 +56,7 @@ export class GameController {
 		@Body() body: GameAcquisitionRequestDto,
 	): Promise<GameCheckoutResponseDto> {
 		const result = await this.createGameCheckoutCommand.createGameCheckout(
-			CreateGameCheckoutCommandData.create({ publicOfferId: body.publicOfferId, userId: session.user.id }),
+			CreateGameCheckoutCommandData.create({ publicListingId: body.publicListingId, userId: session.user.id }),
 		);
 
 		if (!!result.validationResult) {
@@ -105,7 +105,7 @@ export class GameController {
 			throw new NotFoundException('Game not found');
 		}
 
-		return GetGameResponseDto.fromEntity(result.game, result.gameVersionList, result.publicOfferList);
+		return GetGameResponseDto.fromEntity(result.game, result.gameVersionList, result.publicListingList);
 	}
 
 }

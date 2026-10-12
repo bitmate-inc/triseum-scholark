@@ -18,13 +18,15 @@ import { ValidationResult } from '../../../../../lib/validator/model/validation.
 import { RedisClient } from '../../../infrastructure/redis/redis.module';
 import { StripeClient } from '../../../infrastructure/stripe/stripe.module';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
-import { ClassroomGameRepository } from '../../education/repository/classroom.game.repository';
-import { InstitutionGameOfferRepository } from '../../education/repository/institution.game.offer.repository';
+import type { Money } from '../../../shared/commerce/model/money.entity';
+import { ClassroomGameListingDesignatedPayor } from '../../education/model/classroom.game.listing.entity';
+import { ClassroomGameListingRepository } from '../../education/repository/classroom.game.listing.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GamePaymentAttempt, GamePaymentAttemptStatus } from '../model/game.payment.attempt.entity';
+import type { GameVariant } from '../model/game.variant.entity';
 import { GameLicenseRepository } from '../repository/game.license.repository';
 import { GamePaymentAttemptRepository } from '../repository/game.payment.attempt.repository';
-import { PublicGameOfferRepository } from '../repository/public.game.offer.repository';
+import { PublicGameListingRepository } from '../repository/public.game.listing.repository';
 import { FulfillGamePaymentCommand } from './fulfill.game.payment.command';
 
 export class CreateGameCheckoutCommandData extends StaticFactory {
@@ -33,17 +35,17 @@ export class CreateGameCheckoutCommandData extends StaticFactory {
 	userId!: string;
 
 	@IsUUID()
-	publicOfferId!: string;
+	publicListingId!: string;
 
 }
 
-export class CreateClassroomGameCheckoutCommandData extends StaticFactory {
+export class CreateClassroomGameListingCheckoutCommandData extends StaticFactory {
 
 	@IsUUID()
 	userId!: string;
 
 	@IsUUID()
-	classroomGameId!: string;
+	classroomGameListingId!: string;
 
 }
 
@@ -71,12 +73,11 @@ export class CreateGameCheckoutCommand {
 
 	constructor(
 		private readonly validator: Validator,
-		private readonly publicOfferRepository: PublicGameOfferRepository,
+		private readonly publicListingRepository: PublicGameListingRepository,
 		private readonly gameLicenseRepository: GameLicenseRepository,
 		private readonly userRepository: UserEntityRepository,
 		private readonly paymentAttemptRepository: GamePaymentAttemptRepository,
-		private readonly classroomGameRepository: ClassroomGameRepository,
-		private readonly institutionGameOfferRepository: InstitutionGameOfferRepository,
+		private readonly classroomGameListingRepository: ClassroomGameListingRepository,
 		@Inject(StripeClient()) private readonly stripe: Stripe,
 		@Inject(RedisClient()) private readonly redisClient: RedisClientType,
 		@Inject(stripeConfig.KEY) private readonly config: ConfigType<typeof stripeConfig>,
@@ -89,14 +90,14 @@ export class CreateGameCheckoutCommand {
 			return CreateGameCheckoutCommandResult.fail({ validationResult });
 		}
 
-		const [publicOffer, user] = await Promise.all([
-			this.publicOfferRepository.findForAcquisition(data.publicOfferId),
+		const [publicListing, user] = await Promise.all([
+			this.publicListingRepository.findForAcquisition(data.publicListingId),
 			this.userRepository.findOneBy({ id: data.userId }),
 		]);
 
-		if (!publicOffer || !publicOffer.publishedAt || publicOffer.publishedAt > new Date()
-			|| !publicOffer.gameVariant.gameVersion.isPublished()
-			|| !publicOffer.gameVariant.gameVersion.game.isPublished()) {
+		if (!publicListing || !publicListing.publishedAt || publicListing.publishedAt > new Date()
+			|| !publicListing.gameVariant.gameVersion.isPublished()
+			|| !publicListing.gameVariant.gameVersion.game.isPublished()) {
 			return CreateGameCheckoutCommandResult.unavailableFail();
 		}
 
@@ -106,23 +107,23 @@ export class CreateGameCheckoutCommand {
 
 		const activeLicense = await this.gameLicenseRepository.findActiveByUserAndGameVariant(
 			data.userId,
-			publicOffer.gameVariant,
+			publicListing.gameVariant,
 		);
 
 		if (activeLicense) {
 			return CreateGameCheckoutCommandResult.alreadyAcquiredFail();
 		}
 
-		const game = publicOffer.gameVariant.gameVersion.game;
-		return this.withCheckoutCreationLock(`scholark:checkout:${user.id}:public:${publicOffer.id}`, async () => {
+		const game = publicListing.gameVariant.gameVersion.game;
+		return this.withCheckoutCreationLock(`scholark:checkout:${user.id}:public:${publicListing.id}`, async () => {
 			const sessionData = {
 				attemptType: 'public' as const,
-				cancelUrl: `${this.config.portalUrl}/game/${game.slug}/acquire?offer=${publicOffer.id}`,
-				publicOffer,
+				cancelUrl: `${this.config.portalUrl}/game/${game.slug}/acquire?listing=${publicListing.id}`,
+				publicListing,
 				successUrl: `${this.config.portalUrl}/game/${game.slug}/acquire/success?checkout_session_id={CHECKOUT_SESSION_ID}`,
 				userId: user.id!,
 			};
-			const pendingAttempt = await this.paymentAttemptRepository.findPendingByUserAndPublicOffer(user.id!, publicOffer.id!);
+			const pendingAttempt = await this.paymentAttemptRepository.findPendingByUserAndPublicListing(user.id!, publicListing.id!);
 
 			if (pendingAttempt) {
 				const resumed = await this.resumePendingAttempt(pendingAttempt, sessionData);
@@ -133,8 +134,8 @@ export class CreateGameCheckoutCommand {
 
 			const attempt = GamePaymentAttempt.create({
 				licenseDurationDays: 6 * 30,
-				price: publicOffer.price,
-				publicOffer,
+				price: publicListing.price,
+				publicListing,
 				status: GamePaymentAttemptStatus.PENDING,
 				user,
 			});
@@ -144,18 +145,18 @@ export class CreateGameCheckoutCommand {
 		});
 	}
 
-	async createClassroomGameCheckout(data: CreateClassroomGameCheckoutCommandData): Promise<CreateGameCheckoutCommandResult> {
+	async createClassroomGameListingCheckout(data: CreateClassroomGameListingCheckoutCommandData): Promise<CreateGameCheckoutCommandResult> {
 		const validationResult = await this.validator.validate(data);
 		if (validationResult) {
 			return CreateGameCheckoutCommandResult.fail({ validationResult });
 		}
 
-		const [classroomGame, user] = await Promise.all([
-			this.classroomGameRepository.findForAcquisition(data.classroomGameId),
+		const [classroomGameListing, user] = await Promise.all([
+			this.classroomGameListingRepository.findForAcquisition(data.classroomGameListingId),
 			this.userRepository.findOneBy({ id: data.userId }),
 		]);
 
-		if (!classroomGame || !classroomGame.isAvailable()) {
+		if (!classroomGameListing || !classroomGameListing.isAvailable()) {
 			return CreateGameCheckoutCommandResult.unavailableFail();
 		}
 
@@ -163,33 +164,32 @@ export class CreateGameCheckoutCommand {
 			return CreateGameCheckoutCommandResult.userNotFoundFail();
 		}
 
-		const studentPayorOffer = await this.institutionGameOfferRepository.findStudentPayorOffer(classroomGame.institutionGameOffer);
-
-		if (!studentPayorOffer || (classroomGame.customization
-			&& classroomGame.customization.gameVersion !== classroomGame.institutionGameOffer.gameVariant.gameVersion)) {
+		const price = classroomGameListing.price;
+		if (classroomGameListing.designatedPayor !== ClassroomGameListingDesignatedPayor.STUDENT || !price
+			|| (classroomGameListing.customization
+				&& classroomGameListing.customization.gameVersion !== classroomGameListing.gameVariant.gameVersion)) {
 			return CreateGameCheckoutCommandResult.unavailableFail();
 		}
 
-		const existingLicense = await this.gameLicenseRepository.findByUserAndClassroomGame(
+		const existingLicense = await this.gameLicenseRepository.findByUserAndClassroomGameListing(
 			user.id!,
-			classroomGame.id!,
+			classroomGameListing.id!,
 		);
 
 		if (existingLicense) {
 			return CreateGameCheckoutCommandResult.alreadyAcquiredFail();
 		}
 
-		const institutionGameOffer = classroomGame.institutionGameOffer;
-		return this.withCheckoutCreationLock(`scholark:checkout:${user.id}:classroom:${classroomGame.id}`, async () => {
+		return this.withCheckoutCreationLock(`scholark:checkout:${user.id}:classroom:${classroomGameListing.id}`, async () => {
 			const sessionData = {
 				attemptType: 'classroom' as const,
-				cancelUrl: `${this.config.portalUrl}/classroom-game/${classroomGame.id}/acquire`,
-				publicOffer: institutionGameOffer,
-				classroomGameId: classroomGame.id!,
-				successUrl: `${this.config.portalUrl}/classroom-game/${classroomGame.id}/acquire/success?checkout_session_id={CHECKOUT_SESSION_ID}`,
+				cancelUrl: `${this.config.portalUrl}/classroom-game-listing/${classroomGameListing.id}/acquire`,
+				publicListing: { gameVariant: classroomGameListing.gameVariant, id: classroomGameListing.id, price },
+				classroomGameListingId: classroomGameListing.id!,
+				successUrl: `${this.config.portalUrl}/classroom-game-listing/${classroomGameListing.id}/acquire/success?checkout_session_id={CHECKOUT_SESSION_ID}`,
 				userId: user.id!,
 			};
-			const pendingAttempt = await this.paymentAttemptRepository.findPendingByUserAndClassroomGame(user.id!, classroomGame.id!);
+			const pendingAttempt = await this.paymentAttemptRepository.findPendingByUserAndClassroomGameListing(user.id!, classroomGameListing.id!);
 
 			if (pendingAttempt) {
 				const resumed = await this.resumePendingAttempt(pendingAttempt, sessionData);
@@ -199,13 +199,12 @@ export class CreateGameCheckoutCommand {
 			}
 
 			const attempt = GamePaymentAttempt.create({
-				classroomGame,
-				licenseDurationDays: classroomGame.institutionGameOffer.licenseDurationDays,
-				price: institutionGameOffer.price,
-				institutionGameOffer,
+				classroomGameListing,
+				licenseDurationDays: classroomGameListing.licenseDurationDays,
+				price,
 				status: GamePaymentAttemptStatus.PENDING,
 				user,
-				customization: classroomGame.customization,
+				customization: classroomGameListing.customization,
 			});
 			await this.paymentAttemptRepository.save(attempt);
 
@@ -313,14 +312,14 @@ export class CreateGameCheckoutCommand {
 	}
 
 	private assertSessionMatchesAttempt(session: Stripe.Checkout.Session, attempt: GamePaymentAttempt): void {
-		const purchaseType = attempt.classroomGame ? 'classroom' : 'public';
+		const purchaseType = attempt.classroomGameListing ? 'classroom' : 'public';
 		const metadata = session.metadata ?? {};
 		const metadataMatchesAttempt =
 			metadata.attemptId === attempt.id
 			&& metadata.userId === attempt.user.id
 			&& metadata.purchaseType === purchaseType
-			&& metadata.offerId === (attempt.publicOffer?.id ?? attempt.institutionGameOffer?.id)
-			&& metadata.classroomGameId === (attempt.classroomGame?.id ?? '')
+			&& metadata.listingId === (attempt.publicListing?.id ?? attempt.classroomGameListing?.id)
+			&& metadata.classroomGameListingId === (attempt.classroomGameListing?.id ?? '')
 			&& session.client_reference_id === attempt.user.id;
 		if (!metadataMatchesAttempt) {
 			throw new Error('Stripe Checkout metadata does not match the payment attempt');
@@ -352,8 +351,8 @@ export class CreateGameCheckoutCommand {
 		attemptType: 'public' | 'classroom';
 		attemptId: string;
 		cancelUrl: string;
-		classroomGameId?: string;
-		publicOffer: Pick<NonNullable<Awaited<ReturnType<PublicGameOfferRepository['findForAcquisition']>>>, 'id' | 'price' | 'gameVariant'>;
+		classroomGameListingId?: string;
+		publicListing: CheckoutListing;
 		successUrl: string;
 		userId: string;
 	}): Promise<Stripe.Checkout.Session> {
@@ -362,16 +361,16 @@ export class CreateGameCheckoutCommand {
 			client_reference_id: data.userId,
 			line_items: [{
 				price_data: {
-					currency: data.publicOffer.price.currency.toLowerCase(),
-					product_data: { name: data.publicOffer.gameVariant.gameVersion.game.title },
-					unit_amount: data.publicOffer.price.minorUnitAmount,
+					currency: data.publicListing.price.currency.toLowerCase(),
+					product_data: { name: data.publicListing.gameVariant.gameVersion.game.title },
+					unit_amount: data.publicListing.price.minorUnitAmount,
 				},
 				quantity: 1,
 			}],
 			metadata: {
 				attemptId: data.attemptId,
-				classroomGameId: data.classroomGameId ?? '',
-				offerId: data.publicOffer.id!,
+				classroomGameListingId: data.classroomGameListingId ?? '',
+				listingId: data.publicListing.id!,
 				purchaseType: data.attemptType,
 				userId: data.userId,
 			},
@@ -386,8 +385,14 @@ type CheckoutSessionData = {
 	attemptType: 'public' | 'classroom';
 	attemptId: string;
 	cancelUrl: string;
-	classroomGameId?: string;
-	publicOffer: Pick<NonNullable<Awaited<ReturnType<PublicGameOfferRepository['findForAcquisition']>>>, 'id' | 'price' | 'gameVariant'>;
+	classroomGameListingId?: string;
+	publicListing: CheckoutListing;
 	successUrl: string;
 	userId: string;
+};
+
+type CheckoutListing = {
+	id?: string;
+	price: Money;
+	gameVariant: GameVariant;
 };

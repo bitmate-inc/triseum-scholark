@@ -11,69 +11,69 @@ import { Link } from "../../../../i18n/navigation";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { useGetUserLibraryQuery, type UserLibraryItem } from "../../../library/client/api/library-api";
 import {
-	formatOfferLanguage,
-	formatOfferPrice,
-	formatOfferPriceRange,
+	formatListingLanguage,
+	formatListingPrice,
+	formatListingPriceRange,
 	type GameDetails,
 	type GameVersion,
-	type PublicGameOffer,
+	type PublicGameListing,
 } from "../../shared/model/game";
 
-function OfferSelector({
+function ListingSelector({
 	game,
 	version,
-	offerList,
+	listingList,
 	licenseList,
 	canAcquire,
 }: {
 	game: GameDetails;
 	version: GameVersion;
-	offerList: PublicGameOffer[];
+	listingList: PublicGameListing[];
 	licenseList: UserLibraryItem[];
 	canAcquire: boolean;
 }) {
 	const locale = useLocale();
 	const t = useTranslations("catalog");
-	const sortedOfferList = [...offerList].sort((firstOffer, secondOffer) =>
-		formatOfferLanguage(firstOffer.language, locale).localeCompare(formatOfferLanguage(secondOffer.language, locale))
-			|| firstOffer.price.minorUnitAmount - secondOffer.price.minorUnitAmount
-			|| firstOffer.id.localeCompare(secondOffer.id),
+	const sortedListingList = [...listingList].sort((firstListing, secondListing) =>
+		formatListingLanguage(firstListing.language, locale).localeCompare(formatListingLanguage(secondListing.language, locale))
+			|| firstListing.price.minorUnitAmount - secondListing.price.minorUnitAmount
+			|| firstListing.id.localeCompare(secondListing.id),
 	);
-	const [selectedOfferId, setSelectedOfferId] = useState(sortedOfferList[0]?.id ?? "");
-	const selectedOffer = sortedOfferList.find((offer) => offer.id === selectedOfferId) ?? sortedOfferList[0];
-	if (!selectedOffer) {
+	const [selectedListingId, setSelectedListingId] = useState(sortedListingList[0]?.id ?? "");
+	const selectedListing = sortedListingList.find((listing) => listing.id === selectedListingId) ?? sortedListingList[0];
+	if (!selectedListing) {
 		return null;
 	}
 
 	const selectedLicenseList = licenseList.filter(
 		(item) => item.game.id === game.id
 			&& item.gameVersion.id === version.id
-			&& item.gameVariant.id === selectedOffer.gameVariantId,
+			&& item.gameVariant.id === selectedListing.gameVariantId,
 	);
 	const activeLicense = selectedLicenseList.find((item) => item.isActive);
 	const hasExpiredLicense = selectedLicenseList.length > 0;
-	const hasMultiplePrices = new Set(sortedOfferList.map((offer) => `${offer.price.currency}:${offer.price.minorUnitAmount}`)).size > 1;
+	const hasMultiplePrices = new Set(sortedListingList.map((listing) => `${listing.price.currency}:${listing.price.minorUnitAmount}`)).size > 1;
 
 	return (
 		<>
 			{hasMultiplePrices ? (
-				<div className={styles.offerPriceRange} aria-label={t("availablePriceRange", { priceRange: formatOfferPriceRange(sortedOfferList, locale) })}>
-					<strong>{formatOfferPriceRange(sortedOfferList, locale)}</strong>
+				<div className={styles.listingPriceRange} aria-label={t("availablePriceRange", { priceRange: formatListingPriceRange(sortedListingList, locale) })}>
+					<strong>{formatListingPriceRange(sortedListingList, locale)}</strong>
 				</div>
 			) : null}
 			<div className={styles.versionAction}>
-				<div className={styles.offerSelectionControls}>
-					<select aria-label={t("chooseLanguageAndPrice")} value={selectedOffer.id} onChange={(event) => setSelectedOfferId(event.target.value)}>
-						{sortedOfferList.map((offer) => (
-							<option key={offer.id} value={offer.id}>
-								{formatOfferLanguage(offer.language, locale)} · {formatOfferPrice(offer, locale)}
+				<div className={styles.listingSelectionControls}>
+					<select aria-label={t("chooseLanguageAndPrice")} value={selectedListing.id} onChange={(event) => setSelectedListingId(event.target.value)}>
+						{sortedListingList.map((listing) => (
+							<option key={listing.id} value={listing.id}>
+								{formatListingLanguage(listing.language, locale)} · {formatListingPrice(listing, locale)}
 							</option>
 						))}
 					</select>
-					<div className={styles.offerSelectionAction}>
+					<div className={styles.listingSelectionAction}>
 						{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>{t("inLibrary")}</Badge> : hasExpiredLicense ? <Badge variant="outline">{t("expired")}</Badge> : null}
 						{!activeLicense && canAcquire ? (
-							<Link className={buttonVariants({ size: "sm" })} href={`/game/${game.slug}/acquire?offer=${encodeURIComponent(selectedOffer.id)}`}>
+							<Link className={buttonVariants({ size: "sm" })} href={`/game/${game.slug}/acquire?listing=${encodeURIComponent(selectedListing.id)}`}>
 								<MonitorPlay data-icon="inline-start"/>{t("acquire")}
 							</Link>
 						) : null}
@@ -107,10 +107,10 @@ export function GameVersionList({ game }: { game: GameDetails }) {
 									<h3>{version.publisherVersion}</h3>
 								</div>
 								{version.description ? <p className={styles.versionDescription}>{version.description}</p> : <span aria-hidden="true"/>}
-								<OfferSelector
+								<ListingSelector
 									game={game}
 									version={version}
-									offerList={version.publicOfferList ?? []}
+									listingList={version.publicListingList ?? []}
 									licenseList={library.data?.itemList ?? []}
 									canAcquire={licenseStateReady}
 								/>

@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common';
 
 import { GetUserLibraryQuery } from '../catalog/query/get.user.library.query';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
-import { AcquirePublicOfferCommand } from './command/acquire.public.game.offer.command';
+import { AcquirePublicListingCommand } from './command/acquire.public.game.listing.command';
 import { CreateGameCheckoutCommand } from './command/create.game.checkout.command';
 import { CreateGameLaunchTicketCommand } from './command/create.game.launch.ticket.command';
 import { ExpireGamePaymentAttemptCommand } from './command/expire.game.payment.attempt.command';
@@ -19,7 +19,7 @@ import { GamePaymentAttempt } from './model/game.payment.attempt.entity';
 import { GameTaxonomyTerm } from './model/game.taxonomy.term.entity';
 import { GameVariant } from './model/game.variant.entity';
 import { GameVersion } from './model/game.version.entity';
-import { PublicGameOffer } from './model/public.game.offer.entity';
+import { PublicGameListing } from './model/public.game.listing.entity';
 import { StripeWebhookEvent } from './model/stripe.webhook.event.entity';
 import { GetGameListQuery } from './query/get.game.list.query';
 import { GameAcquisitionEventRepository } from './repository/game.acquisition.event.repository';
@@ -28,19 +28,19 @@ import { GameLicenseRepository } from './repository/game.license.repository';
 import { GamePaymentAttemptRepository } from './repository/game.payment.attempt.repository';
 import { GameRepository } from './repository/game.repository';
 import { GameVersionRepository } from './repository/game.version.repository';
-import { PublicGameOfferRepository } from './repository/public.game.offer.repository';
+import { PublicGameListingRepository } from './repository/public.game.listing.repository';
 import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.repository';
 
 @Global()
 @Module({
 	exports: [
-		AcquirePublicOfferCommand,
+		AcquirePublicListingCommand,
 		CreateGameCheckoutCommand,
 		FulfillGamePaymentCommand,
 		ProcessGamePaymentWebhookCommand,
 		RevalidateGamePaymentAttemptCommand,
 		GameLicenseRepository,
-		PublicGameOfferRepository,
+		PublicGameListingRepository,
 		GameAcquisitionRepository,
 		GameAcquisitionEventRepository,
 		GamePaymentAttemptRepository,
@@ -60,7 +60,7 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 			GamePaymentAttempt,
 			StripeWebhookEvent,
 			GameLicense,
-			PublicGameOffer,
+			PublicGameListing,
 			GameTaxonomyTerm,
 			GameVariant,
 			GameVersion,
@@ -68,13 +68,13 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		TaxonomyModule,
 	],
 	providers: [
-		AcquirePublicOfferCommand,
+		AcquirePublicListingCommand,
 		CreateGameCheckoutCommand,
 		FulfillGamePaymentCommand,
 		ProcessGamePaymentWebhookCommand,
 		RevalidateGamePaymentAttemptCommand,
 		GameLicenseRepository,
-		PublicGameOfferRepository,
+		PublicGameListingRepository,
 		GameAcquisitionRepository,
 		GameAcquisitionEventRepository,
 		GamePaymentAttemptRepository,

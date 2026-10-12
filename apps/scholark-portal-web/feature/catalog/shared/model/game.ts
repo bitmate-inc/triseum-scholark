@@ -40,7 +40,7 @@ export type Game = {
 
 export type GameDetails = Game & { gameVersionList: GameVersion[] };
 
-export type PublicGameOffer = {
+export type PublicGameListing = {
 	id: string;
 	price: {
 		minorUnitAmount: number;
@@ -53,7 +53,7 @@ export type PublicGameOffer = {
 
 export type GameVersion = {
 	id: string;
-	publicOfferList: PublicGameOffer[];
+	publicListingList: PublicGameListing[];
 	description?: string;
 	publisherVersion: string;
 	runUrl: string;
@@ -99,23 +99,23 @@ export function formatEstimatedLength(game: Game, locale: string): string | unde
 	return `${formatter.format(minValue)}–${formatter.format(maxValue)}`;
 }
 
-export function formatOfferPrice(offer: PublicGameOffer, locale: string): string {
+export function formatListingPrice(listing: PublicGameListing, locale: string): string {
 	return new Intl.NumberFormat(locale, {
-		currency: offer.price.currency,
+		currency: listing.price.currency,
 		style: "currency",
-	}).format(offer.price.minorUnitAmount / 100);
+	}).format(listing.price.minorUnitAmount / 100);
 }
 
-export function formatOfferPriceRange(offerList: PublicGameOffer[], locale: string): string {
-	const offerListByCurrency = new Map<string, PublicGameOffer[]>();
-	for (const offer of offerList) {
-		const currencyOfferList = offerListByCurrency.get(offer.price.currency) ?? [];
-		currencyOfferList.push(offer);
-		offerListByCurrency.set(offer.price.currency, currencyOfferList);
+export function formatListingPriceRange(listingList: PublicGameListing[], locale: string): string {
+	const listingListByCurrency = new Map<string, PublicGameListing[]>();
+	for (const listing of listingList) {
+		const currencyListingList = listingListByCurrency.get(listing.price.currency) ?? [];
+		currencyListingList.push(listing);
+		listingListByCurrency.set(listing.price.currency, currencyListingList);
 	}
 
-	return [...offerListByCurrency.entries()].map(([currency, currencyOfferList]) => {
-		const amountList = currencyOfferList.map((offer) => offer.price.minorUnitAmount);
+	return [...listingListByCurrency.entries()].map(([currency, currencyListingList]) => {
+		const amountList = currencyListingList.map((listing) => listing.price.minorUnitAmount);
 		const minAmount = Math.min(...amountList) / 100;
 		const maxAmount = Math.max(...amountList) / 100;
 		const formatter = new Intl.NumberFormat(locale, { currency, style: "currency" });
@@ -124,7 +124,7 @@ export function formatOfferPriceRange(offerList: PublicGameOffer[], locale: stri
 	}).join(" · ");
 }
 
-export function formatOfferLanguage(language: string, locale: string): string {
+export function formatListingLanguage(language: string, locale: string): string {
 	const languageTag = language.replaceAll("_", "-");
 	try {
 		return new Intl.DisplayNames([locale], { type: "language" }).of(languageTag) ?? language.toUpperCase();
@@ -133,7 +133,7 @@ export function formatOfferLanguage(language: string, locale: string): string {
 	}
 }
 
-export function formatOfferMode(mode: string): string {
+export function formatListingMode(mode: string): string {
 	return mode
 		.split("_")
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))

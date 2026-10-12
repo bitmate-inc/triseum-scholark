@@ -3,16 +3,16 @@ import { api } from "../../../api/client/api/api-base";
 const acquisitionApi = api.injectEndpoints({
 	endpoints: (build) => ({
 		acquireGame: build.mutation<{ checkoutUrl: string; checkoutSessionId: string }, string>({
-			query: (publicOfferId) => ({
-				body: { publicOfferId },
+			query: (publicListingId) => ({
+				body: { publicListingId },
 				method: "POST",
 				url: "/api/v1/catalog/game/acquisition",
 			}),
 		}),
-		acquireClassroomGame: build.mutation<{ checkoutUrl: string; checkoutSessionId: string }, string>({
-			query: (classroomGameId) => ({
+		acquireClassroomGameListing: build.mutation<{ checkoutUrl: string; checkoutSessionId: string }, string>({
+			query: (classroomGameListingId) => ({
 				method: "POST",
-				url: `/api/v1/catalog/classroom-game/${classroomGameId}/acquisition`,
+				url: `/api/v1/catalog/classroom-game-listing/${classroomGameListingId}/acquisition`,
 			}),
 		}),
 		getCheckoutStatus: build.query<{ status: "pending" | "fulfilled" | "failed" }, string>({
@@ -20,15 +20,15 @@ const acquisitionApi = api.injectEndpoints({
 				url: `/api/v1/user/me/checkout-status?checkoutSessionId=${encodeURIComponent(checkoutSessionId)}`,
 			}),
 		}),
-		redeemAcquisitionCode: build.mutation<{ licenseId: string; licenseDurationDays: number }, { classroomGameId: string; code: string }>({
+		redeemAcquisitionCode: build.mutation<{ licenseId: string; licenseDurationDays: number }, { classroomGameListingId: string; code: string }>({
 			invalidatesTags: ["Library"],
-			query: ({ classroomGameId, code }) => ({
+			query: ({ classroomGameListingId, code }) => ({
 				body: { code },
 				method: "POST",
-				url: `/api/v1/catalog/classroom-game/${classroomGameId}/redeem-code`,
+				url: `/api/v1/catalog/classroom-game-listing/${classroomGameListingId}/redeem-code`,
 			}),
 		}),
 	}),
 });
 
-export const { useAcquireClassroomGameMutation, useAcquireGameMutation, useGetCheckoutStatusQuery, useRedeemAcquisitionCodeMutation } = acquisitionApi;
+export const { useAcquireClassroomGameListingMutation, useAcquireGameMutation, useGetCheckoutStatusQuery, useRedeemAcquisitionCodeMutation } = acquisitionApi;

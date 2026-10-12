@@ -24,10 +24,10 @@ import {
 
 import { CreateAdminAcquisitionCodesCommand } from '../../core/feature/admin/command/create.admin.acquisition.codes.command';
 import { CreateAdminClassroomCommand } from '../../core/feature/admin/command/create.admin.classroom.command';
-import { CreateAdminClassroomGameCommand } from '../../core/feature/admin/command/create.admin.classroom.game.command';
+import { CreateAdminClassroomGameListingCommand } from '../../core/feature/admin/command/create.admin.classroom.game.listing.command';
 import { CreateAdminCourseCommand } from '../../core/feature/admin/command/create.admin.course.command';
 import { CreateAdminGameCommand } from '../../core/feature/admin/command/create.admin.game.command';
-import { CreateAdminGameOfferCommand } from '../../core/feature/admin/command/create.admin.game.offer.command';
+import { CreateAdminGameListingCommand } from '../../core/feature/admin/command/create.admin.game.listing.command';
 import { CreateAdminGameVersionCommand } from '../../core/feature/admin/command/create.admin.game.version.command';
 import { CreateAdminInstitutionCommand } from '../../core/feature/admin/command/create.admin.institution.command';
 import { CreateAdminInstructorCommand } from '../../core/feature/admin/command/create.admin.instructor.command';
@@ -35,14 +35,13 @@ import { CreateAdminPublisherCommand } from '../../core/feature/admin/command/cr
 import { CreateAdminTaxonomyTermCommand } from '../../core/feature/admin/command/create.admin.taxonomy.term.command';
 import { RevokeAdminAcquisitionCodeCommand } from '../../core/feature/admin/command/revoke.admin.acquisition.code.command';
 import { UpdateAdminClassroomCommand } from '../../core/feature/admin/command/update.admin.classroom.command';
-import { UpdateAdminClassroomGameCommand } from '../../core/feature/admin/command/update.admin.classroom.game.command';
+import { UpdateAdminClassroomGameListingCommand } from '../../core/feature/admin/command/update.admin.classroom.game.listing.command';
 import { UpdateAdminCourseCommand } from '../../core/feature/admin/command/update.admin.course.command';
 import { UpdateAdminGameCommand } from '../../core/feature/admin/command/update.admin.game.command';
 import { UpdateAdminGameVersionCommand } from '../../core/feature/admin/command/update.admin.game.version.command';
 import { UpdateAdminInstitutionCommand } from '../../core/feature/admin/command/update.admin.institution.command';
-import { UpdateAdminInstitutionGameOfferCommand } from '../../core/feature/admin/command/update.admin.institution.game.offer.command';
 import { UpdateAdminInstructorCommand } from '../../core/feature/admin/command/update.admin.instructor.command';
-import { UpdateAdminPublicGameOfferCommand } from '../../core/feature/admin/command/update.admin.public.game.offer.command';
+import { UpdateAdminPublicGameListingCommand } from '../../core/feature/admin/command/update.admin.public.game.listing.command';
 import { UpdateAdminPublisherCommand } from '../../core/feature/admin/command/update.admin.publisher.command';
 import { UpdateAdminTaxonomyTermCommand } from '../../core/feature/admin/command/update.admin.taxonomy.term.command';
 import { GetAdminAcquisitionCodeListQuery } from '../../core/feature/admin/query/get.admin.acquisition.code.list.query';
@@ -51,9 +50,12 @@ import {
 	GetAdminLicenseListQuery,
 	GetAdminPaymentAttemptListQuery
 } from '../../core/feature/admin/query/get.admin.billing.query';
-import { GetAdminClassroomGameListQuery, GetAdminClassroomGameQuery } from '../../core/feature/admin/query/get.admin.classroom.game.query';
+import {
+	GetAdminClassroomGameListingListQuery,
+	GetAdminClassroomGameListingQuery
+} from '../../core/feature/admin/query/get.admin.classroom.game.listing.query';
 import { GetAdminClassroomListQuery } from '../../core/feature/admin/query/get.admin.classroom.list.query';
-import { GetAdminGameOfferListQuery } from '../../core/feature/admin/query/get.admin.game.offer.query';
+import { GetAdminGameListingListQuery } from '../../core/feature/admin/query/get.admin.game.listing.query';
 import { GetAdminGameListQuery, GetAdminGameQuery } from '../../core/feature/admin/query/get.admin.game.query';
 import { GetAdminInstructorListQuery, GetAdminInstructorQuery } from '../../core/feature/admin/query/get.admin.instructor.query';
 import { GetAdminPublisherListQuery, GetAdminPublisherQuery } from '../../core/feature/admin/query/get.admin.publisher.query';
@@ -98,11 +100,11 @@ import {
 import { GetAdminClassroomListResponseDto } from './admin.classroom.dto';
 import { CreateAdminClassroomRequestDto, UpdateAdminClassroomRequestDto } from './admin.classroom.mutation.dto';
 import {
-	GetAdminClassroomGameListQueryDto,
-	GetAdminClassroomGameListResponseDto,
-	GetAdminClassroomGameResponseDto,
-} from './admin.classroom-game.dto';
-import { CreateAdminClassroomGameRequestDto, UpdateAdminClassroomGameRequestDto } from './admin.classroom-game.mutation.dto';
+	GetAdminClassroomGameListingListQueryDto,
+	GetAdminClassroomGameListingListResponseDto,
+	GetAdminClassroomGameListingResponseDto,
+} from './admin.classroom-game-listing.dto';
+import { CreateAdminClassroomGameListingRequestDto, UpdateAdminClassroomGameListingRequestDto } from './admin.classroom-game-listing.mutation.dto';
 import { CreateAdminCourseRequestDto, UpdateAdminCourseRequestDto } from './admin.course.mutation.dto';
 import {
 	GetAdminGameListQueryDto,
@@ -110,13 +112,8 @@ import {
 	GetAdminGameResponseDto
 } from './admin.game.dto';
 import { CreateAdminGameRequestDto, UpdateAdminGameRequestDto } from './admin.game.mutation.dto';
-import { GetAdminGameOfferListQueryDto, GetAdminGameOfferListResponseDto } from './admin.game-offer.dto';
-import {
-	CreateAdminInstitutionGameOfferRequestDto,
-	CreateAdminPublicGameOfferRequestDto,
-	UpdateAdminInstitutionGameOfferRequestDto,
-	UpdateAdminPublicGameOfferRequestDto,
-} from './admin.game-offer.mutation.dto';
+import { GetAdminGameListingListQueryDto, GetAdminGameListingListResponseDto } from './admin.game-listing.dto';
+import { CreateAdminPublicGameListingRequestDto, UpdateAdminPublicGameListingRequestDto } from './admin.game-listing.mutation.dto';
 import { CreateAdminGameVersionRequestDto, UpdateAdminGameVersionRequestDto } from './admin.game-version.mutation.dto';
 import { CreateAdminInstitutionRequestDto, UpdateAdminInstitutionRequestDto } from './admin.institution.mutation.dto';
 import {
@@ -150,22 +147,22 @@ export class AdminController {
 		private readonly createAdminAcquisitionCodesCommand: CreateAdminAcquisitionCodesCommand,
 		private readonly revokeAdminAcquisitionCodeCommand: RevokeAdminAcquisitionCodeCommand,
 		private readonly createAdminClassroomCommand: CreateAdminClassroomCommand,
-		private readonly createAdminClassroomGameCommand: CreateAdminClassroomGameCommand,
+		private readonly createAdminClassroomGameListingCommand: CreateAdminClassroomGameListingCommand,
 		private readonly createAdminCourseCommand: CreateAdminCourseCommand,
 		private readonly createAdminInstitutionCommand: CreateAdminInstitutionCommand,
 		private readonly createAdminInstructorCommand: CreateAdminInstructorCommand,
 		private readonly createAdminGameCommand: CreateAdminGameCommand,
-		private readonly createAdminGameOfferCommand: CreateAdminGameOfferCommand,
+		private readonly createAdminGameListingCommand: CreateAdminGameListingCommand,
 		private readonly createAdminGameVersionCommand: CreateAdminGameVersionCommand,
 		private readonly createAdminPublisherCommand: CreateAdminPublisherCommand,
 		private readonly createAdminTaxonomyTermCommand: CreateAdminTaxonomyTermCommand,
 		private readonly getAdminAcquisitionListQuery: GetAdminAcquisitionListQuery,
 		private readonly getAdminAcquisitionCodeListQuery: GetAdminAcquisitionCodeListQuery,
-		private readonly getAdminClassroomGameListQuery: GetAdminClassroomGameListQuery,
-		private readonly getAdminClassroomGameQuery: GetAdminClassroomGameQuery,
+		private readonly getAdminClassroomGameListingListQuery: GetAdminClassroomGameListingListQuery,
+		private readonly getAdminClassroomGameListingQuery: GetAdminClassroomGameListingQuery,
 		private readonly getAdminClassroomListQuery: GetAdminClassroomListQuery,
 		private readonly getAdminGameListQuery: GetAdminGameListQuery,
-		private readonly getAdminGameOfferListQuery: GetAdminGameOfferListQuery,
+		private readonly getAdminGameListingListQuery: GetAdminGameListingListQuery,
 		private readonly getAdminGameQuery: GetAdminGameQuery,
 		private readonly getAdminInstructorListQuery: GetAdminInstructorListQuery,
 		private readonly getAdminInstructorQuery: GetAdminInstructorQuery,
@@ -184,12 +181,11 @@ export class AdminController {
 		private readonly updateAdminInstitutionCommand: UpdateAdminInstitutionCommand,
 		private readonly updateAdminCourseCommand: UpdateAdminCourseCommand,
 		private readonly updateAdminClassroomCommand: UpdateAdminClassroomCommand,
-		private readonly updateAdminClassroomGameCommand: UpdateAdminClassroomGameCommand,
+		private readonly updateAdminClassroomGameListingCommand: UpdateAdminClassroomGameListingCommand,
 		private readonly updateAdminInstructorCommand: UpdateAdminInstructorCommand,
 		private readonly updateAdminGameCommand: UpdateAdminGameCommand,
 		private readonly updateAdminGameVersionCommand: UpdateAdminGameVersionCommand,
-		private readonly updateAdminInstitutionGameOfferCommand: UpdateAdminInstitutionGameOfferCommand,
-		private readonly updateAdminPublicGameOfferCommand: UpdateAdminPublicGameOfferCommand,
+		private readonly updateAdminPublicGameListingCommand: UpdateAdminPublicGameListingCommand,
 		private readonly updateAdminPublisherCommand: UpdateAdminPublisherCommand,
 		private readonly updateAdminTaxonomyTermCommand: UpdateAdminTaxonomyTermCommand,
 	) {}
@@ -314,77 +310,83 @@ export class AdminController {
 		return GetClassroomResponseDto.fromEntity(classroom);
 	}
 
-	@Post('classroom-games')
-	@ApiOperation({ summary: 'Create an immutable classroom game assignment from an institution offer' })
-	@ApiCreatedResponse({ type: GetAdminClassroomGameResponseDto })
-	@ApiBadRequestResponse({ description: 'Assignment end date must be after its start date' })
-	@ApiNotFoundResponse({ description: 'Classroom or institution offer not found' })
-	async createClassroomGame(
-		@Body() body: CreateAdminClassroomGameRequestDto,
-	): Promise<GetAdminClassroomGameResponseDto> {
-		const classroomGame = await this.createAdminClassroomGameCommand.execute({
+	@Post('classroom-game-listings')
+	@ApiOperation({ summary: 'Create a classroom game listing for a classroom and game variant' })
+	@ApiCreatedResponse({ type: GetAdminClassroomGameListingResponseDto })
+	@ApiBadRequestResponse({ description: 'Listing end date must be after its start date' })
+	@ApiNotFoundResponse({ description: 'Classroom or game variant not found' })
+	async createClassroomGameListing(
+		@Body() body: CreateAdminClassroomGameListingRequestDto,
+	): Promise<GetAdminClassroomGameListingResponseDto> {
+		const classroomGameListing = await this.createAdminClassroomGameListingCommand.execute({
 			classroomId: body.classroomId,
+			customizationId: body.customizationId,
+			designatedPayor: body.designatedPayor,
 			endAt: new Date(body.endAt),
-			institutionGameOfferId: body.institutionGameOfferId,
+			gameVariantId: body.gameVariantId,
+			includedLicenseQuantity: body.includedLicenseQuantity,
+			licenseDurationDays: body.licenseDurationDays,
+			price: body.price,
 			publishedAt: body.publishedAt ? new Date(body.publishedAt) : undefined,
 			startAt: new Date(body.startAt),
 		});
-		const result = await this.getAdminClassroomGameQuery.execute({ filterBy: { id: classroomGame.id } });
-		if (!result.classroomGame) {
-			throw new NotFoundException('Classroom game assignment not found.');
+		const result = await this.getAdminClassroomGameListingQuery.execute({ filterBy: { id: classroomGameListing.id } });
+		if (!result.classroomGameListing) {
+			throw new NotFoundException('Classroom game listing not found.');
 		}
-		return GetAdminClassroomGameResponseDto.fromEntity(result.classroomGame);
+		return GetAdminClassroomGameListingResponseDto.fromEntity(result.classroomGameListing);
 	}
 
-	@Get('classroom-games')
-	@ApiOperation({ summary: 'List classroom game assignments for portal administration' })
-	@ApiOkResponse({ type: GetAdminClassroomGameListResponseDto })
-	async getClassroomGameList(
-		@Query() query: GetAdminClassroomGameListQueryDto,
-	): Promise<GetAdminClassroomGameListResponseDto> {
-		const result = await this.getAdminClassroomGameListQuery.execute({
+	@Get('classroom-game-listings')
+	@ApiOperation({ summary: 'List classroom game listings for portal administration' })
+	@ApiOkResponse({ type: GetAdminClassroomGameListingListResponseDto })
+	async getClassroomGameListingList(
+		@Query() query: GetAdminClassroomGameListingListQueryDto,
+	): Promise<GetAdminClassroomGameListingListResponseDto> {
+		const result = await this.getAdminClassroomGameListingListQuery.execute({
 			filterBy: query.adminFilterBy,
 			pagination: query.pagination,
 		});
-		return GetAdminClassroomGameListResponseDto.fromQueryResult(result);
+		return GetAdminClassroomGameListingListResponseDto.fromQueryResult(result);
 	}
 
-	@Get('classroom-games/:id')
-	@ApiOperation({ summary: 'Get a classroom game assignment for portal administration' })
-	@ApiOkResponse({ type: GetAdminClassroomGameResponseDto })
-	@ApiNotFoundResponse({ description: 'Classroom game assignment not found' })
-	async getClassroomGameById(
+	@Get('classroom-game-listings/:id')
+	@ApiOperation({ summary: 'Get a classroom game listing for portal administration' })
+	@ApiOkResponse({ type: GetAdminClassroomGameListingResponseDto })
+	@ApiNotFoundResponse({ description: 'Classroom game listing not found' })
+	async getClassroomGameListingById(
 		@Param('id', ParseUUIDPipe) id: string,
-	): Promise<GetAdminClassroomGameResponseDto> {
-		const result = await this.getAdminClassroomGameQuery.execute({ filterBy: { id } });
-		if (!result.classroomGame) {
-			throw new NotFoundException('Classroom game assignment not found');
+	): Promise<GetAdminClassroomGameListingResponseDto> {
+		const result = await this.getAdminClassroomGameListingQuery.execute({ filterBy: { id } });
+		if (!result.classroomGameListing) {
+			throw new NotFoundException('Classroom game listing not found');
 		}
 
-		return GetAdminClassroomGameResponseDto.fromEntity(result.classroomGame);
+		return GetAdminClassroomGameListingResponseDto.fromEntity(result.classroomGameListing);
 	}
 
-	@Patch('classroom-games/:id')
-	@ApiOperation({ summary: 'Update an unpublished classroom game assignment' })
-	@ApiOkResponse({ type: GetAdminClassroomGameResponseDto })
-	@ApiConflictResponse({ description: 'Published assignments are immutable; create a replacement instead' })
-	@ApiNotFoundResponse({ description: 'Assignment or selected association not found' })
-	async updateClassroomGame(
+	@Patch('classroom-game-listings/:id')
+	@ApiOperation({ summary: 'Update an unpublished classroom game listing' })
+	@ApiOkResponse({ type: GetAdminClassroomGameListingResponseDto })
+	@ApiConflictResponse({ description: 'Published listings are immutable; create a replacement instead' })
+	@ApiNotFoundResponse({ description: 'Classroom game listing or selected association not found' })
+	async updateClassroomGameListing(
 		@Param('id', ParseUUIDPipe) id: string,
-		@Body() body: UpdateAdminClassroomGameRequestDto,
-	): Promise<GetAdminClassroomGameResponseDto> {
-		const { endAt, publishedAt, startAt, ...fields } = body;
-		await this.updateAdminClassroomGameCommand.execute(id, {
+		@Body() body: UpdateAdminClassroomGameListingRequestDto,
+	): Promise<GetAdminClassroomGameListingResponseDto> {
+		const { endAt, price, publishedAt, startAt, ...fields } = body;
+		await this.updateAdminClassroomGameListingCommand.execute(id, {
 			...fields,
 			...(endAt === undefined ? {} : { endAt: new Date(endAt) }),
+			...(price === undefined ? {} : { price }),
 			...(publishedAt === undefined ? {} : { publishedAt: publishedAt === null ? null : new Date(publishedAt) }),
 			...(startAt === undefined ? {} : { startAt: new Date(startAt) }),
 		});
-		const result = await this.getAdminClassroomGameQuery.execute({ filterBy: { id } });
-		if (!result.classroomGame) {
-			throw new NotFoundException('Classroom game assignment not found.');
+		const result = await this.getAdminClassroomGameListingQuery.execute({ filterBy: { id } });
+		if (!result.classroomGameListing) {
+			throw new NotFoundException('Classroom game listing not found.');
 		}
-		return GetAdminClassroomGameResponseDto.fromEntity(result.classroomGame);
+		return GetAdminClassroomGameListingResponseDto.fromEntity(result.classroomGameListing);
 	}
 
 	@Get('instructors')
@@ -601,15 +603,15 @@ export class AdminController {
 		return GetAdminGameResponseDto.fromQueryResult({ ...result, game: result.game });
 	}
 
-	@Post('games/:id/public-offers')
-	@ApiOperation({ summary: 'Create a public offer for a game variant' })
+	@Post('games/:id/public-listings')
+	@ApiOperation({ summary: 'Create a public listing for a game variant' })
 	@ApiCreatedResponse({ type: GetAdminGameResponseDto })
 	@ApiNotFoundResponse({ description: 'Game or variant not found' })
-	async createPublicGameOffer(
+	async createPublicGameListing(
 		@Param('id', ParseUUIDPipe) id: string,
-		@Body() body: CreateAdminPublicGameOfferRequestDto,
+		@Body() body: CreateAdminPublicGameListingRequestDto,
 	): Promise<GetAdminGameResponseDto> {
-		await this.createAdminGameOfferCommand.createPublic({
+		await this.createAdminGameListingCommand.createPublic({
 			available: body.available,
 			gameId: id,
 			gameVariantId: body.gameVariantId,
@@ -623,41 +625,16 @@ export class AdminController {
 		return GetAdminGameResponseDto.fromQueryResult({ ...result, game: result.game });
 	}
 
-	@Post('games/:id/institution-offers')
-	@ApiOperation({ summary: 'Create an institution offer for a game variant' })
-	@ApiCreatedResponse({ type: GetAdminGameResponseDto })
-	@ApiConflictResponse({ description: 'An offer already exists for this variant and payor' })
-	@ApiNotFoundResponse({ description: 'Game or variant not found' })
-	async createInstitutionGameOffer(
-		@Param('id', ParseUUIDPipe) id: string,
-		@Body() body: CreateAdminInstitutionGameOfferRequestDto,
-	): Promise<GetAdminGameResponseDto> {
-		await this.createAdminGameOfferCommand.createInstitution({
-			allocatedLicenseQuantity: body.allocatedLicenseQuantity,
-			designatedPayor: body.designatedPayor,
-			gameId: id,
-			gameVariantId: body.gameVariantId,
-			licenseDurationDays: body.licenseDurationDays,
-			price: body.price,
-			publishedAt: body.publishedAt ? new Date(body.publishedAt) : undefined,
-		});
-		const result = await this.getAdminGameQuery.execute({ filterBy: { id } });
-		if (!result.game) {
-			throw new NotFoundException('Game not found.');
-		}
-		return GetAdminGameResponseDto.fromQueryResult({ ...result, game: result.game });
-	}
-
-	@Patch('games/:id/public-offers/:offerId')
-	@ApiOperation({ summary: 'Update price or availability for a public game offer' })
+	@Patch('games/:id/public-listings/:listingId')
+	@ApiOperation({ summary: 'Update price or availability for a public game listing' })
 	@ApiOkResponse({ type: GetAdminGameResponseDto })
-	@ApiNotFoundResponse({ description: 'Public offer not found for this game' })
-	async updatePublicGameOffer(
+	@ApiNotFoundResponse({ description: 'Public listing not found for this game' })
+	async updatePublicGameListing(
 		@Param('id', ParseUUIDPipe) id: string,
-		@Param('offerId', ParseUUIDPipe) offerId: string,
-		@Body() body: UpdateAdminPublicGameOfferRequestDto,
+		@Param('listingId', ParseUUIDPipe) listingId: string,
+		@Body() body: UpdateAdminPublicGameListingRequestDto,
 	): Promise<GetAdminGameResponseDto> {
-		await this.updateAdminPublicGameOfferCommand.execute(id, offerId, {
+		await this.updateAdminPublicGameListingCommand.execute(id, listingId, {
 			available: body.available,
 			price: body.price,
 			publishedAt: body.publishedAt === undefined ? undefined : body.publishedAt === null ? null : new Date(body.publishedAt),
@@ -669,30 +646,8 @@ export class AdminController {
 		return GetAdminGameResponseDto.fromQueryResult({ ...result, game: result.game });
 	}
 
-	@Patch('games/:id/institution-offers/:offerId')
-	@ApiOperation({ summary: 'Update an unpublished institution game offer' })
-	@ApiOkResponse({ type: GetAdminGameResponseDto })
-	@ApiConflictResponse({ description: 'Published offers are immutable or the offer conflicts with an existing variant offer' })
-	@ApiNotFoundResponse({ description: 'Institution offer not found for this game' })
-	async updateInstitutionGameOffer(
-		@Param('id', ParseUUIDPipe) id: string,
-		@Param('offerId', ParseUUIDPipe) offerId: string,
-		@Body() body: UpdateAdminInstitutionGameOfferRequestDto,
-	): Promise<GetAdminGameResponseDto> {
-		const { publishedAt, ...fields } = body;
-		await this.updateAdminInstitutionGameOfferCommand.execute(id, offerId, {
-			...fields,
-			...(publishedAt === undefined ? {} : { publishedAt: publishedAt === null ? null : new Date(publishedAt) }),
-		});
-		const result = await this.getAdminGameQuery.execute({ filterBy: { id } });
-		if (!result.game) {
-			throw new NotFoundException('Game not found.');
-		}
-		return GetAdminGameResponseDto.fromQueryResult({ ...result, game: result.game });
-	}
-
 	@Get('games/:id')
-	@ApiOperation({ summary: 'Get a game and catalog offers for portal administration' })
+	@ApiOperation({ summary: 'Get a game and catalog listings for portal administration' })
 	@ApiOkResponse({ type: GetAdminGameResponseDto })
 	@ApiNotFoundResponse({ description: 'Game not found' })
 	async getGameById(
@@ -707,22 +662,21 @@ export class AdminController {
 			game: result.game,
 			gameVersionList: result.gameVersionList,
 			gameVariantList: result.gameVariantList,
-			institutionGameOfferList: result.institutionGameOfferList,
-			publicGameOfferList: result.publicGameOfferList,
+			publicGameListingList: result.publicGameListingList,
 		});
 	}
 
-	@Get('game-offers')
-	@ApiOperation({ summary: 'List game offers for portal administration' })
-	@ApiOkResponse({ type: GetAdminGameOfferListResponseDto })
-	async getGameOfferList(
-		@Query() query: GetAdminGameOfferListQueryDto,
-	): Promise<GetAdminGameOfferListResponseDto> {
-		const result = await this.getAdminGameOfferListQuery.execute({
+	@Get('game-listings')
+	@ApiOperation({ summary: 'List game listings for portal administration' })
+	@ApiOkResponse({ type: GetAdminGameListingListResponseDto })
+	async getGameListingList(
+		@Query() query: GetAdminGameListingListQueryDto,
+	): Promise<GetAdminGameListingListResponseDto> {
+		const result = await this.getAdminGameListingListQuery.execute({
 			filterBy: query.adminFilterBy,
 			pagination: query.pagination,
 		});
-		return GetAdminGameOfferListResponseDto.fromQueryResult(result);
+		return GetAdminGameListingListResponseDto.fromQueryResult(result);
 	}
 
 	@Get('taxonomy')
@@ -867,7 +821,7 @@ export class AdminController {
 	@Post('acquisition-codes')
 	@ApiOperation({ summary: 'Generate institution-funded acquisition codes for portal administration' })
 	@ApiCreatedResponse({ type: CreateAdminAcquisitionCodesResponseDto })
-	@ApiBadRequestResponse({ description: 'Codes require an institution-funded offer and a future expiry date' })
+	@ApiBadRequestResponse({ description: 'Codes require an institution-funded listing and a future expiry date' })
 	async createAcquisitionCodes(
 		@Body() body: CreateAdminAcquisitionCodesRequestDto,
 		@AuthSession() session: AuthSessionData,

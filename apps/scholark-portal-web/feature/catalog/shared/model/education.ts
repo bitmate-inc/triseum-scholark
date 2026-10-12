@@ -49,17 +49,19 @@ export type Classroom = {
 	taxonomyTermList: TaxonomyTerm[];
 };
 
-export type ClassroomGame = {
+export type ClassroomGameListing = {
 	id: string;
 	classroom: Pick<Classroom, "id" | "name" | "slug" | "institution">;
 	game: Game;
-	institutionGameOfferId: string;
 	designatedPayor: "student" | "institution";
 	gameVersionId: string;
+	gameVariantId: string;
+	customizationId?: string;
 	price?: {
 		minorUnitAmount: number;
 		currency: string;
 	};
+	includedLicenseQuantity?: number;
 	language?: string;
 	mode?: string;
 	startAt: string;
@@ -84,13 +86,13 @@ export type ClassroomListResponse = {
 	totalItemCount: number;
 };
 
-export type ClassroomGameListResponse = {
-	classroomGameList: ClassroomGame[];
+export type ClassroomGameListingListResponse = {
+	classroomGameListingList: ClassroomGameListing[];
 	totalItemCount: number;
 };
 
-export type ClassroomGameResponse = {
-	classroomGame: ClassroomGame;
+export type ClassroomGameListingResponse = {
+	classroomGameListing: ClassroomGameListing;
 };
 
 export type EducationListQuery = {

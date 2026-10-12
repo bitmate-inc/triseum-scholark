@@ -66,15 +66,15 @@ export class RevalidateGamePaymentAttemptCommand {
 	}
 
 	private assertSessionMatchesAttempt(session: Stripe.Checkout.Session, attempt: NonNullable<Awaited<ReturnType<GamePaymentAttemptRepository['findByIdAndUser']>>>): void {
-		const purchaseType = attempt.classroomGame ? 'classroom' : 'public';
-		const expectedOfferId = attempt.publicOffer?.id ?? attempt.institutionGameOffer?.id;
+		const purchaseType = attempt.classroomGameListing ? 'classroom' : 'public';
+		const expectedListingId = attempt.publicListing?.id ?? attempt.classroomGameListing?.id;
 		const metadata = session.metadata ?? {};
 		const metadataMatchesAttempt =
 			metadata.attemptId === attempt.id
 			&& metadata.userId === attempt.user.id
 			&& metadata.purchaseType === purchaseType
-			&& metadata.offerId === expectedOfferId
-			&& (purchaseType !== 'classroom' || metadata.classroomGameId === attempt.classroomGame?.id)
+			&& metadata.listingId === expectedListingId
+			&& (purchaseType !== 'classroom' || metadata.classroomGameListingId === attempt.classroomGameListing?.id)
 			&& session.client_reference_id === attempt.user.id;
 		if (!metadataMatchesAttempt) {
 			throw new Error('Stripe Checkout metadata does not match the payment attempt');

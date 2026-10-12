@@ -1,0 +1,101 @@
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
+import { Injectable } from '@nestjs/common';
+
+import { addOrderBy, addPagination } from '../../../../../lib/database/mikro.orm.query';
+import type { PaginationDto } from '../../../../../lib/entity/query/query.dto';
+import {
+	ASCII_CHARACTER_LIST,
+	DIACRITIC_CHARACTER_LIST,
+	normalizeCatalogSearchQuery,
+} from '../../catalog/query/catalog.search';
+import { ClassroomGameListing } from '../../education/model/classroom.game.listing.entity';
+
+export interface GetAdminClassroomGameListingListQueryData {
+	filterBy?: {
+		classroomId?: string;
+		gameId?: string;
+		institutionId?: string;
+		q?: string;
+	};
+	pagination?: PaginationDto;
+}
+
+export interface GetAdminClassroomGameListingQueryData {
+	filterBy?: { id?: string };
+}
+
+function addClassroomGameListingRelations(
+	queryBuilder: ReturnType<EntityRepository<ClassroomGameListing>['createQueryBuilder']>,
+): void {
+	queryBuilder
+		.leftJoinAndSelect('classroomGameListing.classroom', 'classroom')
+		.leftJoinAndSelect('classroom.institution', 'institution')
+		.leftJoinAndSelect('classroomGameListing.gameVariant', 'gameVariant')
+		.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+		.leftJoinAndSelect('gameVersion.game', 'game')
+		.leftJoinAndSelect('game.publisher', 'publisher');
+}
+
+@Injectable()
+export class GetAdminClassroomGameListingListQuery {
+
+	constructor(
+		@InjectRepository(ClassroomGameListing)
+		private readonly classroomGameListingRepository: EntityRepository<ClassroomGameListing>,
+	) {}
+
+	async execute(data: GetAdminClassroomGameListingListQueryData): Promise<{ classroomGameListingList: ClassroomGameListing[]; totalItemCount: number }> {
+		const queryBuilder = this.classroomGameListingRepository.createQueryBuilder('classroomGameListing');
+		addClassroomGameListingRelations(queryBuilder);
+
+		if (data.filterBy?.institutionId) {
+			queryBuilder.andWhere({ classroom: { institution: data.filterBy.institutionId } });
+		}
+		if (data.filterBy?.classroomId) {
+			queryBuilder.andWhere({ classroom: data.filterBy.classroomId });
+		}
+		if (data.filterBy?.gameId) {
+			queryBuilder.andWhere({ gameVariant: { gameVersion: { game: data.filterBy.gameId } } });
+		}
+
+		const searchQuery = data.filterBy?.q?.trim();
+		if (searchQuery) {
+			const searchPattern = `%${normalizeCatalogSearchQuery(searchQuery)}%`;
+			const searchFields = ['classroom.name', 'classroom.code', 'classroom.slug', 'game.title', 'game.slug'];
+			const predicates = searchFields.map((field) =>
+				`translate(lower(${field}), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}') like ?`,
+			);
+			queryBuilder.andWhere(`(${predicates.join(' or ')})`, searchFields.map(() => searchPattern));
+		}
+
+		addPagination(queryBuilder, data.pagination);
+		addOrderBy(queryBuilder, undefined, 'classroomGameListing.startAt', 'DESC');
+
+		const [classroomGameListingList, totalItemCount] = await queryBuilder.getResultAndCount();
+		return { classroomGameListingList, totalItemCount };
+	}
+
+}
+
+@Injectable()
+export class GetAdminClassroomGameListingQuery {
+
+	constructor(
+		@InjectRepository(ClassroomGameListing)
+		private readonly classroomGameListingRepository: EntityRepository<ClassroomGameListing>,
+	) {}
+
+	async execute(data: GetAdminClassroomGameListingQueryData): Promise<{ classroomGameListing?: ClassroomGameListing }> {
+		if (!data.filterBy?.id) {
+			return { classroomGameListing: undefined };
+		}
+
+		const queryBuilder = this.classroomGameListingRepository.createQueryBuilder('classroomGameListing');
+		addClassroomGameListingRelations(queryBuilder);
+		queryBuilder.where({ id: data.filterBy.id });
+
+		return { classroomGameListing: (await queryBuilder.getSingleResult()) ?? undefined };
+	}
+
+}

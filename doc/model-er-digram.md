@@ -62,7 +62,7 @@ erDiagram
     PUBLISHER ||--o{ PUBLISHER_MEMBER : has_members
     USER ||--o{ PUBLISHER_MEMBER : joins_as_member
 
-    %% Game catalog, versions, offers, and taxonomy
+    %% Game catalog, versions, listings, and taxonomy
     GAME {
         uuid id PK
         string title
@@ -97,24 +97,13 @@ erDiagram
         datetime createdAt
     }
 
-    PUBLIC_GAME_OFFER {
+    PUBLIC_GAME_LISTING {
         uuid id PK
         uuid gameVariantId FK
         int price_minorUnitAmount
         string price_currency
         boolean isAvailable
         datetime createdAt
-        datetime publishedAt
-    }
-
-    INSTITUTION_GAME_OFFER {
-        uuid id PK
-        uuid gameVariantId FK
-        string designatedPayor
-        int price_minorUnitAmount
-        string price_currency
-        int allocatedLicenseQuantity
-        int licenseDurationDays
         datetime publishedAt
     }
 
@@ -146,8 +135,7 @@ erDiagram
     GAME ||--o{ GAME_TAXONOMY_TERM : has_taxonomy
     TAXONOMY_TERM ||--o{ GAME_TAXONOMY_TERM : classifies
     GAME_VERSION ||--o{ GAME_VARIANT : has_variants
-    GAME_VARIANT ||--o| PUBLIC_GAME_OFFER : may_have_public_offer
-    GAME_VARIANT ||--o{ INSTITUTION_GAME_OFFER : has_institution_offers
+    GAME_VARIANT ||--o| PUBLIC_GAME_LISTING : may_have_public_listing
     GAME_VERSION ||--o{ GAME_CUSTOMIZATION : has_customizations
 
     %% Institutions, courses, classrooms, and instructors
@@ -200,15 +188,21 @@ erDiagram
         string slug UK
     }
 
-    CLASSROOM_GAME {
+    CLASSROOM_GAME_LISTING {
         uuid id PK
         uuid classroomId FK
-        uuid institutionGameOfferId FK
+        uuid gameVariantId FK
+        string designatedPayor
+        int price_minorUnitAmount
+        string price_currency
+        int includedLicenseQuantity
+        int licenseDurationDays
         uuid customizationId FK
         datetime startAt
         datetime endAt
         datetime publishedAt
         datetime createdAt
+        datetime updatedAt
         datetime updatedAt
     }
 
@@ -218,15 +212,15 @@ erDiagram
     CLASSROOM }o--o{ COURSE : includes
     CLASSROOM }o--o{ INSTRUCTOR : assigns
     CLASSROOM }o--o{ TAXONOMY_TERM : has_taxonomy
-    CLASSROOM ||--o{ CLASSROOM_GAME : schedules
-    INSTITUTION_GAME_OFFER ||--o{ CLASSROOM_GAME : selects_offer
-    GAME_CUSTOMIZATION o|--o{ CLASSROOM_GAME : optionally_customizes
+    CLASSROOM ||--o{ CLASSROOM_GAME_LISTING : lists
+    GAME_VARIANT ||--o{ CLASSROOM_GAME_LISTING : selected_for
+    GAME_CUSTOMIZATION o|--o{ CLASSROOM_GAME_LISTING : optionally_customizes
 
     %% Licenses, purchases, redemptions, and payment processing
     GAME_LICENSE {
         uuid id PK
         uuid userId FK
-        uuid classroomGameId FK
+        uuid classroomGameListingId FK
         uuid gameVariantId FK
         uuid customizationId FK
         datetime startAt
@@ -237,9 +231,8 @@ erDiagram
     GAME_PAYMENT_ATTEMPT {
         uuid id PK
         uuid userId FK
-        uuid publicOfferId FK
-        uuid institutionGameOfferId FK
-        uuid classroomGameId FK
+        uuid publicListingId FK
+        uuid classroomGameListingId FK
         uuid customizationId FK
         string stripeCheckoutSessionId UK
         string stripePaymentIntentId
@@ -255,7 +248,7 @@ erDiagram
         uuid id PK
         string codeDigest UK
         string codeSuffix
-        uuid classroomGameId FK
+        uuid classroomGameListingId FK
         datetime expiresAt
         datetime revokedAt
         datetime createdAt
@@ -271,8 +264,8 @@ erDiagram
     GAME_ACQUISITION {
         uuid id PK
         uuid userId FK
-        uuid publicOfferId FK
-        uuid institutionGameOfferId FK
+        uuid publicListingId FK
+        uuid classroomGameListingId FK
         uuid licenseId FK
         uuid codeRedemptionId FK
         uuid paymentAttemptId FK
@@ -307,20 +300,19 @@ erDiagram
     }
 
     USER ||--o{ GAME_LICENSE : owns
-    CLASSROOM_GAME o|--o{ GAME_LICENSE : contextualizes
+    CLASSROOM_GAME_LISTING o|--o{ GAME_LICENSE : contextualizes
     GAME_VARIANT ||--o{ GAME_LICENSE : licenses
     GAME_CUSTOMIZATION o|--o{ GAME_LICENSE : optionally_customizes
     USER ||--o{ GAME_PAYMENT_ATTEMPT : starts
-    PUBLIC_GAME_OFFER o|--o{ GAME_PAYMENT_ATTEMPT : may_be_purchased
-    INSTITUTION_GAME_OFFER o|--o{ GAME_PAYMENT_ATTEMPT : may_be_purchased
-    CLASSROOM_GAME o|--o{ GAME_PAYMENT_ATTEMPT : may_be_paid_for
+    PUBLIC_GAME_LISTING o|--o{ GAME_PAYMENT_ATTEMPT : may_be_purchased
+    CLASSROOM_GAME_LISTING o|--o{ GAME_PAYMENT_ATTEMPT : may_be_paid_for
     GAME_CUSTOMIZATION o|--o{ GAME_PAYMENT_ATTEMPT : optionally_customizes
-    CLASSROOM_GAME o|--o{ ACQUISITION_CODE : may_have_codes
+    CLASSROOM_GAME_LISTING o|--o{ ACQUISITION_CODE : may_have_codes
     ACQUISITION_CODE ||--o{ ACQUISITION_CODE_REDEMPTION : is_redeemed
     USER ||--o{ ACQUISITION_CODE_REDEMPTION : redeems
     USER ||--o{ GAME_ACQUISITION : makes
-    PUBLIC_GAME_OFFER o|--o{ GAME_ACQUISITION : may_be_acquired
-    INSTITUTION_GAME_OFFER o|--o{ GAME_ACQUISITION : may_be_acquired
+    PUBLIC_GAME_LISTING o|--o{ GAME_ACQUISITION : may_be_acquired
+    CLASSROOM_GAME_LISTING o|--o{ GAME_ACQUISITION : may_be_acquired
     GAME_LICENSE ||--o{ GAME_ACQUISITION : fulfilled_as
     ACQUISITION_CODE_REDEMPTION o|--o| GAME_ACQUISITION : may_fulfill
     GAME_PAYMENT_ATTEMPT o|--o| GAME_ACQUISITION : may_fulfill
@@ -363,8 +355,7 @@ erDiagram
 - `AccountIdentity(provider, providerAccountId)` and `AccountIdentity(user, provider)` are unique.
 - `AccountAuthToken.valueHash` is unique.
 - `GameVersion(game, publisherVersion)` and `GameVariant(gameVersion, language, mode)` are unique.
-- `PublicGameOffer.gameVariant` is unique.
-- `InstitutionGameOffer(gameVariant, designatedPayor)` is unique.
+- `PublicGameListing.gameVariant` is unique.
 - `GameTaxonomyTerm(gameId, taxonomyTerm)` is unique; `TaxonomyTerm(type, slug)` is unique.
 - `Course(institution, code)` and `Classroom(institution, code)` are unique.
 - `AcquisitionCode.codeDigest` is unique; `AcquisitionCodeRedemption(acquisitionCode, redeemedBy)` is unique.
@@ -381,6 +372,6 @@ Media = { type: image | video, src: string, alt: string }
 Money = { minorUnitAmount: integer, currency: Currency }
 ```
 
-`Media` is stored as JSON. `Money` is embedded with `price_` prefixes in public offers, institution offers, acquisitions, and payment attempts. An institution offer is attached to a game variant and identifies whether the student or institution is the designated payor; a classroom assignment selects that offer. Acquisition codes are stored as digests and are scoped to a classroom assignment. Account session records are managed outside this relational model.
+`Media` is stored as JSON. `Money` is embedded with `price_` prefixes in public game listings, classroom game listings, acquisitions, and payment attempts. A `ClassroomGameListing` directly links one classroom and one game variant and stores the designated payor, optional student price, informational included-license quantity, license duration, availability window, publication date, and optional customization. Its `price`, `includedLicenseQuantity`, `customization`, and `publishedAt` fields are nullable; institution-funded listings leave `price` null, and included quantity is not enforced. Acquisition codes are stored as digests and are scoped directly to a classroom game listing. Account session records are managed outside this relational model.
 
 Optional entity references in the diagram correspond to nullable MikroORM relations. Payment source exclusivity and other transactional acquisition rules are enforced in application workflows rather than by additional database relationships.

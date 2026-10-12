@@ -11,15 +11,15 @@ import { GamePaymentAttempt, GamePaymentAttemptStatus } from '../model/game.paym
 import { GameAcquisitionEventRepository } from '../repository/game.acquisition.event.repository';
 import { GamePaymentAttemptRepository } from '../repository/game.payment.attempt.repository';
 import {
-	AcquireClassroomGameCommand,
-	AcquireClassroomGameCommandData,
-	AcquireClassroomGameCommandResult,
-} from './acquire.classroom.game.command';
+	AcquireClassroomGameListingCommand,
+	AcquireClassroomGameListingCommandData,
+	AcquireClassroomGameListingCommandResult,
+} from './acquire.classroom.game.listing.command';
 import {
-	AcquirePublicOfferCommand,
-	AcquirePublicOfferCommandData,
-	AcquirePublicOfferCommandResult,
-} from './acquire.public.game.offer.command';
+	AcquirePublicListingCommand,
+	AcquirePublicListingCommandData,
+	AcquirePublicListingCommandResult,
+} from './acquire.public.game.listing.command';
 
 export type GamePaymentFulfillmentSource = 'webhook' | 'revalidation';
 
@@ -29,8 +29,8 @@ export class FulfillGamePaymentCommand {
 	constructor(
 		private readonly paymentAttemptRepository: GamePaymentAttemptRepository,
 		private readonly acquisitionEventRepository: GameAcquisitionEventRepository,
-		private readonly acquirePublicGameOfferCommand: AcquirePublicOfferCommand,
-		private readonly acquireClassroomGameCommand: AcquireClassroomGameCommand,
+		private readonly acquirePublicGameListingCommand: AcquirePublicListingCommand,
+		private readonly acquireClassroomGameListingCommand: AcquireClassroomGameListingCommand,
 		private readonly unitOfWork: MikroOrmUnitOfWork,
 	) {}
 
@@ -63,12 +63,12 @@ export class FulfillGamePaymentCommand {
 				throw new Error('Stripe Checkout session does not match the payment attempt');
 			}
 
-			const purchaseType = attempt.classroomGame ? 'classroom' : 'public';
+			const purchaseType = attempt.classroomGameListing ? 'classroom' : 'public';
 			const metadataMatchesAttempt =
 				(!session.client_reference_id || session.client_reference_id === attempt.user.id)
 				&& (!session.metadata?.userId || session.metadata.userId === attempt.user.id)
-				&& (!session.metadata?.offerId || session.metadata.offerId === (attempt.publicOffer?.id ?? attempt.institutionGameOffer?.id))
-				&& (!session.metadata?.classroomGameId || session.metadata.classroomGameId === attempt.classroomGame?.id)
+				&& (!session.metadata?.listingId || session.metadata.listingId === (attempt.publicListing?.id ?? attempt.classroomGameListing?.id))
+				&& (!session.metadata?.classroomGameListingId || session.metadata.classroomGameListingId === attempt.classroomGameListing?.id)
 				&& session.metadata?.purchaseType === purchaseType;
 
 			if (!metadataMatchesAttempt) {
@@ -83,11 +83,11 @@ export class FulfillGamePaymentCommand {
 				return;
 			}
 
-			let result: AcquireClassroomGameCommandResult | AcquirePublicOfferCommandResult;
+			let result: AcquireClassroomGameListingCommandResult | AcquirePublicListingCommandResult;
 
-			if (attempt.classroomGame) {
-				result = await this.acquireClassroomGameCommand.execute(AcquireClassroomGameCommandData.create({
-					classroomGameId: attempt.classroomGame.id!,
+			if (attempt.classroomGameListing) {
+				result = await this.acquireClassroomGameListingCommand.execute(AcquireClassroomGameListingCommandData.create({
+					classroomGameListingId: attempt.classroomGameListing.id!,
 					customization: attempt.customization,
 					licenseDurationDays: attempt.licenseDurationDays,
 					paymentAttempt: attempt,
@@ -95,11 +95,11 @@ export class FulfillGamePaymentCommand {
 					userId: attempt.user.id!,
 				}));
 			} else {
-				if (!attempt.publicOffer) {
-					throw new Error('Public game offer not found for payment attempt');
+				if (!attempt.publicListing) {
+					throw new Error('Public game listing not found for payment attempt');
 				}
-				result = await this.acquirePublicGameOfferCommand.execute(AcquirePublicOfferCommandData.create({
-					publicOfferId: attempt.publicOffer.id!,
+				result = await this.acquirePublicGameListingCommand.execute(AcquirePublicListingCommandData.create({
+					publicListingId: attempt.publicListing.id!,
 					licenseDurationDays: attempt.licenseDurationDays,
 					paymentAttempt: attempt,
 					price: attempt.price,

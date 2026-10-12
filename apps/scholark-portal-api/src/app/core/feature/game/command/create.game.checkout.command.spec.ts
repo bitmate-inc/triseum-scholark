@@ -2,7 +2,7 @@ import type Stripe from 'stripe';
 
 import { GamePaymentAttemptStatus } from '../model/game.payment.attempt.entity';
 import {
-	CreateClassroomGameCheckoutCommandData,
+	CreateClassroomGameListingCheckoutCommandData,
 	CreateGameCheckoutCommand,
 	CreateGameCheckoutCommandData
 } from './create.game.checkout.command';
@@ -17,25 +17,26 @@ function createContext(purchaseType: 'public' | 'classroom', sessionOverrides: P
 	};
 	const gameVersion = { game, isPublished: jest.fn().mockReturnValue(true) };
 	const gameVariant = { gameVersion };
-	const publicOffer = {
+	const publicListing = {
 		gameVariant,
 		id: '00000000-0000-4000-8000-000000000003',
 		price: { currency: 'USD', minorUnitAmount: 1200 },
 		publishedAt: new Date(Date.now() - 1000),
 	};
-	const institutionGameOffer = { ...publicOffer, licenseDurationDays: 180 };
-	const classroomGame = {
+	const classroomGameListing = {
 		customization: undefined,
+		designatedPayor: 'student',
+		gameVariant,
 		id: '00000000-0000-4000-8000-000000000004',
-		institutionGameOffer,
 		isAvailable: jest.fn().mockReturnValue(true),
+		licenseDurationDays: 180,
+		price: publicListing.price,
 	};
 	const attempt = {
-		classroomGame: purchaseType === 'classroom' ? classroomGame : undefined,
+		classroomGameListing: purchaseType === 'classroom' ? classroomGameListing : undefined,
 		id: '00000000-0000-4000-8000-000000000005',
-		institutionGameOffer: purchaseType === 'classroom' ? institutionGameOffer : undefined,
 		price: { currency: 'USD', minorUnitAmount: 1200 },
-		publicOffer: purchaseType === 'public' ? publicOffer : undefined,
+		publicListing: purchaseType === 'public' ? publicListing : undefined,
 		status: GamePaymentAttemptStatus.PENDING,
 		stripeCheckoutSessionId: 'cs_test_existing',
 		user,
@@ -47,8 +48,8 @@ function createContext(purchaseType: 'public' | 'classroom', sessionOverrides: P
 		id: 'cs_test_existing',
 		metadata: {
 			attemptId: attempt.id,
-			classroomGameId: purchaseType === 'classroom' ? classroomGame.id : '',
-			offerId: publicOffer.id,
+			classroomGameListingId: purchaseType === 'classroom' ? classroomGameListing.id : '',
+			listingId: purchaseType === 'public' ? publicListing.id : classroomGameListing.id,
 			purchaseType,
 			userId: user.id,
 		},
@@ -59,8 +60,8 @@ function createContext(purchaseType: 'public' | 'classroom', sessionOverrides: P
 		...sessionOverrides,
 	} as Stripe.Checkout.Session;
 	const paymentAttemptRepository = {
-		findPendingByUserAndPublicOffer: jest.fn().mockResolvedValue(purchaseType === 'public' ? attempt : undefined),
-		findPendingByUserAndClassroomGame: jest.fn().mockResolvedValue(purchaseType === 'classroom' ? attempt : undefined),
+		findPendingByUserAndPublicListing: jest.fn().mockResolvedValue(purchaseType === 'public' ? attempt : undefined),
+		findPendingByUserAndClassroomGameListing: jest.fn().mockResolvedValue(purchaseType === 'classroom' ? attempt : undefined),
 		findById: jest.fn().mockResolvedValue(undefined),
 		markPendingAsFailed: jest.fn().mockResolvedValue(true),
 		save: jest.fn().mockImplementation(async (entity) => {
@@ -88,15 +89,14 @@ function createContext(purchaseType: 'public' | 'classroom', sessionOverrides: P
 	};
 	const command = new CreateGameCheckoutCommand(
 		{ validate: jest.fn().mockResolvedValue(undefined) } as never,
-		{ findForAcquisition: jest.fn().mockResolvedValue(publicOffer) } as never,
+		{ findForAcquisition: jest.fn().mockResolvedValue(publicListing) } as never,
 		{
 			findActiveByUserAndGameVariant: jest.fn().mockResolvedValue(undefined),
-			findByUserAndClassroomGame: jest.fn().mockResolvedValue(undefined),
+			findByUserAndClassroomGameListing: jest.fn().mockResolvedValue(undefined),
 		} as never,
 		{ findOneBy: jest.fn().mockResolvedValue(user) } as never,
 		paymentAttemptRepository as never,
-		{ findForAcquisition: jest.fn().mockResolvedValue(classroomGame) } as never,
-		{ findStudentPayorOffer: jest.fn().mockResolvedValue(institutionGameOffer) } as never,
+		{ findForAcquisition: jest.fn().mockResolvedValue(classroomGameListing) } as never,
 		stripe as unknown as Stripe,
 		redisClient as never,
 		{ portalUrl: 'https://portal.example.test' } as never,
@@ -105,11 +105,11 @@ function createContext(purchaseType: 'public' | 'classroom', sessionOverrides: P
 
 	return {
 		attempt,
-		classroomGame,
+		classroomGameListing,
 		command,
 		fulfillGamePaymentCommand,
 		paymentAttemptRepository,
-		publicOffer,
+		publicListing,
 		redisClient,
 		stripe,
 		user,
@@ -120,8 +120,8 @@ describe(CreateGameCheckoutCommand.name, () => {
 	it.each(['public', 'classroom'] as const)('reuses the existing open %s Checkout Session', async (purchaseType) => {
 		const context = createContext(purchaseType);
 		const result = purchaseType === 'public'
-			? await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({ publicOfferId: context.publicOffer.id, userId: context.user.id }))
-			: await context.command.createClassroomGameCheckout(CreateClassroomGameCheckoutCommandData.create({ classroomGameId: context.classroomGame.id, userId: context.user.id }));
+			? await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({ publicListingId: context.publicListing.id, userId: context.user.id }))
+			: await context.command.createClassroomGameListingCheckout(CreateClassroomGameListingCheckoutCommandData.create({ classroomGameListingId: context.classroomGameListing.id, userId: context.user.id }));
 
 		expect(result.checkoutSessionId).toBe('cs_test_existing');
 		expect(result.checkoutUrl).toBe('https://checkout.stripe.test/existing');
@@ -133,7 +133,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		const context = createContext('public', { payment_status: 'paid' });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
-			publicOfferId: context.publicOffer.id,
+			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
 
@@ -150,7 +150,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		const context = createContext('public', { status: 'complete' });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
-			publicOfferId: context.publicOffer.id,
+			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
 
@@ -163,7 +163,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		const context = createContext('public', { status: 'expired' });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
-			publicOfferId: context.publicOffer.id,
+			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
 
@@ -182,7 +182,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		context.paymentAttemptRepository.findById.mockResolvedValue({ status: GamePaymentAttemptStatus.FULFILLED });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
-			publicOfferId: context.publicOffer.id,
+			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
 
@@ -196,9 +196,9 @@ describe(CreateGameCheckoutCommand.name, () => {
 		context.redisClient.set.mockResolvedValue(null);
 
 		await expect(context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
-			publicOfferId: context.publicOffer.id,
+			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}))).rejects.toMatchObject({ status: 429 });
-		expect(context.paymentAttemptRepository.findPendingByUserAndPublicOffer).not.toHaveBeenCalled();
+		expect(context.paymentAttemptRepository.findPendingByUserAndPublicListing).not.toHaveBeenCalled();
 	});
 });

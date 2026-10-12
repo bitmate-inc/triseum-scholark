@@ -75,7 +75,7 @@ export class GetAdminAcquisitionListQuery {
 			populate: [
 				'user',
 				'license.gameVariant.gameVersion.game',
-				'license.classroomGame.classroom.institution',
+				'license.classroomGameListing.classroom.institution',
 				'paymentAttempt',
 				'codeRedemption.acquisitionCode',
 			] as never,
@@ -106,19 +106,14 @@ export class GetAdminPaymentAttemptListQuery {
 		const queryBuilder = this.paymentAttemptRepository.createQueryBuilder('paymentAttempt');
 		queryBuilder
 			.leftJoinAndSelect('paymentAttempt.user', 'user')
-			.leftJoinAndSelect('paymentAttempt.publicOffer', 'publicOffer')
-			.leftJoinAndSelect('publicOffer.gameVariant', 'publicGameVariant')
+			.leftJoinAndSelect('paymentAttempt.publicListing', 'publicListing')
+			.leftJoinAndSelect('publicListing.gameVariant', 'publicGameVariant')
 			.leftJoinAndSelect('publicGameVariant.gameVersion', 'publicGameVersion')
 			.leftJoinAndSelect('publicGameVersion.game', 'publicGame')
-			.leftJoinAndSelect('paymentAttempt.institutionGameOffer', 'institutionGameOffer')
-			.leftJoinAndSelect('institutionGameOffer.gameVariant', 'institutionGameVariant')
-			.leftJoinAndSelect('institutionGameVariant.gameVersion', 'institutionGameVersion')
-			.leftJoinAndSelect('institutionGameVersion.game', 'institutionGame')
-			.leftJoinAndSelect('paymentAttempt.classroomGame', 'classroomGame')
-			.leftJoinAndSelect('classroomGame.institutionGameOffer', 'classroomGameOffer')
-			.leftJoinAndSelect('classroomGameOffer.gameVariant', 'classroomGameVariant')
-			.leftJoinAndSelect('classroomGameVariant.gameVersion', 'classroomGameVersion')
-			.leftJoinAndSelect('classroomGameVersion.game', 'classroomGameTitle');
+			.leftJoinAndSelect('paymentAttempt.classroomGameListing', 'classroomGameListing')
+			.leftJoinAndSelect('classroomGameListing.gameVariant', 'classroomGameListingVariant')
+			.leftJoinAndSelect('classroomGameListingVariant.gameVersion', 'classroomGameListingVersion')
+			.leftJoinAndSelect('classroomGameListingVersion.game', 'classroomGameListingTitle');
 
 		if (data.filterBy?.status) {
 			queryBuilder.andWhere({ status: data.filterBy.status });
@@ -129,7 +124,7 @@ export class GetAdminPaymentAttemptListQuery {
 			const searchPattern = `%${normalizeCatalogSearchQuery(searchQuery)}%`;
 			const searchFields = [
 				'"user"."email"', '"user"."first_name"', '"user"."last_name"', '"publicGame"."title"',
-				'"institutionGame"."title"', '"classroomGameTitle"."title"',
+				'"classroomGameListingTitle"."title"',
 			];
 			const predicates = searchFields.map((field) =>
 				`translate(lower(${field}), '${DIACRITIC_CHARACTER_LIST}', '${ASCII_CHARACTER_LIST}') like ?`,

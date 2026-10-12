@@ -7,10 +7,9 @@ import { AcquisitionCode } from '../src/app/core/feature/education/model/acquisi
 import { AcquisitionCodeRedemption } from '../src/app/core/feature/education/model/acquisition.code.redemption.entity';
 import { digestAcquisitionCode, getAcquisitionCodeSuffix } from '../src/app/core/feature/education/model/acquisition.code.util';
 import { Classroom } from '../src/app/core/feature/education/model/classroom.entity';
-import { ClassroomGame } from '../src/app/core/feature/education/model/classroom.game.entity';
+import { ClassroomGameListing , ClassroomGameListingDesignatedPayor } from '../src/app/core/feature/education/model/classroom.game.listing.entity';
 import { EducationCatalogStatus } from '../src/app/core/feature/education/model/education.catalog.status';
 import { Institution } from '../src/app/core/feature/education/model/institution.entity';
-import { InstitutionGameOffer, InstitutionGameOfferDesignatedPayor } from '../src/app/core/feature/education/model/institution.game.offer.entity';
 import { GameAcquisition } from '../src/app/core/feature/game/model/game.acquisition.entity';
 import { GameAcquisitionEvent } from '../src/app/core/feature/game/model/game.acquisition.event.entity';
 import { User } from '../src/app/core/feature/user/model/user.entity';
@@ -81,21 +80,17 @@ describe('AppController (e2e)', () => {
 			.expect(200);
 
 		const entityManager = app.get(MikroORM).em.fork();
-		const institutionGameOffer = await entityManager.findOne(InstitutionGameOffer, {
-			designatedPayor: InstitutionGameOfferDesignatedPayor.INSTITUTION,
+		const classroomGameListing = await entityManager.findOne(ClassroomGameListing, {
+			designatedPayor: ClassroomGameListingDesignatedPayor.INSTITUTION,
 		});
-		const classroomGame = institutionGameOffer
-			? await entityManager.findOne(ClassroomGame, { institutionGameOffer })
-			: undefined;
 		const user = await entityManager.findOne(User, { email: 'user1@scholark.com' });
-		expect(institutionGameOffer).toBeDefined();
-		expect(classroomGame).toBeDefined();
+		expect(classroomGameListing).toBeDefined();
 		expect(user).toBeDefined();
 		const rawCode = `E2E-${Date.now()}`;
 		const code = entityManager.create(AcquisitionCode, {
 			codeDigest: digestAcquisitionCode(rawCode),
 			codeSuffix: getAcquisitionCodeSuffix(rawCode),
-			classroomGame: classroomGame!,
+			classroomGameListing: classroomGameListing!,
 			expiresAt: new Date(Date.now() + 60_000),
 		});
 		const redemption = entityManager.create(AcquisitionCodeRedemption, {
@@ -463,15 +458,15 @@ describe('AppController (e2e)', () => {
 		const suffix = Date.now();
 		const publisherSlug = `e2e-game-publisher-${suffix}`;
 		const gameSlug = `e2e-game-${suffix}`;
-		const institutionSlug = `e2e-assignment-institution-${suffix}`;
-		const classroomSlug = `e2e-assignment-classroom-${suffix}`;
+		const institutionSlug = `e2e-listing-institution-${suffix}`;
+		const classroomSlug = `e2e-listing-classroom-${suffix}`;
 		let publisherId: string | undefined;
 		let gameId: string | undefined;
 		let gameVariantId: string | undefined;
 		let institutionId: string | undefined;
 		let classroomId: string | undefined;
-		let classroomGameId: string | undefined;
-		let replacementClassroomGameId: string | undefined;
+		let classroomGameListingId: string | undefined;
+		let replacementClassroomGameListingId: string | undefined;
 		try {
 			const publisherResponse = await agent
 				.post('/api/v1/admin/publishers')
@@ -481,12 +476,12 @@ describe('AppController (e2e)', () => {
 
 			const institutionResponse = await agent
 				.post('/api/v1/admin/institutions')
-				.send({ name: 'E2E Assignment Institution', slug: institutionSlug })
+				.send({ name: 'E2E Listing Institution', slug: institutionSlug })
 				.expect(201);
 			institutionId = institutionResponse.body.institution.id;
 			const classroomResponse = await agent
 				.post('/api/v1/admin/classrooms')
-				.send({ code: 'E2E-ASSIGNMENT', institutionId, name: 'E2E Assignment Classroom', slug: classroomSlug })
+				.send({ code: 'E2E-LISTING', courseType: 'standard', institutionId, language: 'en', name: 'E2E Listing Classroom', slug: classroomSlug })
 				.expect(201);
 			classroomId = classroomResponse.body.classroom.id;
 
@@ -558,109 +553,90 @@ describe('AppController (e2e)', () => {
 				.expect(400);
 
 			await agent
-				.post(`/api/v1/admin/games/${gameId}/public-offers`)
+				.post(`/api/v1/admin/games/${gameId}/public-listings`)
 				.send({ available: true, gameVariantId, price: { currency: 'USD', minorUnitAmount: 1800 } })
 				.expect(201);
-			const offerListResponse = await agent
-				.get('/api/v1/admin/game-offers?type=public&limit=10&offset=0&q=E2E Game')
+			const listingListResponse = await agent
+				.get('/api/v1/admin/game-listings?type=public&limit=10&offset=0&q=E2E Game')
 				.expect(200);
-			const publicOfferId = offerListResponse.body.offerList[0].id as string;
-			const publicOfferUpdateResponse = await agent
-				.patch(`/api/v1/admin/games/${gameId}/public-offers/${publicOfferId}`)
+			const publicListingId = listingListResponse.body.listingList[0].id as string;
+			const publicListingUpdateResponse = await agent
+				.patch(`/api/v1/admin/games/${gameId}/public-listings/${publicListingId}`)
 				.send({ available: false, price: { currency: 'USD', minorUnitAmount: 1999 }, publishedAt: null })
 				.expect(200);
-			const publicOffer = publicOfferUpdateResponse.body.game.versionList[0].variantList[0].publicOfferList[0];
-			expect(publicOffer).toMatchObject({ available: false, price: { currency: 'USD', minorUnitAmount: 1999 } });
-			expect(publicOffer.publishedAt).toBeUndefined();
+			const publicListing = publicListingUpdateResponse.body.game.versionList[0].variantList[0].publicListingList[0];
+			expect(publicListing).toMatchObject({ available: false, price: { currency: 'USD', minorUnitAmount: 1999 } });
+			expect(publicListing.publishedAt).toBeUndefined();
 			await agent
-				.patch(`/api/v1/admin/games/${gameId}/public-offers/${publicOfferId}`)
+				.patch(`/api/v1/admin/games/${gameId}/public-listings/${publicListingId}`)
 				.send({ publishedAt: '2000-01-01T00:00:00.000Z' })
 				.expect(200);
 			await agent
-				.patch(`/api/v1/admin/games/${gameId}/public-offers/${publicOfferId}`)
+				.patch(`/api/v1/admin/games/${gameId}/public-listings/${publicListingId}`)
 				.send({ available: true })
 				.expect(409);
 
-			const institutionOfferInput = {
+			const listingInput = {
+				classroomId,
 				designatedPayor: 'student',
+				endAt: '2027-01-01T00:00:00.000Z',
 				gameVariantId,
+				includedLicenseQuantity: 5,
 				licenseDurationDays: 90,
 				price: { currency: 'USD', minorUnitAmount: 1200 },
-			};
-			const institutionOfferResponse = await agent
-				.post(`/api/v1/admin/games/${gameId}/institution-offers`)
-				.send(institutionOfferInput)
-				.expect(201);
-			const institutionOfferId = institutionOfferResponse.body.game.versionList[0].variantList[0].institutionOfferList[0].id as string;
-			await agent
-				.patch(`/api/v1/admin/games/${gameId}/institution-offers/${institutionOfferId}`)
-				.send({ price: { currency: 'USD', minorUnitAmount: 1300 }, publishedAt: '2000-01-01T00:00:00.000Z' })
-				.expect(200);
-			await agent
-				.patch(`/api/v1/admin/games/${gameId}/institution-offers/${institutionOfferId}`)
-				.send({ licenseDurationDays: 120 })
-				.expect(409);
-			await agent
-				.post(`/api/v1/admin/games/${gameId}/institution-offers`)
-				.send(institutionOfferInput)
-				.expect(409);
-
-			const assignmentInput = {
-				classroomId,
-				endAt: '2027-01-01T00:00:00.000Z',
-				institutionGameOfferId: institutionOfferId,
 				startAt: '2026-10-01T00:00:00.000Z',
 			};
-			const assignmentResponse = await agent
-				.post('/api/v1/admin/classroom-games')
-				.send(assignmentInput)
+			const listingResponse = await agent
+				.post('/api/v1/admin/classroom-game-listings')
+				.send(listingInput)
 				.expect(201);
-			classroomGameId = assignmentResponse.body.classroomGame.id;
-			expect(assignmentResponse.body.classroomGame).toMatchObject({
+			classroomGameListingId = listingResponse.body.classroomGameListing.id;
+			expect(listingResponse.body.classroomGameListing).toMatchObject({
 				classroomId,
 				designatedPayor: 'student',
+				gameVariantId,
 				gameVersionId: expect.any(String),
-				institutionGameOfferId: institutionOfferId,
+				includedLicenseQuantity: 5,
 				licenseDurationDays: 90,
-				startAt: assignmentInput.startAt,
-				endAt: assignmentInput.endAt,
+				price: { currency: 'USD', minorUnitAmount: 1200 },
+				startAt: listingInput.startAt,
+				endAt: listingInput.endAt,
 			});
 			await agent
-				.patch(`/api/v1/admin/classroom-games/${classroomGameId}`)
+				.patch(`/api/v1/admin/classroom-game-listings/${classroomGameListingId}`)
 				.send({ endAt: '2027-02-01T00:00:00.000Z' })
 				.expect(200);
 			await agent
-				.patch(`/api/v1/admin/classroom-games/${classroomGameId}`)
+				.patch(`/api/v1/admin/classroom-game-listings/${classroomGameListingId}`)
 				.send({ publishedAt: '2000-01-01T00:00:00.000Z' })
 				.expect(200);
 			await agent
-				.patch(`/api/v1/admin/classroom-games/${classroomGameId}`)
+				.patch(`/api/v1/admin/classroom-game-listings/${classroomGameListingId}`)
 				.send({ endAt: '2027-03-01T00:00:00.000Z' })
 				.expect(409);
 			const replacementResponse = await agent
-				.post('/api/v1/admin/classroom-games')
-				.send({ ...assignmentInput, endAt: '2027-06-01T00:00:00.000Z', publishedAt: '2000-01-01T00:00:00.000Z', startAt: assignmentInput.endAt })
+				.post('/api/v1/admin/classroom-game-listings')
+				.send({ ...listingInput, endAt: '2027-06-01T00:00:00.000Z', publishedAt: '2000-01-01T00:00:00.000Z', startAt: listingInput.endAt })
 				.expect(201);
-			replacementClassroomGameId = replacementResponse.body.classroomGame.id;
-			expect(replacementClassroomGameId).not.toBe(classroomGameId);
+			replacementClassroomGameListingId = replacementResponse.body.classroomGameListing.id;
+			expect(replacementClassroomGameListingId).not.toBe(classroomGameListingId);
 			await agent
-				.post('/api/v1/admin/classroom-games')
-				.send({ ...assignmentInput, endAt: assignmentInput.startAt })
+				.post('/api/v1/admin/classroom-game-listings')
+				.send({ ...listingInput, endAt: listingInput.startAt })
 				.expect(400);
 			await agent
-				.post(`/api/v1/admin/games/${publisherId}/public-offers`)
+				.post(`/api/v1/admin/games/${publisherId}/public-listings`)
 				.send({ available: true, gameVariantId, price: { currency: 'USD', minorUnitAmount: 500 } })
 				.expect(404);
 		} finally {
-			if (classroomGameId) {
-				await app.get(MikroORM).em.getConnection().execute('DELETE FROM classroom_game WHERE id = ?', [classroomGameId]);
+			if (classroomGameListingId) {
+				await app.get(MikroORM).em.getConnection().execute('DELETE FROM classroom_game_listing WHERE id = ?', [classroomGameListingId]);
 			}
-			if (replacementClassroomGameId) {
-				await app.get(MikroORM).em.getConnection().execute('DELETE FROM classroom_game WHERE id = ?', [replacementClassroomGameId]);
+			if (replacementClassroomGameListingId) {
+				await app.get(MikroORM).em.getConnection().execute('DELETE FROM classroom_game_listing WHERE id = ?', [replacementClassroomGameListingId]);
 			}
 			if (gameVariantId) {
-				await app.get(MikroORM).em.getConnection().execute('DELETE FROM public_game_offer WHERE game_variant_id = ?', [gameVariantId]);
-				await app.get(MikroORM).em.getConnection().execute('DELETE FROM institution_game_offer WHERE game_variant_id = ?', [gameVariantId]);
+				await app.get(MikroORM).em.getConnection().execute('DELETE FROM public_game_listing WHERE game_variant_id = ?', [gameVariantId]);
 			}
 			if (gameId) {
 				await app.get(MikroORM).em.getConnection().execute('DELETE FROM game WHERE id = ?', [gameId]);
@@ -700,7 +676,7 @@ describe('AppController (e2e)', () => {
 
 			const classroomResponse = await agent
 				.post('/api/v1/admin/classrooms')
-				.send({ code: 'E2E-INSTRUCTOR', institutionId, name: 'E2E Instructor Classroom', slug: classroomSlug })
+				.send({ code: 'E2E-INSTRUCTOR', courseType: 'standard', institutionId, language: 'en', name: 'E2E Instructor Classroom', slug: classroomSlug })
 				.expect(201);
 			classroomId = classroomResponse.body.classroom.id;
 
@@ -746,7 +722,7 @@ describe('AppController (e2e)', () => {
 		}
 	});
 
-	it('lists institution game offers for administration', async () => {
+	it('lists classroom game listings for administration', async () => {
 		const agent = request.agent(app.getHttpServer());
 		await agent
 			.post('/api/v1/auth/login')
@@ -754,11 +730,11 @@ describe('AppController (e2e)', () => {
 			.expect(200);
 
 		const response = await agent
-			.get('/api/v1/admin/game-offers')
-			.query({ type: 'institution' })
+			.get('/api/v1/admin/classroom-game-listings')
+			.query({ limit: 10, offset: 0 })
 			.expect(200);
 
-		expect(response.body).toHaveProperty('offerList');
+		expect(response.body).toHaveProperty('classroomGameListingList');
 	});
 
 	it('revokes persisted Passport sessions by user', async () => {
@@ -773,7 +749,7 @@ describe('AppController (e2e)', () => {
 		await agent.get('/api/v1/user/me').expect(401);
 	});
 
-	it('rejects acquiring a classroom game already enrolled by the student', async () => {
+	it('rejects acquiring a classroom listing already in the student library', async () => {
 		const agent = request.agent(app.getHttpServer());
 		await agent
 			.post('/api/v1/auth/login')
@@ -781,7 +757,7 @@ describe('AppController (e2e)', () => {
 			.expect(200);
 
 		await agent
-			.post('/api/v1/catalog/classroom-game/00000000-0000-4000-8000-000000000232/acquisition')
+			.post('/api/v1/catalog/classroom-game-listing/00000000-0000-4000-8000-000000000232/acquisition')
 			.expect(422);
 	});
 
@@ -793,7 +769,7 @@ describe('AppController (e2e)', () => {
 			.expect(200);
 
 		await agent
-			.post('/api/v1/catalog/classroom-game/00000000-0000-4000-8000-000000000800/redeem-code')
+			.post('/api/v1/catalog/classroom-game-listing/00000000-0000-4000-8000-000000000800/redeem-code')
 			.send({ code: '' })
 			.expect(400);
 	});
@@ -811,37 +787,39 @@ describe('AppController (e2e)', () => {
 			.expect(200);
 
 		const entityManager = app.get(MikroORM).em.fork();
-		const seedClassroomGame = await entityManager.findOne(
-			ClassroomGame,
+		const seedClassroomGameListing = await entityManager.findOne(
+			ClassroomGameListing,
 			{ id: '00000000-0000-4000-8000-000000000941' },
 			{ populate: ['classroom.institution'] },
 		);
-		expect(seedClassroomGame).toBeDefined();
+		expect(seedClassroomGameListing).toBeDefined();
 		const suffix = `${Date.now()}`;
 		const classroom = entityManager.create(Classroom, {
 			code: `LEDGER-${suffix}`,
 			courseType: 'standard',
-			institution: seedClassroomGame!.classroom.institution,
+			institution: seedClassroomGameListing!.classroom.institution,
 			language: 'en',
 			name: `Ledger test ${suffix}`,
 			slug: `ledger-test-${suffix}`,
 			status: EducationCatalogStatus.ACTIVE,
 		});
 		const now = new Date();
-		const classroomGame = entityManager.create(ClassroomGame, {
+		const classroomGameListing = entityManager.create(ClassroomGameListing, {
 			classroom,
+			designatedPayor: ClassroomGameListingDesignatedPayor.INSTITUTION,
 			endAt: new Date(now.getTime() + 86_400_000),
-			institutionGameOffer: seedClassroomGame!.institutionGameOffer,
+			gameVariant: seedClassroomGameListing!.gameVariant,
+			licenseDurationDays: 120,
 			publishedAt: now,
 			startAt: new Date(now.getTime() - 60_000),
 		});
-		entityManager.persist([classroom, classroomGame]);
+		entityManager.persist([classroom, classroomGameListing]);
 		await entityManager.flush();
-		const classroomGameId = classroomGame.id!;
+		const classroomGameListingId = classroomGameListing.id!;
 
 		const createResponse = await adminAgent
 			.post('/api/v1/admin/acquisition-codes')
-			.send({ classroomGameId, expiresAt: new Date(Date.now() + 86_400_000).toISOString(), quantity: 1 })
+			.send({ classroomGameListingId, expiresAt: new Date(Date.now() + 86_400_000).toISOString(), quantity: 1 })
 			.expect(201);
 		const rawCode = createResponse.body.codeList[0] as string;
 		const codeEntity = await entityManager.findOne(AcquisitionCode, { codeDigest: digestAcquisitionCode(rawCode) });
@@ -849,7 +827,7 @@ describe('AppController (e2e)', () => {
 		expect(codeEntity?.id).toBeDefined();
 
 		const redemptionResponse = await studentAgent
-			.post(`/api/v1/catalog/classroom-game/${classroomGameId}/redeem-code`)
+			.post(`/api/v1/catalog/classroom-game-listing/${classroomGameListingId}/redeem-code`)
 			.send({ code: rawCode })
 			.expect(200);
 		expect(redemptionResponse.body.licenseDurationDays).toBe(120);
@@ -862,7 +840,7 @@ describe('AppController (e2e)', () => {
 		expect(detailResponse.body).toEqual(expect.objectContaining({
 			classroomName: classroom.name,
 			code: `******-******-**${getAcquisitionCodeSuffix(rawCode)}`,
-			institutionName: seedClassroomGame!.classroom.institution.name,
+			institutionName: seedClassroomGameListing!.classroom.institution.name,
 			redemptionList: [expect.objectContaining({ userEmail: 'student2@scholark.com' })],
 			eventList: expect.arrayContaining([
 				expect.objectContaining({ eventType: 'code_issued', actorType: 'admin' }),

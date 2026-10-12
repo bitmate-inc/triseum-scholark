@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import styles from "../../../../asset/style/site.module.css";
-import { ClassroomGameList } from "../../../../feature/catalog/client/component/classroom-game-list";
-import { getClassroomGameListRequest, getClassroomRequest } from "../../../../feature/catalog/server/request/education.request";
+import { ClassroomGameListingList } from "../../../../feature/catalog/client/component/classroom-game-listing-list";
+import { getClassroomGameListingListRequest, getClassroomRequest } from "../../../../feature/catalog/server/request/education.request";
 import { AcademicMasthead } from "../../../../feature/catalog/shared/component/academic-masthead";
 import { isLocale } from "../../../../i18n/routing";
 
@@ -28,7 +28,7 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
 	if (!classroom) notFound();
 	const instructorList = classroom.instructorList ?? [];
 
-	const { classroomGameList } = await getClassroomGameListRequest({ classroomId: classroom.id });
+	const { classroomGameListingList } = await getClassroomGameListingListRequest({ classroomId: classroom.id });
 
 	return (
 		<main className={styles.gamePage}>
@@ -46,10 +46,10 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
 			<section className={styles.academicSection}>
 				<div className={styles.sectionHeading}>
 					<div><p className={styles.kicker}>{t("assignedExperiences")}</p><h2>{t("classroomGames")}</h2></div>
-					<span>{t("gameCount", { count: classroomGameList.length })}</span>
+					<span>{t("gameCount", { count: classroomGameListingList.length })}</span>
 				</div>
-				{classroomGameList.length ? (
-					<ClassroomGameList classroomGameList={classroomGameList}/>
+				{classroomGameListingList.length ? (
+					<ClassroomGameListingList classroomGameListingList={classroomGameListingList}/>
 				) : (
 					<div className={styles.emptyState}><h3>{t("noGamesAssigned")}</h3><p>{t("noGamesAssignedDescription")}</p></div>
 				)}

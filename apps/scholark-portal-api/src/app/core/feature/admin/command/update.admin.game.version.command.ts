@@ -7,10 +7,10 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 
-import { InstitutionGameOffer } from '../../education/model/institution.game.offer.entity';
+import { ClassroomGameListing } from '../../education/model/classroom.game.listing.entity';
 import { GameVariant, GameVariantMode } from '../../game/model/game.variant.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
-import { PublicGameOffer } from '../../game/model/public.game.offer.entity';
+import { PublicGameListing } from '../../game/model/public.game.listing.entity';
 
 export interface UpdateAdminGameVersionCommandData {
 	description?: string;
@@ -28,10 +28,10 @@ export class UpdateAdminGameVersionCommand {
 		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 		@InjectRepository(GameVariant)
 		private readonly gameVariantRepository: EntityRepository<GameVariant>,
-		@InjectRepository(InstitutionGameOffer)
-		private readonly institutionGameOfferRepository: EntityRepository<InstitutionGameOffer>,
-		@InjectRepository(PublicGameOffer)
-		private readonly publicGameOfferRepository: EntityRepository<PublicGameOffer>,
+		@InjectRepository(ClassroomGameListing)
+		private readonly classroomGameListingRepository: EntityRepository<ClassroomGameListing>,
+		@InjectRepository(PublicGameListing)
+		private readonly publicGameListingRepository: EntityRepository<PublicGameListing>,
 	) {}
 
 	async execute(gameId: string, versionId: string, data: UpdateAdminGameVersionCommandData): Promise<GameVersion> {
@@ -112,12 +112,12 @@ export class UpdateAdminGameVersionCommand {
 				if (requestedIdSet.has(variant.id!)) {
 					continue;
 				}
-				const [institutionOffer, publicOffer] = await Promise.all([
-					this.institutionGameOfferRepository.findOne({ gameVariant: variant.id }),
-					this.publicGameOfferRepository.findOne({ gameVariant: variant.id }),
+				const [classroomListing, publicListing] = await Promise.all([
+					this.classroomGameListingRepository.findOne({ gameVariant: variant.id }),
+					this.publicGameListingRepository.findOne({ gameVariant: variant.id }),
 				]);
-				if (institutionOffer || publicOffer) {
-					throw new ConflictException('Variants referenced by offers cannot be removed.');
+				if (classroomListing || publicListing) {
+					throw new ConflictException('Variants referenced by listings cannot be removed.');
 				}
 				entityManager.remove(variant);
 			}

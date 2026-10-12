@@ -13,8 +13,8 @@ function createCommand(
 		id: 'cs_test_123',
 		metadata: {
 			attemptId: '00000000-0000-4000-8000-000000000005',
-			classroomGameId: purchaseType === 'classroom' ? '00000000-0000-4000-8000-000000000004' : undefined,
-			offerId: purchaseType === 'public' ? '00000000-0000-4000-8000-000000000002' : '00000000-0000-4000-8000-000000000003',
+			classroomGameListingId: purchaseType === 'classroom' ? '00000000-0000-4000-8000-000000000004' : undefined,
+			listingId: purchaseType === 'public' ? '00000000-0000-4000-8000-000000000002' : '00000000-0000-4000-8000-000000000003',
 			purchaseType,
 			userId: user.id,
 		},

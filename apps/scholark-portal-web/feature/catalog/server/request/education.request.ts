@@ -3,8 +3,8 @@ import "server-only";
 import { apiFetch, ApiRequestError } from "../../../api/server/request/api-fetch";
 import type {
 	Classroom,
-	ClassroomGameListResponse,
-	ClassroomGameResponse,
+	ClassroomGameListingListResponse,
+	ClassroomGameListingResponse,
 	ClassroomListResponse,
 	Course,
 	CourseListResponse,
@@ -68,14 +68,14 @@ export async function getClassroomRequest(slug: string) {
 	};
 }
 
-export function getClassroomGameListRequest(query: EducationListQuery = {}) {
-	return apiFetch<ClassroomGameListResponse>(`/api/v1/catalog/classroom-game${createQueryString(query)}`);
+export function getClassroomGameListingListRequest(query: EducationListQuery = {}) {
+	return apiFetch<ClassroomGameListingListResponse>(`/api/v1/catalog/classroom-game-listing${createQueryString(query)}`);
 }
 
-export async function getClassroomGameRequest(id: string) {
+export async function getClassroomGameListingRequest(id: string) {
 	try {
-		const response = await apiFetch<ClassroomGameResponse>(`/api/v1/catalog/classroom-game/${encodeURIComponent(id)}`);
-		return response.classroomGame;
+		const response = await apiFetch<ClassroomGameListingResponse>(`/api/v1/catalog/classroom-game-listing/${encodeURIComponent(id)}`);
+		return response.classroomGameListing;
 	} catch (error) {
 		if (error instanceof ApiRequestError && error.status === 404) return undefined;
 		throw error;

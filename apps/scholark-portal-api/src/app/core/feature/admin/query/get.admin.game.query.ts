@@ -10,11 +10,10 @@ import {
 	DIACRITIC_CHARACTER_LIST,
 	normalizeCatalogSearchQuery,
 } from '../../catalog/query/catalog.search';
-import { InstitutionGameOffer } from '../../education/model/institution.game.offer.entity';
 import { Game } from '../../game/model/game.entity';
 import { GameVariant } from '../../game/model/game.variant.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
-import { PublicGameOffer } from '../../game/model/public.game.offer.entity';
+import { PublicGameListing } from '../../game/model/public.game.listing.entity';
 
 export type AdminGamePublicationFilter = 'published' | 'unpublished' | 'scheduled';
 
@@ -86,21 +85,18 @@ export class GetAdminGameQuery {
 		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 		@InjectRepository(GameVariant)
 		private readonly gameVariantRepository: EntityRepository<GameVariant>,
-		@InjectRepository(PublicGameOffer)
-		private readonly publicGameOfferRepository: EntityRepository<PublicGameOffer>,
-		@InjectRepository(InstitutionGameOffer)
-		private readonly institutionGameOfferRepository: EntityRepository<InstitutionGameOffer>,
+		@InjectRepository(PublicGameListing)
+		private readonly publicGameListingRepository: EntityRepository<PublicGameListing>,
 	) {}
 
 	async execute(data: GetAdminGameQueryData): Promise<{
 		game?: Game;
 		gameVersionList: GameVersion[];
 		gameVariantList: GameVariant[];
-		institutionGameOfferList: InstitutionGameOffer[];
-		publicGameOfferList: PublicGameOffer[];
+		publicGameListingList: PublicGameListing[];
 	}> {
 		if (!data.filterBy?.id) {
-			return { gameVersionList: [], gameVariantList: [], institutionGameOfferList: [], publicGameOfferList: [] };
+			return { gameVersionList: [], gameVariantList: [], publicGameListingList: [] };
 		}
 
 		const game = await this.gameRepository.findOne(
@@ -108,7 +104,7 @@ export class GetAdminGameQuery {
 			{ populate: ['publisher'] },
 		);
 		if (!game) {
-			return { gameVersionList: [], gameVariantList: [], institutionGameOfferList: [], publicGameOfferList: [] };
+			return { gameVersionList: [], gameVariantList: [], publicGameListingList: [] };
 		}
 
 		const gameVersionList = await this.gameVersionRepository.find(
@@ -123,14 +119,11 @@ export class GetAdminGameQuery {
 				{ orderBy: { language: 'ASC', mode: 'ASC' } },
 			);
 		const gameVariantIds = gameVariantList.map((variant) => variant.id!);
-		const [publicGameOfferList, institutionGameOfferList] = gameVariantIds.length === 0
-			? [[], []]
-			: await Promise.all([
-				this.publicGameOfferRepository.find({ gameVariant: { $in: gameVariantIds } }),
-				this.institutionGameOfferRepository.find({ gameVariant: { $in: gameVariantIds } }),
-			]);
+		const publicGameListingList = gameVariantIds.length === 0
+			? []
+			: await this.publicGameListingRepository.find({ gameVariant: { $in: gameVariantIds } });
 
-		return { game, gameVersionList, gameVariantList, institutionGameOfferList, publicGameOfferList };
+		return { game, gameVersionList, gameVariantList, publicGameListingList };
 	}
 
 }

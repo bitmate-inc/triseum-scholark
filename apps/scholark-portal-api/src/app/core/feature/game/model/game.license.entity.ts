@@ -6,7 +6,7 @@ import {
 } from '@mikro-orm/decorators/legacy';
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
-import { ClassroomGame } from '../../education/model/classroom.game.entity';
+import { ClassroomGameListing } from '../../education/model/classroom.game.listing.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
 import { GameVariant } from './game.variant.entity';
@@ -20,8 +20,8 @@ export class GameLicense extends StaticFactory {
 	@ManyToOne(() => User, { deleteRule: 'cascade' })
 	user!: User;
 
-	@ManyToOne(() => ClassroomGame, { nullable: true, deleteRule: 'restrict' })
-	classroomGame?: ClassroomGame;
+	@ManyToOne(() => ClassroomGameListing, { nullable: true, deleteRule: 'restrict' })
+	classroomGameListing?: ClassroomGameListing;
 
 	@ManyToOne(() => GameVariant, { deleteRule: 'restrict' })
 	gameVariant!: GameVariant;

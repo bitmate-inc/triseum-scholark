@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common';
 import { EducationModule } from '../education/education.module';
 import { GameModule } from '../game/game.module';
 import { GetCatalogClassroomListQuery, GetCatalogClassroomQuery } from './query/get.catalog.classroom.query';
-import { GetCatalogClassroomGameListQuery, GetCatalogClassroomGameQuery } from './query/get.catalog.classroom-game.query';
+import { GetCatalogClassroomGameListingListQuery, GetCatalogClassroomGameListingQuery } from './query/get.catalog.classroom-game-listing.query';
 import { GetCatalogCourseListQuery, GetCatalogCourseQuery } from './query/get.catalog.course.query';
 import { GetCatalogGameListQuery } from './query/get.catalog.game.list.query';
 import { GetCatalogInstitutionListQuery, GetCatalogInstitutionQuery } from './query/get.catalog.institution.query';
@@ -17,8 +17,8 @@ const educationCatalogQueryList = [
 	GetCatalogCourseQuery,
 	GetCatalogClassroomListQuery,
 	GetCatalogClassroomQuery,
-	GetCatalogClassroomGameListQuery,
-	GetCatalogClassroomGameQuery,
+	GetCatalogClassroomGameListingListQuery,
+	GetCatalogClassroomGameListingQuery,
 ];
 
 @Global()

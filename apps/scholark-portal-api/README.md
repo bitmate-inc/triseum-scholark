@@ -17,7 +17,7 @@ src/lib/                        Adapted, app-local reusable primitives
 - `account/` — Account identities and authentication, including registration, email verification, password workflows, and auth tokens.
 - `admin/` — Administrative identity plus read/write use cases for managing education records, catalog data, acquisition codes, and billing.
 - `catalog/` — Learner-facing game discovery, featured games, user-library reads, and institution/course/classroom catalog queries.
-- `education/` — Institutions, courses, classrooms, instructors, classroom game assignments, institution offers, and acquisition codes.
+- `education/` — Institutions, courses, classrooms, instructors, classroom game listings, and acquisition codes.
 - `game/` — Games, versions and customizations; acquisition, checkout, payment/webhook processing, licenses, launch tickets, play events, and game state.
 - `media/` — Shared media metadata for image and video assets.
 - `publisher/` — Publisher records and publisher membership.

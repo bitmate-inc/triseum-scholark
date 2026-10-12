@@ -6,7 +6,7 @@ import { GetCatalogGameListQueryResult } from '../../core/feature/catalog/query/
 import { GetFeaturedGameListQueryResult } from '../../core/feature/catalog/query/get.featured.game.list.query';
 import { Game } from '../../core/feature/game/model/game.entity';
 import { GameVersion } from '../../core/feature/game/model/game.version.entity';
-import { PublicGameOffer } from '../../core/feature/game/model/public.game.offer.entity';
+import { PublicGameListing } from '../../core/feature/game/model/public.game.listing.entity';
 import { Publisher } from '../../core/feature/publisher/model/publisher.entity';
 import { TaxonomyType } from '../../core/feature/taxonomy/model/taxonomy.term.entity';
 import { Currency } from '../../core/shared/commerce/model/currency';
@@ -19,7 +19,7 @@ export class GameAcquisitionRequestDto {
 
 	@ApiProperty({ format: 'uuid' })
 	@IsUUID()
-	publicOfferId!: string;
+	publicListingId!: string;
 
 }
 
@@ -168,8 +168,8 @@ class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' |
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
 
-	@ApiProperty({ type: () => [PublicGameOfferResponseDto] })
-	publicOfferList!: PublicGameOfferResponseDto[];
+	@ApiProperty({ type: () => [PublicGameListingResponseDto] })
+	publicListingList!: PublicGameListingResponseDto[];
 
 	@ApiPropertyOptional()
 	description?: string;
@@ -185,7 +185,7 @@ class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' |
 
 }
 
-class PublicGameOfferResponseDto {
+class PublicGameListingResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
@@ -212,22 +212,22 @@ export class GetGameResponseDto {
 	@ApiProperty({ type: [GameVersionResponseDto] })
 	gameVersionList!: GameVersionResponseDto[];
 
-	static fromEntity(game: Game, gameVersionList: GameVersion[] = [], publicOfferList: PublicGameOffer[] = []): GetGameResponseDto {
-		const publicOffersByVersionId = new Map<string, PublicGameOfferResponseDto[]>();
-		for (const offer of publicOfferList) {
-			const versionId = offer.gameVariant.gameVersion.id!;
-			const offerList = publicOffersByVersionId.get(versionId) ?? [];
-			offerList.push({
-				gameVariantId: offer.gameVariant.id!,
-				id: offer.id!,
-				language: offer.gameVariant.language,
-				mode: offer.gameVariant.mode,
+	static fromEntity(game: Game, gameVersionList: GameVersion[] = [], publicListingList: PublicGameListing[] = []): GetGameResponseDto {
+		const publicListingsByVersionId = new Map<string, PublicGameListingResponseDto[]>();
+		for (const listing of publicListingList) {
+			const versionId = listing.gameVariant.gameVersion.id!;
+			const listingList = publicListingsByVersionId.get(versionId) ?? [];
+			listingList.push({
+				gameVariantId: listing.gameVariant.id!,
+				id: listing.id!,
+				language: listing.gameVariant.language,
+				mode: listing.gameVariant.mode,
 				price: {
-					currency: offer.price.currency,
-					minorUnitAmount: offer.price.minorUnitAmount,
+					currency: listing.price.currency,
+					minorUnitAmount: listing.price.minorUnitAmount,
 				},
 			});
-			publicOffersByVersionId.set(versionId, offerList);
+			publicListingsByVersionId.set(versionId, listingList);
 		}
 
 		return {
@@ -235,7 +235,7 @@ export class GetGameResponseDto {
 			gameVersionList: gameVersionList.map((gameVersion) => ({
 				description: gameVersion.description,
 				id: gameVersion.id!,
-				publicOfferList: publicOffersByVersionId.get(gameVersion.id!) ?? [],
+				publicListingList: publicListingsByVersionId.get(gameVersion.id!) ?? [],
 				publishedAt: gameVersion.publishedAt,
 				publisherVersion: gameVersion.publisherVersion,
 				runUrl: gameVersion.runUrl,

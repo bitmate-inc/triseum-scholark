@@ -21,7 +21,7 @@ export type UserLibraryItem = {
 		name: string;
 		slug: string;
 	};
-	classroomGameId?: string;
+	classroomGameListingId?: string;
 	progress?: {
 		completedCount: number;
 		totalCount: number;

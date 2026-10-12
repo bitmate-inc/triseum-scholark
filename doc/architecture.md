@@ -75,8 +75,8 @@ flowchart TB
 - Implement game-data mapping to ScholArk's generic record model and validate it with one representative Triseum-produced web game.
 - Allow an authorized Instructor to initiate and download a classroom-scoped grade file in each LMS-oriented export format included in the finite target-MVP list baselined during discovery; later additions require explicit scope and forecast revision.
 - Activate fixed-term licenses for exact immutable Game Versions through the approved acquisition paths; after expiry, a new acquisition creates a separate license. Enforce expiry and retain historical acquisition, license, game-play, and game-state records.
-- Represent publisher-defined InstitutionGameOffers separately from institutions. An offer specifies designated payor, price, and license duration; a classroom assignment selects the offer and exact Game Version. Institutional billing is outside the MVP.
-- Treat published classroom Game Version assignments and published GameCustomizations as immutable. Changes create replacement assignments or new customizations.
+- Represent classroom game access terms as `ClassroomGameListing` records directly linked to one Classroom and one GameVariant. Each listing stores designated payor, optional student price, informational included quantity, license duration, optional customization, availability dates, and publication state; there is no separate institution-specific assignment entity. Classroom retains its own `language` and `courseType`; no GameVersion capability metadata is introduced. Institutional billing is outside the MVP.
+- Treat published ClassroomGameListings and published GameCustomizations as immutable. Changes create replacement listings or new customizations.
 
 ## Initial Pilot Boundary
 
@@ -95,7 +95,7 @@ Prefer serving the game through a ScholArk-controlled HTTPS URL that proxies req
 ## New Admin App Responsibilities
 
 - Create and manage institutions, publishers, instructors, courses, classrooms, and game listings.
-- Maintain classroom, instructor, game-assignment, payment-mode, language, usage, and available configuration data required by the portals.
+- Maintain classroom, instructor, ClassroomGameListing, designated-payor, classroom-language, course-type, and available configuration data required by the portals.
 - Be the operational administration surface for the new platform; detailed workflows and pilot sequence are baselined in Milestone 2.
 
 ## Future Architecture
@@ -122,9 +122,9 @@ Milestone 2 must validate this direction against the new product requirements, i
 - Define the minimum usable pilot acceptance set and its deployment environment.
 - Define the Store catalog/discovery boundary and the Stripe checkout, webhook, idempotency, failure-handling, and fixed-term license activation flow.
 - Define license duration, activation, expiry, fresh acquisition after expiry, status, and historical-retention rules, including in-progress session behavior at expiry. Licenses are not renewed.
-- Define Game Version identity and release lifecycle. Publishers provide an unconstrained `publisherVersion` label; the target model licenses exact immutable Game Versions and classroom assignments select the permitted version. Discovery must define upgrade/replacement behavior and launch behavior for permitted versions.
-- Define publisher ownership and publication of standalone and institution-use offers, and how institutions select institution-use offers through classroom assignments.
-- Define the future Game Forge publication flow for data-only GameCustomizations, including content snapshots, draft/publication behavior, and compatibility with the selected Game Version. Capability and integration metadata remain open.
+- Define Game Version identity and release lifecycle. Publishers provide an unconstrained `publisherVersion` label; the target model licenses exact immutable Game Versions and each ClassroomGameListing selects a GameVariant. Discovery must define upgrade/replacement behavior and launch behavior for permitted versions.
+- Define publisher ownership and publication of standalone `PublicGameListings`, and authorized creation/publication of classroom listings directly linked to Classrooms and GameVariants.
+- Define the future Game Forge publication flow for data-only GameCustomizations, including content snapshots, draft/publication behavior, and compatibility with the selected Game Version. No GameVersion capability lists are modeled for the MVP.
 - Define institution acquisition-code generation, ownership, validation, and license activation behavior.
 - Decide whether and how an existing not-for-credit Student Game and license can be associated with a classroom for credit, including license-term and duplicate-payment rules.
 - Define how game-play and game-state records relate to a Student Game, and whether records created before a later classroom association are visible to the Instructor or eligible for classroom progress and grading.

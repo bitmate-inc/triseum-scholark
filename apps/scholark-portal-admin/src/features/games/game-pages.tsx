@@ -34,10 +34,8 @@ import {
 	type CreateAdminGameInput,
 	createAdminGameVersion,
 	type CreateAdminGameVersionInput,
-	createAdminInstitutionGameOffer,
-	type CreateAdminInstitutionGameOfferInput,
-	createAdminPublicGameOffer,
-	type CreateAdminPublicGameOfferInput,
+	createAdminPublicGameListing,
+	type CreateAdminPublicGameListingInput,
 	getAdminGame,
 	getAdminGameList,
 	getAllPublishers,
@@ -46,10 +44,8 @@ import {
 	updateAdminGame,
 	updateAdminGameVersion,
 	type UpdateAdminGameVersionInput,
-	updateAdminInstitutionGameOffer,
-	type UpdateAdminInstitutionGameOfferInput,
-	updateAdminPublicGameOffer,
-	type UpdateAdminPublicGameOfferInput,
+	updateAdminPublicGameListing,
+	type UpdateAdminPublicGameListingInput,
 } from '../../lib/admin-api';
 
 const pageSize = 10;
@@ -132,7 +128,7 @@ export function GameListPage() {
 				<div>
 					<p className="eyebrow">Catalog</p>
 					<h1 id="page-title">Games</h1>
-					<p className="page-description">Review catalog records, publication states, versions, and offers.</p>
+					<p className="page-description">Review catalog records, publication states, versions, and listings.</p>
 				</div>
 				<div className="institution-heading-actions">
 					<Button className="refresh-button" onClick={() => setCreateOpen(!isCreateOpen)} size="sm" type="button" variant={isCreateOpen ? 'outline' : 'default'}>
@@ -249,7 +245,7 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 	const [isVersionFormOpen, setVersionFormOpen] = useState(false);
 	const [editingVersionId, setEditingVersionId] = useState<string>();
 	const variantCount = currentGame.versionList.reduce((count, version) => count + version.variantList.length, 0);
-	const offerCount = currentGame.versionList.reduce((count, version) => count + version.variantList.reduce((sum, variant) => sum + variant.publicOfferList.length + variant.institutionOfferList.length, 0), 0);
+	const listingCount = currentGame.versionList.reduce((count, version) => count + version.variantList.reduce((sum, variant) => sum + variant.publicListingList.length, 0), 0);
 
 	return (
 		<>
@@ -285,13 +281,13 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 					<div><dt>Featured</dt><dd>{currentGame.featured ? 'Yes' : 'No'}</dd></div>
 					<div><dt>Versions</dt><dd>{currentGame.versionList.length}</dd></div>
 					<div><dt>Variants</dt><dd>{variantCount}</dd></div>
-					<div><dt>Offers</dt><dd>{offerCount}</dd></div>
+					<div><dt>Public listings</dt><dd>{listingCount}</dd></div>
 					{currentGame.summary && <div><dt>Summary</dt><dd>{currentGame.summary}</dd></div>}
 					{currentGame.description && <div className="game-description-field"><dt>Description</dt><dd>{currentGame.description}</dd></div>}
 				</dl>
 			</div>
 			<div className="detail-section">
-				<div className="game-catalog-section-heading"><h2>Versions and offers</h2><Button onClick={() => setVersionFormOpen(!isVersionFormOpen)} size="sm" type="button" variant={isVersionFormOpen ? 'outline' : 'default'}>{isVersionFormOpen ? <X size={14}/> : <Plus size={14}/>} {isVersionFormOpen ? 'Cancel' : 'Add version'}</Button></div>
+				<div className="game-catalog-section-heading"><h2>Versions and public listings</h2><Button onClick={() => setVersionFormOpen(!isVersionFormOpen)} size="sm" type="button" variant={isVersionFormOpen ? 'outline' : 'default'}>{isVersionFormOpen ? <X size={14}/> : <Plus size={14}/>} {isVersionFormOpen ? 'Cancel' : 'Add version'}</Button></div>
 				{isVersionFormOpen && <GameVersionForm
 					onCancel={() => setVersionFormOpen(false)}
 					onSubmit={async (input) => {
@@ -377,11 +373,11 @@ function GameVersionForm({
 				<label>Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/></label>
 			</div>
 			<div className="game-version-variant-editor">
-				<div className="game-offer-title-row"><h3>Variants</h3><Button onClick={() => setVariantList((current) => [...current, { key: crypto.randomUUID(), language: '', mode: 'default' }])} size="sm" type="button" variant="outline"><Plus size={13}/> Add variant</Button></div>
+				<div className="game-listing-title-row"><h3>Variants</h3><Button onClick={() => setVariantList((current) => [...current, { key: crypto.randomUUID(), language: '', mode: 'default' }])} size="sm" type="button" variant="outline"><Plus size={13}/> Add variant</Button></div>
 				{variantList.map((variant, index) => <div className="game-version-variant-row" key={variant.key}>
 					<label>Language<input autoComplete="off" maxLength={32} onChange={(event) => setVariantList((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, language: event.target.value } : item))} required value={variant.language}/></label>
 					<label>Mode<select onChange={(event) => setVariantList((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, mode: event.target.value as 'default' | 'game_based_course' } : item))} value={variant.mode}><option value="default">Default</option><option value="game_based_course">Game-based course</option></select></label>
-					{variantList.length > 1 && <button aria-label={`Remove variant ${index + 1}`} className="game-offer-action" onClick={() => setVariantList((current) => current.filter((_, itemIndex) => itemIndex !== index))} title="Remove variant" type="button"><X size={13}/></button>}
+					{variantList.length > 1 && <button aria-label={`Remove variant ${index + 1}`} className="game-listing-action" onClick={() => setVariantList((current) => current.filter((_, itemIndex) => itemIndex !== index))} title="Remove variant" type="button"><X size={13}/></button>}
 				</div>)}
 			</div>
 			{error && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{error}</div>}
@@ -394,8 +390,7 @@ function GameVersionForm({
 }
 
 type AdminGameVariantProfile = AdminGameProfile['versionList'][number]['variantList'][number];
-type AdminGamePublicOfferProfile = AdminGameVariantProfile['publicOfferList'][number];
-type AdminGameInstitutionOfferProfile = AdminGameVariantProfile['institutionOfferList'][number];
+type AdminGamePublicListingProfile = AdminGameVariantProfile['publicListingList'][number];
 
 function GameVariantCard({
 	gameId,
@@ -406,120 +401,90 @@ function GameVariantCard({
 	onSaved: (game: AdminGameProfile) => void;
 	variant: AdminGameVariantProfile;
 }) {
-	const [activeForm, setActiveForm] = useState<{ type: 'public' | 'institution'; offerId?: string; designatedPayor?: AdminGameInstitutionOfferProfile['designatedPayor'] }>();
-	const availableInstitutionPayorList = (['student', 'institution'] as const).filter((payor) => !variant.institutionOfferList.some((offer) => offer.designatedPayor === payor && offer.id !== activeForm?.offerId));
-	const publicOfferList = variant.publicOfferList;
-	const publicOffer = publicOfferList[0];
+	const [activeForm, setActiveForm] = useState<{ listingId?: string }>();
+	const publicListingList = variant.publicListingList;
+	const publicListing = publicListingList[0];
 
 	return (
 		<div className="game-variant">
 			<div className="game-variant-heading"><strong>{variant.language}</strong><span>{variant.mode.replaceAll('_', ' ')}</span></div>
-			<div className="game-offer-slot-list" aria-label="Offers for this variant">
-				<GameOfferSlot
+			<div className="game-listing-slot-list" aria-label="Listings for this variant">
+				<GameListingSlot
 					description="Individual learner checkout"
-					label="Public offer"
-					onAdd={() => setActiveForm({ type: 'public' })}
-					onEdit={publicOffer && !isPublished(publicOffer.publishedAt) ? () => setActiveForm({ offerId: publicOffer.id, type: 'public' }) : undefined}
-					offer={publicOffer}
-					duplicateCount={publicOfferList.length}
+					label="Public listing"
+					onAdd={() => setActiveForm({})}
+					onEdit={publicListing && !isPublished(publicListing.publishedAt) ? () => setActiveForm({ listingId: publicListing.id }) : undefined}
+					listing={publicListing}
+					duplicateCount={publicListingList.length}
 				/>
-				{(['student', 'institution'] as const).map((payor) => {
-					const offer = variant.institutionOfferList.find((item) => item.designatedPayor === payor);
-					return <GameOfferSlot
-						description={payor === 'student' ? 'Student pays for access' : 'Institution pays for access'}
-						institutionOffer={offer}
-						key={payor}
-						label={`${payor === 'student' ? 'Student' : 'Institution'} offer`}
-						onAdd={() => setActiveForm({ designatedPayor: payor, type: 'institution' })}
-						onEdit={offer && !isPublished(offer.publishedAt) ? () => setActiveForm({ designatedPayor: payor, offerId: offer.id, type: 'institution' }) : undefined}
-					/>
-				})}
 			</div>
-			{activeForm && <GameOfferForm
+			{activeForm && <GameListingForm
 				gameId={gameId}
 				onCancel={() => setActiveForm(undefined)}
 				onSaved={(game) => {
 					onSaved(game);
 					setActiveForm(undefined);
 				}}
-				initialDesignatedPayor={activeForm.designatedPayor}
-				availableInstitutionPayorList={availableInstitutionPayorList}
-				publicOffer={activeForm.type === 'public' && activeForm.offerId ? publicOffer : undefined}
-				institutionOffer={activeForm.type === 'institution' && activeForm.offerId ? variant.institutionOfferList.find((offer) => offer.id === activeForm.offerId) : undefined}
-				type={activeForm.type}
+				publicListing={activeForm.listingId ? publicListing : undefined}
 				variantId={variant.id}
 			/>}
 		</div>
 	);
 }
 
-function GameOfferSlot({
+function GameListingSlot({
 	description,
-	institutionOffer,
 	label,
 	onAdd,
 	onEdit,
-	offer,
+	listing,
 	duplicateCount = 1,
 }: {
 	description: string;
 	duplicateCount?: number;
-	institutionOffer?: AdminGameInstitutionOfferProfile;
 	label: string;
 	onAdd: () => void;
 	onEdit?: () => void;
-	offer?: AdminGamePublicOfferProfile;
+	listing?: AdminGamePublicListingProfile;
 }) {
-	const currentOffer = offer ?? institutionOffer;
 	return (
-		<div className="game-offer-slot">
-			<div className="game-offer-slot-label"><strong>{label}</strong><small>{description}</small></div>
-			{currentOffer ? <>
-				<div className="game-offer-slot-value">
-					<strong>{formatPrice(currentOffer.price)}</strong>
-					{institutionOffer ? <small>{institutionOffer.licenseDurationDays} days{typeof institutionOffer.allocatedLicenseQuantity === 'number' ? ` · ${institutionOffer.allocatedLicenseQuantity} licenses` : ' · No quantity limit'}</small> : <small>{offer?.available ? 'Available to acquire' : 'Unavailable'}</small>}
+		<div className="game-listing-slot">
+			<div className="game-listing-slot-label"><strong>{label}</strong><small>{description}</small></div>
+			{listing ? <>
+				<div className="game-listing-slot-value">
+					<strong>{formatPrice(listing.price)}</strong>
+					<small>{listing.available ? 'Available to acquire' : 'Unavailable'}</small>
 				</div>
-				<span className={`publication-state state-${publicationState(currentOffer.publishedAt)}`}>{publicationLabel(currentOffer.publishedAt)}</span>
-				{onEdit ? <Button onClick={onEdit} size="sm" type="button" variant="outline"><Pencil/> Edit</Button> : <span className="game-offer-slot-locked">Read-only</span>}
-				{duplicateCount > 1 && <p className="game-offer-duplicate-warning" role="alert">{duplicateCount} public offers exist for this variant; only one is allowed. Review the legacy duplicate before changing this slot.</p>}
+				<span className={`publication-state state-${publicationState(listing.publishedAt)}`}>{publicationLabel(listing.publishedAt)}</span>
+				{onEdit ? <Button onClick={onEdit} size="sm" type="button" variant="outline"><Pencil/> Edit</Button> : <span className="game-listing-slot-locked">Read-only</span>}
+				{duplicateCount > 1 && <p className="game-listing-duplicate-warning" role="alert">{duplicateCount} public listings exist for this variant; only one is allowed. Review the legacy duplicate before changing this slot.</p>}
 			</> : <>
-				<span className="game-offer-slot-empty">Not set up</span>
-				<span className="game-offer-slot-empty-state">No offer</span>
-				<Button onClick={onAdd} size="sm" type="button" variant="outline"><Plus/> Add offer</Button>
+				<span className="game-listing-slot-empty">Not set up</span>
+				<span className="game-listing-slot-empty-state">No listing</span>
+				<Button onClick={onAdd} size="sm" type="button" variant="outline"><Plus/> Add listing</Button>
 			</>}
 		</div>
 	);
 }
 
-function GameOfferForm({
+function GameListingForm({
 	gameId,
-	initialDesignatedPayor,
-	availableInstitutionPayorList,
 	onCancel,
 	onSaved,
-	institutionOffer,
-	publicOffer,
-	type,
+	publicListing,
 	variantId,
 }: {
 	gameId: string;
-	initialDesignatedPayor?: AdminGameInstitutionOfferProfile['designatedPayor'];
-	availableInstitutionPayorList: AdminGameInstitutionOfferProfile['designatedPayor'][];
-	institutionOffer?: AdminGameInstitutionOfferProfile;
 	onCancel: () => void;
 	onSaved: (game: AdminGameProfile) => void;
-	publicOffer?: AdminGamePublicOfferProfile;
-	type: 'public' | 'institution';
+	publicListing?: AdminGamePublicListingProfile;
 	variantId: string;
 }) {
-	const existingOffer = publicOffer ?? institutionOffer;
+	const existingListing = publicListing;
 	const dialogRef = useRef<HTMLDialogElement>(null);
-	const [price, setPrice] = useState(existingOffer ? (existingOffer.price.minorUnitAmount / 100).toFixed(2) : '');
-	const [available, setAvailable] = useState(publicOffer?.available ?? true);
-	const [publishedAt, setPublishedAt] = useState(toDateTimeInput(existingOffer?.publishedAt));
-	const [designatedPayor, setDesignatedPayor] = useState<AdminGameInstitutionOfferProfile['designatedPayor']>(institutionOffer?.designatedPayor ?? initialDesignatedPayor ?? 'student');
-	const [licenseDurationDays, setLicenseDurationDays] = useState(String(institutionOffer?.licenseDurationDays ?? 120));
-	const [allocatedLicenseQuantity, setAllocatedLicenseQuantity] = useState(typeof institutionOffer?.allocatedLicenseQuantity === 'number' ? String(institutionOffer.allocatedLicenseQuantity) : '');
+	const [price, setPrice] = useState(existingListing ? (existingListing.price.minorUnitAmount / 100).toFixed(2) : '');
+	const [available, setAvailable] = useState(publicListing?.available ?? true);
+	const [publishedAt, setPublishedAt] = useState(toDateTimeInput(existingListing?.publishedAt));
 	const [error, setError] = useState<string>();
 	const [isSaving, setSaving] = useState(false);
 
@@ -542,73 +507,46 @@ function GameOfferForm({
 		setSaving(true);
 		const inputPrice = { currency: 'USD', minorUnitAmount: Math.round(Number(price) * 100) };
 		try {
-			if (type === 'public') {
-				if (publicOffer) {
-					const input: UpdateAdminPublicGameOfferInput = {
-						available,
-						price: inputPrice,
-						publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
-					};
-					onSaved(await updateAdminPublicGameOffer(gameId, publicOffer.id, input));
-				} else {
-					const input: CreateAdminPublicGameOfferInput = {
-						available,
-						gameVariantId: variantId,
-						price: inputPrice,
-						publishedAt: publishedAt ? new Date(publishedAt).toISOString() : undefined,
-					};
-					onSaved(await createAdminPublicGameOffer(gameId, input));
-				}
-			} else if (institutionOffer) {
-				const input: UpdateAdminInstitutionGameOfferInput = {
-					allocatedLicenseQuantity: allocatedLicenseQuantity ? Number(allocatedLicenseQuantity) : null,
-					designatedPayor,
-					licenseDurationDays: Number(licenseDurationDays),
+			if (publicListing) {
+				const input: UpdateAdminPublicGameListingInput = {
+					available,
 					price: inputPrice,
 					publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
 				};
-				onSaved(await updateAdminInstitutionGameOffer(gameId, institutionOffer.id, input));
+				onSaved(await updateAdminPublicGameListing(gameId, publicListing.id, input));
 			} else {
-				const input: CreateAdminInstitutionGameOfferInput = {
-					allocatedLicenseQuantity: allocatedLicenseQuantity ? Number(allocatedLicenseQuantity) : undefined,
-					designatedPayor,
+				const input: CreateAdminPublicGameListingInput = {
+					available,
 					gameVariantId: variantId,
-					licenseDurationDays: Number(licenseDurationDays),
 					price: inputPrice,
 					publishedAt: publishedAt ? new Date(publishedAt).toISOString() : undefined,
 				};
-				onSaved(await createAdminInstitutionGameOffer(gameId, input));
+				onSaved(await createAdminPublicGameListing(gameId, input));
 			}
 		} catch (requestError) {
-			setError(requestError instanceof Error ? requestError.message : 'Offer could not be saved.');
+			setError(requestError instanceof Error ? requestError.message : 'Listing could not be saved.');
 		} finally {
 			setSaving(false);
 		}
 	}
 
 	return (
-		<dialog aria-labelledby="game-offer-dialog-title" className="game-offer-dialog" onCancel={(event) => {
+		<dialog aria-labelledby="game-listing-dialog-title" className="game-listing-dialog" onCancel={(event) => {
 			event.preventDefault();
 			onCancel();
 		}} ref={dialogRef}>
-			<div className="game-offer-dialog-content">
-				<div className="game-offer-dialog-heading">
-					<div><p className="eyebrow">{existingOffer ? 'Edit offer' : 'New offer'}</p><h2 id="game-offer-dialog-title">{type === 'public' ? 'Public offer' : `${designatedPayor === 'student' ? 'Student' : 'Institution'} offer`}</h2></div>
-					<Button aria-label="Close offer form" onClick={onCancel} size="icon" type="button" variant="outline"><X/></Button>
+			<div className="game-listing-dialog-content">
+				<div className="game-listing-dialog-heading">
+					<div><p className="eyebrow">{existingListing ? 'Edit listing' : 'New listing'}</p><h2 id="game-listing-dialog-title">Public listing</h2></div>
+					<Button aria-label="Close listing form" onClick={onCancel} size="icon" type="button" variant="outline"><X/></Button>
 				</div>
-				<form className="institution-form game-offer-form" onSubmit={handleSubmit}>
+				<form className="institution-form game-listing-form" onSubmit={handleSubmit}>
 					<div className="institution-form-fields">
 						<label>Price (USD)<input min="0" onChange={(event) => setPrice(event.target.value)} required step="0.01" type="number" value={price}/></label>
-						{type === 'public' ? <>
-							<label className="game-featured-toggle"><input checked={available} onChange={(event) => setAvailable(event.target.checked)} type="checkbox"/><span>Available to acquire</span></label>
-						</> : <>
-							{institutionOffer ? <label>Designated payor<select onChange={(event) => setDesignatedPayor(event.target.value as AdminGameInstitutionOfferProfile['designatedPayor'])} value={designatedPayor}>{availableInstitutionPayorList.map((payor) => <option key={payor} value={payor}>{payor === 'student' ? 'Student' : 'Institution'}</option>)}</select></label> : <div className="game-offer-readonly-field"><span>Designated payor</span><strong>{designatedPayor === 'student' ? 'Student' : 'Institution'}</strong></div>}
-							<label>License duration (days)<input min="1" onChange={(event) => setLicenseDurationDays(event.target.value)} required step="1" type="number" value={licenseDurationDays}/></label>
-							<label>License quantity<input min="0" onChange={(event) => setAllocatedLicenseQuantity(event.target.value)} step="1" type="number" value={allocatedLicenseQuantity}/></label>
-						</>}
+						<label className="game-featured-toggle"><input checked={available} onChange={(event) => setAvailable(event.target.checked)} type="checkbox"/><span>Available to acquire</span></label>
 					</div>
-					<label className="game-offer-publication-field">Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/><span>Leave blank for a draft. Dates use your local time; published offers cannot be edited.</span></label>
-					<div aria-label="Publication date shortcuts" className="game-offer-date-shortcuts">
+					<label className="game-listing-publication-field">Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/><span>Leave blank for a draft. Dates use your local time; published listings cannot be edited.</span></label>
+					<div aria-label="Publication date shortcuts" className="game-listing-date-shortcuts">
 						<Button onClick={() => setPublishedAt(toDateTimeInput(new Date().toISOString()))} size="sm" type="button" variant="outline">Set to now</Button>
 						<Button onClick={() => setPublishedAt(tomorrowAtNine())} size="sm" type="button" variant="outline">Tomorrow, 9:00 AM</Button>
 						<Button disabled={!publishedAt} onClick={() => setPublishedAt('')} size="sm" type="button" variant="outline">Clear</Button>
@@ -616,7 +554,7 @@ function GameOfferForm({
 					{error && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{error}</div>}
 					<div className="institution-form-actions">
 						<Button disabled={isSaving} onClick={onCancel} size="sm" type="button" variant="outline"><X size={14}/> Cancel</Button>
-						<Button disabled={isSaving} size="sm" type="submit"><Check size={14}/>{isSaving ? 'Saving...' : existingOffer ? 'Save offer' : 'Create offer'}</Button>
+						<Button disabled={isSaving} size="sm" type="submit"><Check size={14}/>{isSaving ? 'Saving...' : existingListing ? 'Save listing' : 'Create listing'}</Button>
 					</div>
 				</form>
 			</div>

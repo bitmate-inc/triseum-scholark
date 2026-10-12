@@ -114,26 +114,25 @@ export class AdminAcquisitionCodeListItemResponseDto {
 		redemptionList: AcquisitionCodeRedemption[],
 		eventList: GameAcquisitionEvent[] = [],
 	): AdminAcquisitionCodeListItemResponseDto {
-		const classroomGame = code.classroomGame;
-		const offer = classroomGame?.institutionGameOffer;
-		const variant = offer?.gameVariant;
+		const classroomGameListing = code.classroomGameListing;
+		const variant = classroomGameListing?.gameVariant;
 		const now = new Date();
 		const status = code.revokedAt ? 'revoked' : code.expiresAt <= now ? 'expired' : 'active';
 		return {
 			code: `******-******-**${code.codeSuffix}`,
-			classroomId: classroomGame?.classroom.id,
-			classroomName: classroomGame?.classroom.name,
+			classroomId: classroomGameListing?.classroom.id,
+			classroomName: classroomGameListing?.classroom.name,
 			createdAt: code.createdAt,
-			designatedPayor: offer?.designatedPayor,
+			designatedPayor: classroomGameListing?.designatedPayor,
 			expiresAt: code.expiresAt,
 			gameTitle: variant?.gameVersion.game.title,
 			id: code.id!,
-			institutionId: classroomGame?.classroom.institution.id,
-			institutionName: classroomGame?.classroom.institution.name,
+			institutionId: classroomGameListing?.classroom.institution.id,
+			institutionName: classroomGameListing?.classroom.institution.name,
 			language: variant?.language,
-			licenseDurationDays: offer?.licenseDurationDays,
+			licenseDurationDays: classroomGameListing?.licenseDurationDays,
 			mode: variant?.mode,
-			price: offer?.price,
+			price: classroomGameListing?.price,
 			publisherVersion: variant?.gameVersion.publisherVersion,
 			redemptionList: redemptionList.map(AdminAcquisitionCodeRedemptionResponseDto.fromEntity),
 			eventList: eventList.map(AdminAcquisitionEventResponseDto.fromEntity),

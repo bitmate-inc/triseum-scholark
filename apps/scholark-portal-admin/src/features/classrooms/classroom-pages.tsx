@@ -281,7 +281,7 @@ function ClassroomDetails({
 					<div><dt>Description</dt><dd>{classroom.description || 'No description provided.'}</dd></div>
 				</dl>
 				<div className="learning-space-links">
-					<Link className="related-section-link" to={`/classroom-games?classroomId=${encodeURIComponent(classroom.id)}`}><Gamepad2 size={16}/> View classroom games</Link>
+					<Link className="related-section-link" to={`/classroom-game-listings?classroomId=${encodeURIComponent(classroom.id)}`}><Gamepad2 size={16}/> View classroom games</Link>
 				</div>
 			</div>
 			<div className="detail-section">

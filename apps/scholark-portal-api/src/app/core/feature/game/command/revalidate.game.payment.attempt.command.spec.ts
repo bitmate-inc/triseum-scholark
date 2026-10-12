@@ -5,11 +5,10 @@ import { RevalidateGamePaymentAttemptCommand } from './revalidate.game.payment.a
 
 function createCommand(sessionOverrides: Partial<Stripe.Checkout.Session> = {}) {
 	const attempt = {
-		classroomGame: undefined,
-		institutionGameOffer: undefined,
+		classroomGameListing: undefined,
 		id: '00000000-0000-4000-8000-000000000005',
 		price: { currency: 'USD', minorUnitAmount: 1200 },
-		publicOffer: { id: '00000000-0000-4000-8000-000000000002' },
+		publicListing: { id: '00000000-0000-4000-8000-000000000002' },
 		status: GamePaymentAttemptStatus.PENDING,
 		stripeCheckoutSessionId: 'cs_test_123',
 		user: { id: '00000000-0000-4000-8000-000000000001' },
@@ -21,7 +20,7 @@ function createCommand(sessionOverrides: Partial<Stripe.Checkout.Session> = {}) 
 		id: 'cs_test_123',
 		metadata: {
 			attemptId: '00000000-0000-4000-8000-000000000005',
-			offerId: '00000000-0000-4000-8000-000000000002',
+			listingId: '00000000-0000-4000-8000-000000000002',
 			purchaseType: 'public',
 			userId: '00000000-0000-4000-8000-000000000001',
 		},

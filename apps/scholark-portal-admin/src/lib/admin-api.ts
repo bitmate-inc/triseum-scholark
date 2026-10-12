@@ -100,44 +100,54 @@ export interface CreateCourseInput {
 
 export type UpdateCourseInput = Partial<CreateCourseInput> & { status?: Course['status'] };
 
-export interface ClassroomGame {
+export interface ClassroomGameListing {
 	classroomId: string;
 	classroomName: string;
 	classroomSlug: string;
+	customizationId?: string;
 	designatedPayor: 'student' | 'institution';
 	endAt: string;
 	gameId: string;
 	gamePublishedAt?: string;
 	gameSlug: string;
 	gameTitle: string;
+	gameVariantId: string;
 	gameVersionId: string;
+	includedLicenseQuantity?: number;
 	id: string;
 	institution: Pick<Institution, 'id' | 'name' | 'slug'>;
-	institutionGameOfferId: string;
 	language: string;
 	licenseDurationDays: number;
 	mode: string;
-	price: { currency: string; minorUnitAmount: number };
+	price?: { currency: string; minorUnitAmount: number };
 	publisherVersion: string;
 	publisher: { id: string; name: string; slug: string };
 	publishedAt?: string;
 	startAt: string;
 }
 
-export interface ClassroomGameListResponse {
-	classroomGameList: ClassroomGame[];
+export interface ClassroomGameListingListResponse {
+	classroomGameListingList: ClassroomGameListing[];
 	totalItemCount: number;
 }
 
-export interface CreateAdminClassroomGameInput {
+export interface CreateAdminClassroomGameListingInput {
 	classroomId: string;
+	customizationId?: string;
+	designatedPayor: 'student' | 'institution';
 	endAt: string;
-	institutionGameOfferId: string;
+	gameVariantId: string;
+	includedLicenseQuantity?: number;
+	licenseDurationDays: number;
+	price?: AdminGameListingPrice;
 	publishedAt?: string;
 	startAt: string;
 }
 
-export type UpdateAdminClassroomGameInput = Partial<Omit<CreateAdminClassroomGameInput, 'publishedAt'>> & {
+export type UpdateAdminClassroomGameListingInput = Omit<Partial<CreateAdminClassroomGameListingInput>, 'customizationId' | 'includedLicenseQuantity' | 'price' | 'publishedAt'> & {
+	customizationId?: string | null;
+	includedLicenseQuantity?: number | null;
+	price?: AdminGameListingPrice | null;
 	publishedAt?: string | null;
 };
 
@@ -229,17 +239,9 @@ export interface AdminGameProfile extends AdminGame {
 		runUrl: string;
 		variantList: {
 			id: string;
-			institutionOfferList: {
-				allocatedLicenseQuantity?: number | null;
-				designatedPayor: 'student' | 'institution';
-				id: string;
-				licenseDurationDays: number;
-				price: { currency: string; minorUnitAmount: number };
-				publishedAt?: string;
-			}[];
 			language: string;
 			mode: 'default' | 'game_based_course';
-			publicOfferList: {
+			publicListingList: {
 				available: boolean;
 				id: string;
 				price: { currency: string; minorUnitAmount: number };
@@ -254,6 +256,16 @@ export interface AdminGameListResponse {
 	totalItemCount: number;
 }
 
+export interface AdminGameVariantOption {
+	gameId: string;
+	gameTitle: string;
+	gameVersionId: string;
+	id: string;
+	language: string;
+	mode: 'default' | 'game_based_course';
+	publisherVersion: string;
+}
+
 export interface CreateAdminGameInput {
 	description?: string;
 	featured: boolean;
@@ -266,38 +278,21 @@ export interface CreateAdminGameInput {
 
 export type UpdateAdminGameInput = Partial<Omit<CreateAdminGameInput, 'publisherId' | 'publishedAt'>> & { publishedAt?: string | null };
 
-export interface AdminGameOfferPrice {
+export interface AdminGameListingPrice {
 	currency: string;
 	minorUnitAmount: number;
 }
 
-export interface CreateAdminPublicGameOfferInput {
+export interface CreateAdminPublicGameListingInput {
 	available: boolean;
 	gameVariantId: string;
-	price: AdminGameOfferPrice;
+	price: AdminGameListingPrice;
 	publishedAt?: string;
 }
 
-export interface UpdateAdminPublicGameOfferInput {
+export interface UpdateAdminPublicGameListingInput {
 	available?: boolean;
-	price?: AdminGameOfferPrice;
-	publishedAt?: string | null;
-}
-
-export interface CreateAdminInstitutionGameOfferInput {
-	allocatedLicenseQuantity?: number;
-	designatedPayor: 'student' | 'institution';
-	gameVariantId: string;
-	licenseDurationDays: number;
-	price: AdminGameOfferPrice;
-	publishedAt?: string;
-}
-
-export interface UpdateAdminInstitutionGameOfferInput {
-	allocatedLicenseQuantity?: number | null;
-	designatedPayor?: 'student' | 'institution';
-	licenseDurationDays?: number;
-	price?: AdminGameOfferPrice;
+	price?: AdminGameListingPrice;
 	publishedAt?: string | null;
 }
 
@@ -313,23 +308,26 @@ export type UpdateAdminGameVersionInput = Partial<Omit<CreateAdminGameVersionInp
 	variantList?: { id?: string; language: string; mode: 'default' | 'game_based_course' }[];
 };
 
-export interface AdminGameOffer {
-	allocatedLicenseQuantity?: number | null;
+export interface AdminGameListing {
+	classroom?: { id: string; name: string; slug: string; institutionName: string };
 	available?: boolean;
 	designatedPayor?: 'student' | 'institution';
 	game: Pick<AdminGame, 'id' | 'slug' | 'title'>;
 	gameVariant: { id: string; language: string; mode: 'default' | 'game_based_course' };
 	gameVersion: { id: string; publisherVersion: string };
 	id: string;
+	includedLicenseQuantity?: number;
 	licenseDurationDays?: number;
-	offerType: 'public' | 'institution';
-	price: { currency: string; minorUnitAmount: number };
+	listingType: 'public' | 'classroom';
+	price?: { currency: string; minorUnitAmount: number };
 	publishedAt?: string;
 	publisher: Pick<Publisher, 'id' | 'name' | 'slug'>;
+	startAt?: string;
+	endAt?: string;
 }
 
-export interface AdminGameOfferListResponse {
-	offerList: AdminGameOffer[];
+export interface AdminGameListingListResponse {
+	listingList: AdminGameListing[];
 	totalItemCount: number;
 }
 
@@ -470,7 +468,7 @@ export interface AdminAcquisitionCodeListResponse {
 }
 
 export interface CreateAdminAcquisitionCodesInput {
-	classroomGameId: string;
+	classroomGameListingId: string;
 	expiresAt: string;
 	quantity: number;
 }
@@ -690,13 +688,13 @@ export async function updateCourse(id: string, input: UpdateCourseInput): Promis
 	);
 }
 
-export async function getClassroomGameList(
+export async function getClassroomGameListingList(
 	query: string,
 	offset: number,
 	institutionId: string,
 	classroomId: string,
 	signal?: AbortSignal,
-): Promise<ClassroomGameListResponse> {
+): Promise<ClassroomGameListingListResponse> {
 	const searchParams = new URLSearchParams({ limit: '10', offset: String(offset) });
 	if (query.trim()) {
 		searchParams.set('q', query.trim());
@@ -708,54 +706,54 @@ export async function getClassroomGameList(
 		searchParams.set('classroomId', classroomId);
 	}
 
-	const response = await adminFetch(`${apiBase}/admin/classroom-games?${searchParams}`, {
+	const response = await adminFetch(`${apiBase}/admin/classroom-game-listings?${searchParams}`, {
 		credentials: 'include',
 		signal,
 	});
 	if (!response.ok) {
-		throw new Error(response.status === 403 ? 'Administrator access is required.' : 'Classroom games could not be loaded.');
+		throw new Error(response.status === 403 ? 'Administrator access is required.' : 'Classroom game listings could not be loaded.');
 	}
 
-	return await response.json() as ClassroomGameListResponse;
+	return await response.json() as ClassroomGameListingListResponse;
 }
 
-export async function getAllAdminClassroomGames(signal?: AbortSignal): Promise<ClassroomGame[]> {
-	const classroomGameList: ClassroomGame[] = [];
+export async function getAllAdminClassroomGameListings(signal?: AbortSignal): Promise<ClassroomGameListing[]> {
+	const classroomGameListingList: ClassroomGameListing[] = [];
 	let offset = 0;
 	let totalItemCount = 0;
 
 	do {
-		const result = await getClassroomGameList('', offset, '', '', signal);
-		classroomGameList.push(...result.classroomGameList);
+		const result = await getClassroomGameListingList('', offset, '', '', signal);
+		classroomGameListingList.push(...result.classroomGameListingList);
 		totalItemCount = result.totalItemCount;
-		offset += result.classroomGameList.length;
+		offset += result.classroomGameListingList.length;
 	} while (offset < totalItemCount && offset > 0);
 
-	return classroomGameList;
+	return classroomGameListingList;
 }
 
-export async function getClassroomGame(id: string, signal?: AbortSignal): Promise<ClassroomGame> {
-	const response = await adminFetch(`${apiBase}/admin/classroom-games/${encodeURIComponent(id)}`, {
+export async function getClassroomGameListing(id: string, signal?: AbortSignal): Promise<ClassroomGameListing> {
+	const response = await adminFetch(`${apiBase}/admin/classroom-game-listings/${encodeURIComponent(id)}`, {
 		credentials: 'include',
 		signal,
 	});
 	if (!response.ok) {
-		throw new Error(response.status === 404 ? 'Classroom game assignment not found.' : 'Classroom game details could not be loaded.');
+		throw new Error(response.status === 404 ? 'Classroom game listing not found.' : 'Classroom game listing details could not be loaded.');
 	}
 
-	const result = await response.json() as { classroomGame: ClassroomGame };
-	return result.classroomGame;
+	const result = await response.json() as { classroomGameListing: ClassroomGameListing };
+	return result.classroomGameListing;
 }
 
-export async function createAdminClassroomGame(input: CreateAdminClassroomGameInput): Promise<ClassroomGame> {
-	return await saveAdminRecord<CreateAdminClassroomGameInput, ClassroomGame>(
-		'/admin/classroom-games', 'POST', input, 'classroomGame', 'Classroom game assignment could not be saved.',
+export async function createAdminClassroomGameListing(input: CreateAdminClassroomGameListingInput): Promise<ClassroomGameListing> {
+	return await saveAdminRecord<CreateAdminClassroomGameListingInput, ClassroomGameListing>(
+		'/admin/classroom-game-listings', 'POST', input, 'classroomGameListing', 'Classroom game listing could not be saved.',
 	);
 }
 
-export async function updateAdminClassroomGame(id: string, input: UpdateAdminClassroomGameInput): Promise<ClassroomGame> {
-	return await saveAdminRecord<UpdateAdminClassroomGameInput, ClassroomGame>(
-		`/admin/classroom-games/${encodeURIComponent(id)}`, 'PATCH', input, 'classroomGame', 'Classroom game assignment could not be saved.',
+export async function updateAdminClassroomGameListing(id: string, input: UpdateAdminClassroomGameListingInput): Promise<ClassroomGameListing> {
+	return await saveAdminRecord<UpdateAdminClassroomGameListingInput, ClassroomGameListing>(
+		`/admin/classroom-game-listings/${encodeURIComponent(id)}`, 'PATCH', input, 'classroomGameListing', 'Classroom game listing could not be saved.',
 	);
 }
 
@@ -938,6 +936,30 @@ export async function getAdminGame(id: string, signal?: AbortSignal): Promise<Ad
 	return result.game;
 }
 
+export async function getAllAdminGameVariants(signal?: AbortSignal): Promise<AdminGameVariantOption[]> {
+	const gameList: AdminGame[] = [];
+	let offset = 0;
+	let totalItemCount = 0;
+
+	do {
+		const result = await getAdminGameList('', offset, '', '', signal);
+		gameList.push(...result.gameList);
+		totalItemCount = result.totalItemCount;
+		offset += result.gameList.length;
+	} while (offset < totalItemCount && offset > 0);
+
+	const gameProfileList = await Promise.all(gameList.map((game) => getAdminGame(game.id, signal)));
+	return gameProfileList.flatMap((game) => game.versionList.flatMap((version) => version.variantList.map((variant) => ({
+		gameId: game.id,
+		gameTitle: game.title,
+		gameVersionId: version.id,
+		id: variant.id,
+		language: variant.language,
+		mode: variant.mode,
+		publisherVersion: version.publisherVersion,
+	}))));
+}
+
 export async function createAdminGame(input: CreateAdminGameInput): Promise<AdminGameProfile> {
 	return await saveAdminRecord<CreateAdminGameInput, AdminGameProfile>(
 		'/admin/games', 'POST', input, 'game', 'Game could not be saved.',
@@ -967,78 +989,43 @@ export async function updateAdminGameVersion(
 	);
 }
 
-export async function createAdminPublicGameOffer(gameId: string, input: CreateAdminPublicGameOfferInput): Promise<AdminGameProfile> {
-	return await saveAdminRecord<CreateAdminPublicGameOfferInput, AdminGameProfile>(
-		`/admin/games/${encodeURIComponent(gameId)}/public-offers`, 'POST', input, 'game', 'Public offer could not be saved.',
+export async function createAdminPublicGameListing(gameId: string, input: CreateAdminPublicGameListingInput): Promise<AdminGameProfile> {
+	return await saveAdminRecord<CreateAdminPublicGameListingInput, AdminGameProfile>(
+		`/admin/games/${encodeURIComponent(gameId)}/public-listings`, 'POST', input, 'game', 'Public listing could not be saved.',
 	);
 }
 
-export async function updateAdminPublicGameOffer(
+export async function updateAdminPublicGameListing(
 	gameId: string,
-	offerId: string,
-	input: UpdateAdminPublicGameOfferInput,
+	listingId: string,
+	input: UpdateAdminPublicGameListingInput,
 ): Promise<AdminGameProfile> {
-	return await saveAdminRecord<UpdateAdminPublicGameOfferInput, AdminGameProfile>(
-		`/admin/games/${encodeURIComponent(gameId)}/public-offers/${encodeURIComponent(offerId)}`,
-		'PATCH', input, 'game', 'Public offer could not be saved.',
+	return await saveAdminRecord<UpdateAdminPublicGameListingInput, AdminGameProfile>(
+		`/admin/games/${encodeURIComponent(gameId)}/public-listings/${encodeURIComponent(listingId)}`,
+		'PATCH', input, 'game', 'Public listing could not be saved.',
 	);
 }
 
-export async function createAdminInstitutionGameOffer(
-	gameId: string,
-	input: CreateAdminInstitutionGameOfferInput,
-): Promise<AdminGameProfile> {
-	return await saveAdminRecord<CreateAdminInstitutionGameOfferInput, AdminGameProfile>(
-		`/admin/games/${encodeURIComponent(gameId)}/institution-offers`, 'POST', input, 'game', 'Institution offer could not be saved.',
-	);
-}
-
-export async function updateAdminInstitutionGameOffer(
-	gameId: string,
-	offerId: string,
-	input: UpdateAdminInstitutionGameOfferInput,
-): Promise<AdminGameProfile> {
-	return await saveAdminRecord<UpdateAdminInstitutionGameOfferInput, AdminGameProfile>(
-		`/admin/games/${encodeURIComponent(gameId)}/institution-offers/${encodeURIComponent(offerId)}`,
-		'PATCH', input, 'game', 'Institution offer could not be saved.',
-	);
-}
-
-export async function getAdminGameOfferList(
-	type: 'public' | 'institution',
+export async function getAdminGameListingList(
+	type: 'public' | 'classroom',
 	query: string,
 	offset: number,
 	signal?: AbortSignal,
-): Promise<AdminGameOfferListResponse> {
+): Promise<AdminGameListingListResponse> {
 	const searchParams = new URLSearchParams({ limit: '10', offset: String(offset), type });
 	if (query.trim()) {
 		searchParams.set('q', query.trim());
 	}
 
-	const response = await adminFetch(`${apiBase}/admin/game-offers?${searchParams}`, {
+	const response = await adminFetch(`${apiBase}/admin/game-listings?${searchParams}`, {
 		credentials: 'include',
 		signal,
 	});
 	if (!response.ok) {
-		throw new Error(response.status === 403 ? 'Administrator access is required.' : 'Game offers could not be loaded.');
+		throw new Error(response.status === 403 ? 'Administrator access is required.' : 'Game listings could not be loaded.');
 	}
 
-	return await response.json() as AdminGameOfferListResponse;
-}
-
-export async function getAllAdminInstitutionGameOffers(signal?: AbortSignal): Promise<AdminGameOffer[]> {
-	const offerList: AdminGameOffer[] = [];
-	let offset = 0;
-	let totalItemCount = 0;
-
-	do {
-		const result = await getAdminGameOfferList('institution', '', offset, signal);
-		offerList.push(...result.offerList);
-		totalItemCount = result.totalItemCount;
-		offset += result.offerList.length;
-	} while (offset < totalItemCount && offset > 0);
-
-	return offerList;
+	return await response.json() as AdminGameListingListResponse;
 }
 
 export async function getTaxonomyTermList(

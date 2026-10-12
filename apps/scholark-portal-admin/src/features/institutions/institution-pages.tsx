@@ -268,7 +268,7 @@ function InstitutionDetails({
 					<Link className="related-section-link" to={`/classrooms?institutionId=${encodeURIComponent(institution.id)}`}><GraduationCap size={16}/> View classrooms</Link>
 					<Link className="related-section-link" to={`/courses?institutionId=${encodeURIComponent(institution.id)}`}><BookOpen size={16}/> View courses</Link>
 					<Link className="related-section-link" to={`/instructors?institutionId=${encodeURIComponent(institution.id)}`}><Users size={16}/> View instructors</Link>
-					<Link className="related-section-link" to={`/classroom-games?institutionId=${encodeURIComponent(institution.id)}`}><Gamepad2 size={16}/> View classroom games</Link>
+					<Link className="related-section-link" to={`/classroom-game-listings?institutionId=${encodeURIComponent(institution.id)}`}><Gamepad2 size={16}/> View classroom games</Link>
 				</div>
 			</div>
 		</>

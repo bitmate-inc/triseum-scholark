@@ -9,11 +9,11 @@ import {
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Money } from '../../../shared/commerce/model/money.entity';
 import { AcquisitionCodeRedemption } from '../../education/model/acquisition.code.redemption.entity';
-import { InstitutionGameOffer } from '../../education/model/institution.game.offer.entity';
+import { ClassroomGameListing } from '../../education/model/classroom.game.listing.entity';
 import { User } from '../../user/model/user.entity';
 import { GameLicense } from './game.license.entity';
 import { GamePaymentAttempt } from './game.payment.attempt.entity';
-import { PublicGameOffer } from './public.game.offer.entity';
+import { PublicGameListing } from './public.game.listing.entity';
 
 export enum GameAcquisitionMechanism {
 	USER_PAID = 'user_paid',
@@ -30,11 +30,11 @@ export class GameAcquisition extends StaticFactory {
 	@ManyToOne(() => User, { deleteRule: 'restrict' })
 	user!: User;
 
-	@ManyToOne(() => PublicGameOffer, { deleteRule: 'restrict', nullable: true })
-	publicOffer?: PublicGameOffer;
+	@ManyToOne(() => PublicGameListing, { deleteRule: 'restrict', nullable: true })
+	publicListing?: PublicGameListing;
 
-	@ManyToOne(() => InstitutionGameOffer, { deleteRule: 'restrict', nullable: true })
-	institutionGameOffer?: InstitutionGameOffer;
+	@ManyToOne(() => ClassroomGameListing, { deleteRule: 'restrict', nullable: true })
+	classroomGameListing?: ClassroomGameListing;
 
 	@ManyToOne(() => GameLicense, { deleteRule: 'restrict' })
 	license!: GameLicense;

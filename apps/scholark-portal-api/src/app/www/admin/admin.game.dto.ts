@@ -7,11 +7,10 @@ import {
 
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import type { GetAdminGameListQueryData } from '../../core/feature/admin/query/get.admin.game.query';
-import { InstitutionGameOffer, InstitutionGameOfferDesignatedPayor } from '../../core/feature/education/model/institution.game.offer.entity';
 import { Game } from '../../core/feature/game/model/game.entity';
 import { GameVariant, GameVariantMode } from '../../core/feature/game/model/game.variant.entity';
 import { GameVersion } from '../../core/feature/game/model/game.version.entity';
-import { PublicGameOffer } from '../../core/feature/game/model/public.game.offer.entity';
+import { PublicGameListing } from '../../core/feature/game/model/public.game.listing.entity';
 import { MoneyDto } from '../catalog/game.dto';
 
 enum GamePublicationFilter {
@@ -84,7 +83,7 @@ export class AdminGameListItemResponseDto {
 
 }
 
-export class AdminGamePublicOfferResponseDto {
+export class AdminGamePublicListingResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
@@ -98,41 +97,8 @@ export class AdminGamePublicOfferResponseDto {
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;
 
-	static fromEntity(offer: PublicGameOffer): AdminGamePublicOfferResponseDto {
-		return { available: offer.isAvailable, id: offer.id!, price: offer.price, publishedAt: offer.publishedAt ?? undefined };
-	}
-
-}
-
-export class AdminGameInstitutionOfferResponseDto {
-
-	@ApiProperty({ format: 'uuid' })
-	id!: string;
-
-	@ApiProperty({ enum: InstitutionGameOfferDesignatedPayor, enumName: 'InstitutionGameOfferDesignatedPayor' })
-	designatedPayor!: InstitutionGameOfferDesignatedPayor;
-
-	@ApiProperty({ type: MoneyDto })
-	price!: MoneyDto;
-
-	@ApiPropertyOptional({ minimum: 0 })
-	allocatedLicenseQuantity?: number;
-
-	@ApiProperty({ minimum: 1 })
-	licenseDurationDays!: number;
-
-	@ApiPropertyOptional({ format: 'date-time', type: String })
-	publishedAt?: Date;
-
-	static fromEntity(offer: InstitutionGameOffer): AdminGameInstitutionOfferResponseDto {
-		return {
-			allocatedLicenseQuantity: offer.allocatedLicenseQuantity,
-			designatedPayor: offer.designatedPayor,
-			id: offer.id!,
-			licenseDurationDays: offer.licenseDurationDays,
-			price: offer.price,
-			publishedAt: offer.publishedAt,
-		};
+	static fromEntity(listing: PublicGameListing): AdminGamePublicListingResponseDto {
+		return { available: listing.isAvailable, id: listing.id!, price: listing.price, publishedAt: listing.publishedAt ?? undefined };
 	}
 
 }
@@ -148,11 +114,8 @@ export class AdminGameVariantResponseDto {
 	@ApiProperty({ enum: GameVariantMode, enumName: 'GameVariantMode' })
 	mode!: GameVariantMode;
 
-	@ApiProperty({ type: [AdminGamePublicOfferResponseDto] })
-	publicOfferList!: AdminGamePublicOfferResponseDto[];
-
-	@ApiProperty({ type: [AdminGameInstitutionOfferResponseDto] })
-	institutionOfferList!: AdminGameInstitutionOfferResponseDto[];
+	@ApiProperty({ type: [AdminGamePublicListingResponseDto] })
+	publicListingList!: AdminGamePublicListingResponseDto[];
 
 }
 
@@ -211,8 +174,7 @@ export class AdminGameResponseDto {
 		game: Game;
 		gameVersionList: GameVersion[];
 		gameVariantList: GameVariant[];
-		institutionGameOfferList: InstitutionGameOffer[];
-		publicGameOfferList: PublicGameOffer[];
+		publicGameListingList: PublicGameListing[];
 	}): AdminGameResponseDto {
 		const variantsByVersionId = new Map<string, GameVariant[]>();
 		for (const variant of result.gameVariantList) {
@@ -221,21 +183,13 @@ export class AdminGameResponseDto {
 			variants.push(variant);
 			variantsByVersionId.set(versionId, variants);
 		}
-		const publicOffersByVariantId = new Map<string, PublicGameOffer[]>();
-		for (const offer of result.publicGameOfferList) {
-			const variantId = offer.gameVariant.id!;
-			const offers = publicOffersByVariantId.get(variantId) ?? [];
-			offers.push(offer);
-			publicOffersByVariantId.set(variantId, offers);
+		const publicListingsByVariantId = new Map<string, PublicGameListing[]>();
+		for (const listing of result.publicGameListingList) {
+			const variantId = listing.gameVariant.id!;
+			const listings = publicListingsByVariantId.get(variantId) ?? [];
+			listings.push(listing);
+			publicListingsByVariantId.set(variantId, listings);
 		}
-		const institutionOffersByVariantId = new Map<string, InstitutionGameOffer[]>();
-		for (const offer of result.institutionGameOfferList) {
-			const variantId = offer.gameVariant.id!;
-			const offers = institutionOffersByVariantId.get(variantId) ?? [];
-			offers.push(offer);
-			institutionOffersByVariantId.set(variantId, offers);
-		}
-
 		return {
 			description: result.game.description,
 			featured: result.game.isFeatured,
@@ -257,10 +211,9 @@ export class AdminGameResponseDto {
 				runUrl: version.runUrl,
 				variantList: (variantsByVersionId.get(version.id!) ?? []).map((variant) => ({
 					id: variant.id!,
-					institutionOfferList: (institutionOffersByVariantId.get(variant.id!) ?? []).map(AdminGameInstitutionOfferResponseDto.fromEntity),
 					language: variant.language,
 					mode: variant.mode,
-					publicOfferList: (publicOffersByVariantId.get(variant.id!) ?? []).map(AdminGamePublicOfferResponseDto.fromEntity),
+					publicListingList: (publicListingsByVariantId.get(variant.id!) ?? []).map(AdminGamePublicListingResponseDto.fromEntity),
 				})),
 			})),
 		};

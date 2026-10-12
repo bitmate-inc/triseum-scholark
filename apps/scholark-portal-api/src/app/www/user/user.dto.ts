@@ -73,9 +73,8 @@ export class UserPaymentAttemptResponseDto {
 			canRevalidate: attempt.status === GamePaymentAttemptStatus.PENDING && Boolean(attempt.stripeCheckoutSessionId),
 			createdAt: attempt.createdAt!,
 			fulfilledAt: attempt.fulfilledAt,
-			gameTitle: attempt.publicOffer?.gameVariant.gameVersion.game.title
-				?? attempt.institutionGameOffer?.gameVariant.gameVersion.game.title
-				?? attempt.classroomGame?.institutionGameOffer.gameVariant.gameVersion.game.title
+			gameTitle: attempt.publicListing?.gameVariant.gameVersion.game.title
+				?? attempt.classroomGameListing?.gameVariant.gameVersion.game.title
 				?? 'Unknown game',
 			id: attempt.id!,
 			price: attempt.price,

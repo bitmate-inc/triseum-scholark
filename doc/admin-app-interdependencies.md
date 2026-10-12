@@ -32,11 +32,12 @@ This working hypothesis remains unconfirmed until discovery validates the code, 
 | Instructor business records and assignments | New Admin app | Maintain Instructor record and classroom assignments | Link portal identity and enforce assigned access | Decide identity linkage |
 | Student and Instructor authentication | Portal identity service | Supply stable Admin Instructor ID for identity linkage | Register/invite, authenticate, and authorize | Validate |
 | Game catalog metadata | New Admin app | Maintain game identity, publisher, availability, URL, and metadata | Present eligible catalog and licensed-game views | Validate fields |
-| Publisher offers | New Admin app records publisher-defined terms | Maintain offers on behalf of authorized publishers/users; define designated payor, price, and license duration | Read available offers; authorized users select institution-use offers through classroom assignments | Define maintenance authority |
+| Public listings | New Admin app records standalone commerce terms | Maintain public availability and price on behalf of authorized publishers/users | Read available public listings for standalone checkout | Define maintenance authority |
+| Classroom game listings | New Admin app | Create each listing directly against one Classroom and one GameVariant; maintain designated payor, optional student price, informational included quantity, duration, customization, availability dates, and publication | Read the classroom listing; use student checkout or institution-funded code redemption | Define listing authority; quantity is informational and not enforced |
 | Game Versions and release availability | New Admin app, with publisher-defined release data | Maintain immutable versions and `publisherVersion` labels | Enforce exact version entitlement and launch policy | Define lifecycle |
-| Game Customizations | To decide jointly; future Game Forge responsibility | Maintain draft content and publish immutable customizations | Read published content selected by the classroom assignment | Open |
-| Classroom Game Version assignments | New Admin app, subject to workflow validation | Select an InstitutionGameOffer, optional published customization, and assignment period | Read immutable assignment and create version/customization-specific license context | Define authorized publisher |
-| Classroom payment, language, usage, and configuration settings | New Admin app, subject to configuration design | Maintain approved settings for the assignment | Read and deliver applicable launch configuration | Validate/version |
+| Game Customizations | To decide jointly; future Game Forge responsibility | Maintain draft content and publish immutable customizations | Read published content selected by the ClassroomGameListing | Open |
+| Classroom language and course type | New Admin app | Maintain the Classroom's `language` and `courseType` fields | Read for classroom context | Validate lifecycle |
+| Game Variant language and mode | New Admin app | Maintain variant data on the Game Version | Read through the listing's selected GameVariant | Validate existing catalog behavior |
 | Institution acquisition codes | New Admin app / Portal contract | Issue, store safely, audit, and revoke codes under approved policy | Validate/redact code and activate license exactly once | Define lifecycle contract |
 | Student acquisitions and Game Licenses | Portal expected; institution-funded authority is open | May supply institution-funded entitlement authority | Record acquisition, term, status, and version entitlement; retain expired terms and create separate licenses for later purchases | Open |
 | Game-play and game-state records | Game produces; Portal expected to persist | No MVP administration dependency expected | Validate, store, version, and associate with Student Game | Validate |
@@ -50,9 +51,9 @@ The Milestone 2 source-of-truth matrix resolves this table. For each domain it m
 | Workflow | Required Admin context | Decision or invariant |
 | --- | --- | --- |
 | Instructor access | Stable Instructor ID, institution/classroom assignments, authorization state, and unambiguous matching data | Decide invitation origin and Portal identity linkage. Email is not an immutable cross-system ID. |
-| For-credit acquisition | Eligible institution; active course/classroom; Instructor assignment where required; assigned InstitutionGameOffer and immutable Game Version; payment, language, usage, and configuration; institution code where applicable | Portal records a license for the exact Game Version and creates a ClassroomGameEnrollment linking the ClassroomGame and license for educational progress and grading; the enrolled User is derived from the license. |
-| Not-for-credit acquisition | Catalog metadata, direct-sale status, launch URL, and available base Game Versions | Distinguish direct acquisition from classroom assignment; final catalog and version-availability rules remain open. |
-| Launch and configuration | Stable Game ID, exact permitted Game Version, launch endpoint, and applicable configuration | Published assignments and versions are immutable; define behavior for replacement assignments and active sessions. |
+| For-credit acquisition | Active classroom; classroom game listing and its selected GameVariant; payment or institution code according to designated payor | Portal records a license directly against the ClassroomGameListing and exact GameVariant; classroom context is available through the listing. |
+| Not-for-credit acquisition | Catalog metadata, direct-sale status, launch URL, and available base Game Versions | Distinguish direct acquisition from classroom listings; final catalog and version-availability rules remain open. |
+| Launch and configuration | Stable Game ID, exact permitted Game Version, launch endpoint, and applicable configuration | Published listings and versions are immutable; define behavior for replacement listings and active sessions. |
 | Instructor progress and grades | Stable classroom and assignment IDs | Renaming or disabling related Admin records must not sever historical progress or grade attribution. |
 
 ## 4. Database and Integration Decision
@@ -295,7 +296,7 @@ The first working session with the Admin app developer should leave with:
 | Data ownership | Which domains are authored in Admin versus Portal, and what stable IDs and API contracts connect them? |
 | Legacy export | If migration is needed, which MSSQL records and relationships can be exported, who can produce the export, and what quality/history limitations exist? |
 | Identity and access | Can one Instructor belong to multiple institutions or classrooms? What stable identifier and invitation/linking workflow will the new platform use? |
-| Catalog and configuration | How will the new Admin app maintain Games, publishers, offers, Game Versions, assignments, and configuration while preserving published immutability? |
+| Catalog and configuration | How will the new Admin app maintain Games, publishers, listings, Game Versions, assignments, and configuration while preserving published immutability? |
 | Institution funding | What are the code issuance, scope, validity, reuse, revocation, and redemption rules in the new platform? |
 | Operations | How will the new Admin app and its data be deployed, backed up, monitored, and rolled back? What representative development/test environment is required? |
 

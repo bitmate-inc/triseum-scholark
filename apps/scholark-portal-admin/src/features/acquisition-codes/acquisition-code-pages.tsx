@@ -21,11 +21,11 @@ import { Link, useParams } from 'react-router-dom';
 
 import {
 	type AdminAcquisitionCode,
-	type ClassroomGame,
+	type ClassroomGameListing,
 	createAdminAcquisitionCodes,
 	getAdminAcquisitionCode,
 	getAdminAcquisitionCodeList,
-	getAllAdminClassroomGames,
+	getAllAdminClassroomGameListings,
 	getAllInstitutions,
 	type Institution,
 	revokeAdminAcquisitionCode,
@@ -57,11 +57,11 @@ function getDefaultExpiryDate(): string {
 
 export function AcquisitionCodeListPage() {
 	const [isCreateOpen, setCreateOpen] = useState(false);
-	const [classroomGameList, setClassroomGameList] = useState<ClassroomGame[]>([]);
+	const [classroomGameListingList, setClassroomGameListingList] = useState<ClassroomGameListing[]>([]);
 	const [institutionList, setInstitutionList] = useState<Institution[]>([]);
 	const [isLoadingOptions, setLoadingOptions] = useState(true);
 	const [optionError, setOptionError] = useState<string>();
-	const [classroomGameId, setClassroomGameId] = useState('');
+	const [classroomGameListingId, setClassroomGameListingId] = useState('');
 	const [quantity, setQuantity] = useState('10');
 	const [expiresAt, setExpiresAt] = useState(getDefaultExpiryDate);
 	const [isSaving, setSaving] = useState(false);
@@ -79,9 +79,9 @@ export function AcquisitionCodeListPage() {
 	useEffect(() => {
 		const controller = new AbortController();
 		setLoadingOptions(true);
-		Promise.all([getAllAdminClassroomGames(controller.signal), getAllInstitutions(controller.signal)])
-			.then(([classroomGames, institutions]) => {
-				setClassroomGameList(classroomGames.filter((classroomGame) => classroomGame.designatedPayor === 'institution'));
+		Promise.all([getAllAdminClassroomGameListings(controller.signal), getAllInstitutions(controller.signal)])
+			.then(([classroomGameListings, institutions]) => {
+				setClassroomGameListingList(classroomGameListings.filter((classroomGameListing) => classroomGameListing.designatedPayor === 'institution'));
 				setInstitutionList(institutions);
 			})
 			.catch((requestError: unknown) => {
@@ -124,7 +124,7 @@ export function AcquisitionCodeListPage() {
 		try {
 			const expiry = new Date(`${expiresAt}T23:59:59.999`);
 			const response = await createAdminAcquisitionCodes({
-				classroomGameId,
+				classroomGameListingId,
 				expiresAt: expiry.toISOString(),
 				quantity: Number(quantity),
 			});
@@ -167,18 +167,18 @@ export function AcquisitionCodeListPage() {
 			</div>
 			{isCreateOpen && <form className="institution-form acquisition-code-form" onSubmit={handleCreate}>
 				<div className="institution-form-fields">
-					<label>Classroom game<select disabled={isLoadingOptions || classroomGameList.length === 0} onChange={(event) => setClassroomGameId(event.target.value)} required value={classroomGameId}>
+					<label>Classroom game<select disabled={isLoadingOptions || classroomGameListingList.length === 0} onChange={(event) => setClassroomGameListingId(event.target.value)} required value={classroomGameListingId}>
 						<option disabled value="">{isLoadingOptions ? 'Loading classroom games...' : 'Select an assignment'}</option>
-						{classroomGameList.map((classroomGame) => <option key={classroomGame.id} value={classroomGame.id}>{classroomGame.institution.name} · {classroomGame.classroomName} · {classroomGame.gameTitle} · Version {classroomGame.publisherVersion} · {classroomGame.language}</option>)}
+						{classroomGameListingList.map((classroomGameListing) => <option key={classroomGameListing.id} value={classroomGameListing.id}>{classroomGameListing.institution.name} · {classroomGameListing.classroomName} · {classroomGameListing.gameTitle} · Version {classroomGameListing.publisherVersion} · {classroomGameListing.language}</option>)}
 					</select></label>
 					<label>Number of codes<input max={500} min={1} onChange={(event) => setQuantity(event.target.value)} required type="number" value={quantity}/></label>
 					<label>Valid through<input min={getDefaultExpiryDate()} onChange={(event) => setExpiresAt(event.target.value)} required type="date" value={expiresAt}/></label>
 				</div>
 				{optionError && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{optionError}</div>}
-				{!isLoadingOptions && !optionError && classroomGameList.length === 0 && <p className="game-empty-note">Create an institution-funded classroom game assignment before generating codes.</p>}
+				{!isLoadingOptions && !optionError && classroomGameListingList.length === 0 && <p className="game-empty-note">Create an institution-funded classroom game assignment before generating codes.</p>}
 				{createError && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{createError}</div>}
 				<div className="institution-form-actions">
-					<Button disabled={isSaving || isLoadingOptions || classroomGameList.length === 0} size="sm" type="submit"><TicketCheck size={14}/>{isSaving ? 'Generating...' : 'Generate codes'}</Button>
+					<Button disabled={isSaving || isLoadingOptions || classroomGameListingList.length === 0} size="sm" type="submit"><TicketCheck size={14}/>{isSaving ? 'Generating...' : 'Generate codes'}</Button>
 				</div>
 			</form>}
 			{generatedCodeList.length > 0 && <section aria-label="Generated acquisition codes" className="detail-section acquisition-generated-panel">
@@ -303,7 +303,7 @@ export function AcquisitionCodeDetailPage() {
 						<div><dt>Issued</dt><dd>{formatDate(code.createdAt)}</dd></div>
 						<div><dt>Valid through</dt><dd>{formatDate(code.expiresAt)}</dd></div>
 						<div><dt>License duration</dt><dd>{code.licenseDurationDays} days</dd></div>
-						<div><dt>Offer price</dt><dd>{formatPrice(code.price)}</dd></div>
+						<div><dt>Listing price</dt><dd>{formatPrice(code.price)}</dd></div>
 					</dl>
 				</section>
 				{code.status === 'active' && <section className="detail-section acquisition-code-revoke-section">

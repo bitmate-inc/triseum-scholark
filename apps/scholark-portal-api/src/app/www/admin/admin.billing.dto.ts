@@ -217,7 +217,7 @@ export class GetAdminAcquisitionDetailResponseDto {
 		const license = acquisition.license;
 		const codeRedemption = acquisition.codeRedemption;
 		return {
-			classroomName: license.classroomGame?.classroom.name,
+			classroomName: license.classroomGameListing?.classroom.name,
 			codeRedemption: codeRedemption && {
 				codeId: codeRedemption.acquisitionCode.id!,
 				codeMask: `******-******-**${codeRedemption.acquisitionCode.codeSuffix}`,
@@ -229,7 +229,7 @@ export class GetAdminAcquisitionDetailResponseDto {
 			eventList: eventList.map(AdminAcquisitionEventResponseDto.fromEntity),
 			gameTitle: gameVariant.gameVersion.game.title,
 			id: acquisition.id!,
-			institutionName: license.classroomGame?.classroom.institution.name,
+			institutionName: license.classroomGameListing?.classroom.institution.name,
 			language: gameVariant.language,
 			license: {
 				endAt: license.endAt,
@@ -274,9 +274,8 @@ export class AdminPaymentAttemptListItemResponseDto extends BillingListItemRespo
 
 	static fromEntity(attempt: GamePaymentAttempt): AdminPaymentAttemptListItemResponseDto {
 		const userName = [attempt.user.firstName, attempt.user.lastName].filter(Boolean).join(' ');
-		const gameTitle = attempt.publicOffer?.gameVariant.gameVersion.game.title
-			?? attempt.institutionGameOffer?.gameVariant.gameVersion.game.title
-			?? attempt.classroomGame?.institutionGameOffer.gameVariant.gameVersion.game.title
+		const gameTitle = attempt.publicListing?.gameVariant.gameVersion.game.title
+			?? attempt.classroomGameListing?.gameVariant.gameVersion.game.title
 			?? 'Unknown game';
 		return {
 			createdAt: attempt.createdAt,

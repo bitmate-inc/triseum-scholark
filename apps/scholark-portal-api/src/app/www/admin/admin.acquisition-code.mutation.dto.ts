@@ -14,7 +14,7 @@ export class CreateAdminAcquisitionCodesRequestDto {
 
 	@ApiProperty({ format: 'uuid' })
 	@IsUUID()
-	classroomGameId!: string;
+	classroomGameListingId!: string;
 
 	@ApiProperty({ minimum: 1, maximum: 500 })
 	@IsInt()

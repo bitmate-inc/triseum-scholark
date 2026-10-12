@@ -34,10 +34,10 @@ import { LoginPage } from './auth/login-page';
 import { getLoginReturnPath } from './auth/login-redirect';
 import { AcquisitionCodeDetailPage, AcquisitionCodeListPage } from './features/acquisition-codes/acquisition-code-pages';
 import { AcquisitionDetailPage, BillingListPage } from './features/billing/billing-pages';
-import { ClassroomGameDetailPage, ClassroomGameListPage } from './features/classroom-games/classroom-game-pages';
+import { ClassroomGameListingDetailPage, ClassroomGameListingListPage } from './features/classroom-game-listings/classroom-game-listing-pages';
 import { ClassroomDetailPage, ClassroomListPage } from './features/classrooms/classroom-pages';
 import { CourseDetailPage, CourseListPage } from './features/courses/course-pages';
-import { GameOfferListPage } from './features/game-offers/game-offer-pages';
+import { GameListingListPage } from './features/game-listings/game-listing-pages';
 import { GameDetailPage, GameListPage } from './features/games/game-pages';
 import { InstitutionDetailPage, InstitutionListPage } from './features/institutions/institution-pages';
 import { InstructorDetailPage, InstructorListPage } from './features/instructors/instructor-pages';
@@ -55,7 +55,7 @@ const navigation = [
 		items: [
 			{ label: 'Institutions', path: '/institutions', icon: Building2 },
 			{ label: 'Classrooms', path: '/classrooms', icon: GraduationCap },
-			{ label: 'Classroom games', path: '/classroom-games', icon: Gamepad2 },
+			{ label: 'Classroom games', path: '/classroom-game-listings', icon: Gamepad2 },
 			{ label: 'Courses', path: '/courses', icon: BookOpen },
 			{ label: 'Instructors', path: '/instructors', icon: Users },
 			{ label: 'Acquisition codes', path: '/acquisition-codes', icon: TicketCheck },
@@ -66,7 +66,7 @@ const navigation = [
 		items: [
 			{ label: 'Publishers', path: '/publishers', icon: Building2 },
 			{ label: 'Games', path: '/games', icon: Gamepad2 },
-			{ label: 'Game offers', path: '/game-offers', icon: Tags },
+			{ label: 'Game listings', path: '/game-listings', icon: Tags },
 			{ label: 'Taxonomy', path: '/taxonomy', icon: Settings2 },
 		],
 	},
@@ -83,13 +83,13 @@ const pageDescriptions: Record<string, { eyebrow: string; title: string; detail:
 	'/': { eyebrow: 'Workspace', title: 'Administration overview', detail: 'Operational tools for the ScholArk portal.' },
 	'/institutions': { eyebrow: 'Education', title: 'Institutions', detail: 'Review institution records and their portal status.' },
 	'/classrooms': { eyebrow: 'Education', title: 'Classrooms', detail: 'Manage classroom records across institutions.' },
-	'/classroom-games': { eyebrow: 'Education', title: 'Classroom games', detail: 'Review game assignments made available to classrooms.' },
+	'/classroom-game-listings': { eyebrow: 'Education', title: 'Classroom games', detail: 'Review game assignments made available to classrooms.' },
 	'/courses': { eyebrow: 'Education', title: 'Courses', detail: 'Manage course records and institutional associations.' },
 	'/instructors': { eyebrow: 'Education', title: 'Instructors', detail: 'Review instructor accounts and institutional access.' },
 	'/acquisition-codes': { eyebrow: 'Education', title: 'Acquisition codes', detail: 'Generate institution-funded access codes and review their redemptions.' },
 	'/publishers': { eyebrow: 'Catalog', title: 'Publishers', detail: 'Manage publisher accounts and catalog ownership.' },
 	'/games': { eyebrow: 'Catalog', title: 'Games', detail: 'Review games, versions, and publication status.' },
-	'/game-offers': { eyebrow: 'Catalog', title: 'Game offers', detail: 'Manage institution-facing offers and availability.' },
+	'/game-listings': { eyebrow: 'Catalog', title: 'Game listings', detail: 'Manage public and classroom game listings.' },
 	'/taxonomy': { eyebrow: 'Catalog', title: 'Taxonomy', detail: 'Organize portal discovery categories and terms.' },
 	'/users': { eyebrow: 'Platform', title: 'Users', detail: 'Search portal accounts and review account status.' },
 	'/billing': { eyebrow: 'Platform', title: 'Billing & acquisitions', detail: 'Review purchases, payment outcomes, and issued game licenses.' },
@@ -166,7 +166,7 @@ function AdminShell({ user }: { user: AdminUser }) {
 	const activePage = pageDescriptions[location.pathname]
 		?? (location.pathname.startsWith('/institutions/') ? pageDescriptions['/institutions']
 			: location.pathname.startsWith('/classrooms/') ? pageDescriptions['/classrooms']
-				: location.pathname.startsWith('/classroom-games/') ? pageDescriptions['/classroom-games']
+				: location.pathname.startsWith('/classroom-game-listings/') ? pageDescriptions['/classroom-game-listings']
 					: location.pathname.startsWith('/courses/') ? pageDescriptions['/courses']
 						: location.pathname.startsWith('/instructors/') ? pageDescriptions['/instructors']
 							: location.pathname.startsWith('/acquisition-codes/') ? pageDescriptions['/acquisition-codes']
@@ -227,8 +227,8 @@ function AdminShell({ user }: { user: AdminUser }) {
 					<Route element={<InstitutionDetailPage/>} path="/institutions/:id"/>
 					<Route element={<ClassroomListPage/>} path="/classrooms"/>
 					<Route element={<ClassroomDetailPage/>} path="/classrooms/:id"/>
-					<Route element={<ClassroomGameListPage/>} path="/classroom-games"/>
-					<Route element={<ClassroomGameDetailPage/>} path="/classroom-games/:id"/>
+					<Route element={<ClassroomGameListingListPage/>} path="/classroom-game-listings"/>
+					<Route element={<ClassroomGameListingDetailPage/>} path="/classroom-game-listings/:id"/>
 					<Route element={<CourseListPage/>} path="/courses"/>
 					<Route element={<CourseDetailPage/>} path="/courses/:id"/>
 					<Route element={<InstructorListPage/>} path="/instructors"/>
@@ -239,12 +239,12 @@ function AdminShell({ user }: { user: AdminUser }) {
 					<Route element={<PublisherDetailPage/>} path="/publishers/:id"/>
 					<Route element={<GameListPage/>} path="/games"/>
 					<Route element={<GameDetailPage/>} path="/games/:id"/>
-					<Route element={<GameOfferListPage/>} path="/game-offers"/>
+					<Route element={<GameListingListPage/>} path="/game-listings"/>
 					<Route element={<TaxonomyListPage/>} path="/taxonomy"/>
 					<Route element={<UserListPage/>} path="/users"/>
 					<Route element={<BillingListPage/>} path="/billing"/>
 					<Route element={<AcquisitionDetailPage/>} path="/billing/acquisitions/:id"/>
-					{Object.keys(pageDescriptions).filter((path) => !['/institutions', '/classrooms', '/classroom-games', '/courses', '/instructors', '/acquisition-codes', '/publishers', '/games', '/game-offers', '/taxonomy', '/users', '/billing'].includes(path)).map((path) => <Route element={<AdminPage path={path}/>} key={path} path={path}/>) }
+					{Object.keys(pageDescriptions).filter((path) => !['/institutions', '/classrooms', '/classroom-game-listings', '/courses', '/instructors', '/acquisition-codes', '/publishers', '/games', '/game-listings', '/taxonomy', '/users', '/billing'].includes(path)).map((path) => <Route element={<AdminPage path={path}/>} key={path} path={path}/>) }
 					<Route element={<Navigate replace to="/institutions"/>} path="*"/>
 				</Routes>
 				<footer className="app-footer"><span>ScholArk Portal Administration</span><span>v0.1</span></footer>
