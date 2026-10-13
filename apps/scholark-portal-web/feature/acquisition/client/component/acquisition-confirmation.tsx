@@ -20,16 +20,16 @@ import { Link , useRouter } from "../../../../i18n/navigation";
 import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { getApiErrorMessage } from "../../../auth/client/lib/api-error";
 import {
-	formatListingMode,
 	formatListingPrice,
 	type Game,
 	type GameVersion,
 	type PublicGameListing,
+	type PublicGameListingPriceGroup,
 } from "../../../catalog/shared/model/game";
 import { useGetUserLibraryQuery } from "../../../library/client/api/library-api";
 import { useAcquireGameMutation } from "../api/acquisition-api";
 
-export function AcquisitionConfirmation({ game, gameVersion, publicListing }: { game: Game; gameVersion: GameVersion; publicListing: PublicGameListing }) {
+export function AcquisitionConfirmation({ game, gameVersion, language, price, publicListing }: { game: Game; gameVersion: GameVersion; language: string; price: PublicGameListingPriceGroup["price"]; publicListing: PublicGameListing }) {
 	const locale = useLocale();
 	const t = useTranslations("acquisition");
 	const router = useRouter();
@@ -37,23 +37,28 @@ export function AcquisitionConfirmation({ game, gameVersion, publicListing }: { 
 	const library = useGetUserLibraryQuery(undefined, { skip: !session.data });
 	const [acquire, acquisition] = useAcquireGameMutation();
 	const activeLicense = library.data?.itemList.find(
-		(item) => item.isActive && item.gameVersion.id === gameVersion.id && item.gameVariant.id === publicListing.gameVariantId,
+		(item) => item.isActive
+			&& item.gameVersion.id === gameVersion.id
+			&& item.language === language
+			&& item.courseType === "standard"
+			&& !item.classroomGameListingId
+			&& !item.customizationId,
 	);
 
 	useEffect(() => {
 		if (!session.isLoading && (!session.data || session.isError)) {
-			const backTo = `/game/${game.slug}/acquire?listing=${publicListing.id}`;
+			const backTo = `/game/${game.slug}/acquire?listing=${publicListing.id}&language=${encodeURIComponent(language)}`;
 			const query = new URLSearchParams({ backTo });
 			router.replace(`/auth/login?${query.toString()}`);
 		}
-	}, [game.slug, publicListing.id, router, session.data, session.isError, session.isLoading]);
+	}, [game.slug, language, publicListing.id, router, session.data, session.isError, session.isLoading]);
 
 	async function confirm() {
 		if (activeLicense) {
 			return;
 		}
 
-		const response = await acquire(publicListing.id);
+		const response = await acquire({ language, publicListingId: publicListing.id });
 
 		if ("data" in response && response.data) {
 			window.location.assign(response.data.checkoutUrl);
@@ -81,7 +86,7 @@ export function AcquisitionConfirmation({ game, gameVersion, publicListing }: { 
 			<h1>{t("readyToAddGame")}</h1>
 			<section className={styles.summary}>
 				{game.cover ? <div className={styles.cover}><Image alt="" fill sizes="180px" src={game.cover.src}/></div> : null}
-				<div><p className={styles.kicker}>{t("selectedGame")}</p><h2>{game.title}</h2><p>{game.summary}</p><p>{t("version", { version: gameVersion.publisherVersion })}</p><p>{publicListing.language} · {formatListingMode(publicListing.mode)} · {formatListingPrice(publicListing, locale)}</p></div>
+				<div><p className={styles.kicker}>{t("selectedGame")}</p><h2>{game.title}</h2><p>{game.summary}</p><p>{t("version", { version: gameVersion.publisherVersion })}</p><p>{language} · {formatListingPrice(price, locale)}</p></div>
 			</section>
 			<p className={styles.detail}>{t("gameStripeDetail")}</p>
 			{acquisition.error ? <Alert variant="destructive"><AlertTitle>{t("gameAcquireError")}</AlertTitle><AlertDescription>{getApiErrorMessage(acquisition.error, { generic: t("genericApiError"), request: t("requestApiError") })}</AlertDescription></Alert> : null}

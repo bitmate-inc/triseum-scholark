@@ -86,7 +86,7 @@ export class UserController {
 		}
 
 		return {
-			gameVersionId: result.license!.gameVariant.gameVersion.id!,
+			gameVersionId: result.license!.gameVersion.id!,
 			launchUrl: result.launchUrl!,
 			launchTicket: result.launchTicket!,
 			licenseId: result.license!.id!,

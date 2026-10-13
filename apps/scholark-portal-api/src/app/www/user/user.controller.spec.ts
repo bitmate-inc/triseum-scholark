@@ -17,7 +17,7 @@ describe(UserController.name, () => {
 			execute: jest.fn().mockResolvedValue({
 				launchTicket: 'signed-launch-ticket',
 				launchUrl: 'https://games.example.test/api/v1/game/launch/exchange',
-				license: { gameVariant: { gameVersion: { id: 'version-id' } }, id: 'license-id' },
+				license: { gameVersion: { id: 'version-id' }, id: 'license-id' },
 				validForSeconds: 75,
 			}),
 		};

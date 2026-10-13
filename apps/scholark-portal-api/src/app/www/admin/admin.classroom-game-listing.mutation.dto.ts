@@ -21,7 +21,7 @@ export class CreateAdminClassroomGameListingRequestDto {
 
 	@ApiProperty({ format: 'uuid' })
 	@IsUUID()
-	gameVariantId!: string;
+	gameVersionId!: string;
 
 	@ApiProperty({ enum: ClassroomGameListingDesignatedPayor })
 	@IsEnum(ClassroomGameListingDesignatedPayor)
@@ -74,7 +74,7 @@ export class UpdateAdminClassroomGameListingRequestDto {
 	@ApiPropertyOptional({ format: 'uuid' })
 	@IsOptional()
 	@IsUUID()
-	gameVariantId?: string;
+	gameVersionId?: string;
 
 	@ApiPropertyOptional({ enum: ClassroomGameListingDesignatedPayor })
 	@IsOptional()

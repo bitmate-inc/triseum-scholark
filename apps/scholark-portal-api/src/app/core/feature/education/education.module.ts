@@ -14,6 +14,10 @@ import { Institution } from './model/institution.entity';
 import { Instructor } from './model/instructor.entity';
 import { AcquisitionCodeRepository } from './repository/acquisition.code.repository';
 import { ClassroomGameListingRepository } from './repository/classroom.game.listing.repository';
+import { ClassroomRepository } from './repository/classroom.repository';
+import { CourseRepository } from './repository/course.repository';
+import { InstitutionRepository } from './repository/institution.repository';
+import { InstructorRepository } from './repository/instructor.repository';
 
 @Global()
 @Module({
@@ -22,6 +26,10 @@ import { ClassroomGameListingRepository } from './repository/classroom.game.list
 		RedeemAcquisitionCodeCommand,
 		ClassroomGameListingRepository,
 		AcquisitionCodeRepository,
+		ClassroomRepository,
+		CourseRepository,
+		InstitutionRepository,
+		InstructorRepository,
 		MikroOrmModule,
 	],
 	imports: [
@@ -42,6 +50,10 @@ import { ClassroomGameListingRepository } from './repository/classroom.game.list
 		RedeemAcquisitionCodeCommand,
 		ClassroomGameListingRepository,
 		AcquisitionCodeRepository,
+		ClassroomRepository,
+		CourseRepository,
+		InstitutionRepository,
+		InstructorRepository,
 	],
 })
 export class EducationModule {}

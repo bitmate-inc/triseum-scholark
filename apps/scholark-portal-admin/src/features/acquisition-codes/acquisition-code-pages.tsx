@@ -220,7 +220,7 @@ export function AcquisitionCodeListPage() {
 }
 
 function AcquisitionCodeRow({ code }: { code: AdminAcquisitionCode }) {
-	const gameVersion = [code.publisherVersion && `Version ${code.publisherVersion}`, code.language, code.mode?.replaceAll('_', ' ')].filter(Boolean).join(' · ');
+	const gameVersion = [code.publisherVersion && `Version ${code.publisherVersion}`, code.language, code.courseType?.replaceAll('-', ' ')].filter(Boolean).join(' · ');
 	const terms = code.designatedPayor
 		? `${code.designatedPayor} pays · ${code.licenseDurationDays ?? 'Unknown'} days · ${formatPrice(code.price)}`
 		: 'Legacy code · terms unavailable';
@@ -289,7 +289,7 @@ export function AcquisitionCodeDetailPage() {
 					<div>
 						<p className="eyebrow">Education / Acquisition codes</p>
 						<h1 id="page-title">{code.code}</h1>
-						<p className="page-description">{code.gameTitle ?? 'Legacy acquisition code'}{code.publisherVersion ? ` · Version ${code.publisherVersion}` : ''}{code.language ? ` · ${code.language}` : ''}{code.mode ? ` · ${code.mode.replaceAll('_', ' ')}` : ''}</p>
+						<p className="page-description">{code.gameTitle ?? 'Legacy acquisition code'}{code.publisherVersion ? ` · Version ${code.publisherVersion}` : ''}{code.language ? ` · ${code.language}` : ''}{code.courseType ? ` · ${code.courseType.replaceAll('-', ' ')}` : ''}</p>
 					</div>
 					<span className={`billing-state billing-state-${code.status}`}>{code.status}</span>
 				</div>

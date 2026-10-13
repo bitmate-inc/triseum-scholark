@@ -311,10 +311,10 @@ export class AdminController {
 	}
 
 	@Post('classroom-game-listings')
-	@ApiOperation({ summary: 'Create a classroom game listing for a classroom and game variant' })
+	@ApiOperation({ summary: 'Create a classroom game listing for a classroom and game version' })
 	@ApiCreatedResponse({ type: GetAdminClassroomGameListingResponseDto })
 	@ApiBadRequestResponse({ description: 'Listing end date must be after its start date' })
-	@ApiNotFoundResponse({ description: 'Classroom or game variant not found' })
+	@ApiNotFoundResponse({ description: 'Classroom or game version not found' })
 	async createClassroomGameListing(
 		@Body() body: CreateAdminClassroomGameListingRequestDto,
 	): Promise<GetAdminClassroomGameListingResponseDto> {
@@ -323,7 +323,7 @@ export class AdminController {
 			customizationId: body.customizationId,
 			designatedPayor: body.designatedPayor,
 			endAt: new Date(body.endAt),
-			gameVariantId: body.gameVariantId,
+			gameVersionId: body.gameVersionId,
 			includedLicenseQuantity: body.includedLicenseQuantity,
 			licenseDurationDays: body.licenseDurationDays,
 			price: body.price,
@@ -558,9 +558,9 @@ export class AdminController {
 	}
 
 	@Post('games/:id/versions')
-	@ApiOperation({ summary: 'Create an immutable publisher version and its variants for a game' })
+	@ApiOperation({ summary: 'Create an immutable publisher version for a game' })
 	@ApiCreatedResponse({ type: GetAdminGameResponseDto })
-	@ApiConflictResponse({ description: 'Publisher version or variant already exists' })
+	@ApiConflictResponse({ description: 'Publisher version already exists' })
 	@ApiNotFoundResponse({ description: 'Game not found' })
 	async createGameVersion(
 		@Param('id', ParseUUIDPipe) id: string,
@@ -572,7 +572,6 @@ export class AdminController {
 			publishedAt: body.publishedAt ? new Date(body.publishedAt) : undefined,
 			publisherVersion: body.publisherVersion,
 			runUrl: body.runUrl,
-			variantList: body.variantList,
 		});
 		const result = await this.getAdminGameQuery.execute({ filterBy: { id } });
 		if (!result.game) {
@@ -582,7 +581,7 @@ export class AdminController {
 	}
 
 	@Patch('games/:id/versions/:versionId')
-	@ApiOperation({ summary: 'Update an unpublished game version and its variants' })
+	@ApiOperation({ summary: 'Update an unpublished game version' })
 	@ApiOkResponse({ type: GetAdminGameResponseDto })
 	@ApiConflictResponse({ description: 'Published versions are immutable or the version data conflicts' })
 	@ApiNotFoundResponse({ description: 'Game version not found' })
@@ -604,19 +603,21 @@ export class AdminController {
 	}
 
 	@Post('games/:id/public-listings')
-	@ApiOperation({ summary: 'Create a public listing for a game variant' })
+	@ApiOperation({ summary: 'Create a public listing for a game version' })
 	@ApiCreatedResponse({ type: GetAdminGameResponseDto })
-	@ApiNotFoundResponse({ description: 'Game or variant not found' })
+	@ApiNotFoundResponse({ description: 'Game or version not found' })
 	async createPublicGameListing(
 		@Param('id', ParseUUIDPipe) id: string,
 		@Body() body: CreateAdminPublicGameListingRequestDto,
 	): Promise<GetAdminGameResponseDto> {
 		await this.createAdminGameListingCommand.createPublic({
 			available: body.available,
+			endAt: body.endAt ? new Date(body.endAt) : undefined,
 			gameId: id,
-			gameVariantId: body.gameVariantId,
-			price: body.price,
+			gameVersionId: body.gameVersionId,
+			priceGroupList: body.priceGroupList,
 			publishedAt: body.publishedAt ? new Date(body.publishedAt) : undefined,
+			startAt: body.startAt ? new Date(body.startAt) : undefined,
 		});
 		const result = await this.getAdminGameQuery.execute({ filterBy: { id } });
 		if (!result.game) {
@@ -626,7 +627,7 @@ export class AdminController {
 	}
 
 	@Patch('games/:id/public-listings/:listingId')
-	@ApiOperation({ summary: 'Update price or availability for a public game listing' })
+	@ApiOperation({ summary: 'Update an unpublished public listing or close a published listing' })
 	@ApiOkResponse({ type: GetAdminGameResponseDto })
 	@ApiNotFoundResponse({ description: 'Public listing not found for this game' })
 	async updatePublicGameListing(
@@ -634,10 +635,12 @@ export class AdminController {
 		@Param('listingId', ParseUUIDPipe) listingId: string,
 		@Body() body: UpdateAdminPublicGameListingRequestDto,
 	): Promise<GetAdminGameResponseDto> {
+		const { endAt, publishedAt, startAt, ...fields } = body;
 		await this.updateAdminPublicGameListingCommand.execute(id, listingId, {
-			available: body.available,
-			price: body.price,
-			publishedAt: body.publishedAt === undefined ? undefined : body.publishedAt === null ? null : new Date(body.publishedAt),
+			...fields,
+			...(endAt === undefined ? {} : { endAt: endAt === null ? null : new Date(endAt) }),
+			...(publishedAt === undefined ? {} : { publishedAt: publishedAt === null ? null : new Date(publishedAt) }),
+			...(startAt === undefined ? {} : { startAt: new Date(startAt) }),
 		});
 		const result = await this.getAdminGameQuery.execute({ filterBy: { id } });
 		if (!result.game) {
@@ -661,7 +664,6 @@ export class AdminController {
 		return GetAdminGameResponseDto.fromQueryResult({
 			game: result.game,
 			gameVersionList: result.gameVersionList,
-			gameVariantList: result.gameVariantList,
 			publicGameListingList: result.publicGameListingList,
 		});
 	}

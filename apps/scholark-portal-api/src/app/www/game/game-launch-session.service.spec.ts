@@ -6,19 +6,15 @@ import { GameLaunchSessionService } from './game-launch-session.service';
 
 const userId = '00000000-0000-4000-8000-000000000001';
 const licenseId = '00000000-0000-4000-8000-000000000002';
-const gameVariantId = '00000000-0000-4000-8000-000000000003';
 const gameVersionId = '00000000-0000-4000-8000-000000000004';
 
 function createService(consumeResult: string | null = 'OK') {
 	const license = {
 		endAt: new Date(Date.now() + 30 * 60 * 1000),
-		gameVariant: {
-			gameVersion: {
-				id: gameVersionId,
-				isPublished: () => true,
-				runUrl: 'https://games.example.test/build/',
-			},
-			id: gameVariantId,
+		gameVersion: {
+			id: gameVersionId,
+			isPublished: () => true,
+			runUrl: 'https://games.example.test/build/',
 		},
 		id: licenseId,
 		isActive: () => true,
@@ -28,7 +24,6 @@ function createService(consumeResult: string | null = 'OK') {
 		signAsync: jest.fn().mockResolvedValue('game-session-token'),
 		verifyAsync: jest.fn().mockResolvedValue({
 			exp: Math.floor(Date.now() / 1000) + 45,
-			gameVariantId,
 			gameVersionId,
 			jti: 'ticket-id',
 			licenseId,
@@ -84,7 +79,6 @@ describe(GameLaunchSessionService.name, () => {
 		const { jwtService, redisClient, service } = createService();
 		(jwtService.verifyAsync as jest.Mock).mockResolvedValueOnce({
 			exp: Math.floor(Date.now() / 1000) + 45,
-			gameVariantId,
 			gameVersionId: '00000000-0000-4000-8000-000000000005',
 			jti: 'ticket-id',
 			licenseId,
@@ -98,7 +92,7 @@ describe(GameLaunchSessionService.name, () => {
 
 	it('uses the licensed Game Version runUrl without a deployment-wide origin list', () => {
 		const { license, service } = createService();
-		license.gameVariant.gameVersion.runUrl = 'https://publisher-cdn.example.test/build/';
+		license.gameVersion.runUrl = 'https://publisher-cdn.example.test/build/';
 
 		expect(service.getLicensedUpstream(license as never).toString()).toBe('https://publisher-cdn.example.test/build/');
 	});

@@ -1,3 +1,4 @@
+import type { RequiredEntityData } from '@mikro-orm/core';
 import {
 	EntityName,
 	EntityRepository,
@@ -31,9 +32,14 @@ export abstract class MikroOrmEntityRepository<Entity extends object> implements
 		return entityManager.getRepository(this.entityName);
 	}
 
+	create(data: RequiredEntityData<Entity>): Entity {
+		return this.repository.create(data);
+	}
+
 	async findOneBy(query: FindOneQuery, options?: FindOptions<Entity>): Promise<Entity | undefined> {
 		const result = await this.repository.findOne(this.buildWhere(query), {
 			filters: options?.withDeleted ? { softDelete: false } : {},
+			lockMode: options?.lockMode,
 			populate: this.toPopulate(options?.relations) as never,
 		});
 

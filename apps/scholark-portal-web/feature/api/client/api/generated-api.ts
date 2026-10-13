@@ -1490,7 +1490,6 @@ export type AdminClassroomGameListingResponseDto = {
 	gameSlug: string;
 	publisher: AdminClassroomGameListingPublisherResponseDto;
 	gameVersionId: string;
-	gameVariantId: string;
 	publisherVersion: string;
 	designatedPayor: ClassroomGameListingDesignatedPayor;
 	price?: MoneyDto;
@@ -1498,7 +1497,7 @@ export type AdminClassroomGameListingResponseDto = {
 	customizationId?: string;
 	licenseDurationDays: number;
 	language: string;
-	mode: string;
+	courseType: string;
 	startAt: string;
 	endAt: string;
 	publishedAt?: string;
@@ -1513,7 +1512,7 @@ export type AdminGameListingPriceRequestDto = {
 };
 export type CreateAdminClassroomGameListingRequestDto = {
 	classroomId: string;
-	gameVariantId: string;
+	gameVersionId: string;
 	designatedPayor: "student" | "institution";
 	price?: AdminGameListingPriceRequestDto;
 	includedLicenseQuantity?: number;
@@ -1529,7 +1528,7 @@ export type GetAdminClassroomGameListingListResponseDto = {
 };
 export type UpdateAdminClassroomGameListingRequestDto = {
 	classroomId?: string;
-	gameVariantId?: string;
+	gameVersionId?: string;
 	designatedPayor?: "student" | "institution";
 	price?: AdminGameListingPriceRequestDto | null;
 	includedLicenseQuantity?: number | null;
@@ -1644,18 +1643,18 @@ export type GetAdminGameListResponseDto = {
 	gameList: AdminGameListItemResponseDto[];
 	totalItemCount: number;
 };
-export type GameVariantMode = "default" | "game_based_course";
-export type AdminGamePublicListingResponseDto = {
+export type AdminGamePublicListingPriceGroupResponseDto = {
 	id: string;
 	price: MoneyDto;
+	languageList: string[];
+};
+export type AdminGamePublicListingResponseDto = {
+	id: string;
+	priceGroupList: AdminGamePublicListingPriceGroupResponseDto[];
 	available: boolean;
 	publishedAt?: string;
-};
-export type AdminGameVariantResponseDto = {
-	id: string;
-	language: string;
-	mode: GameVariantMode;
-	publicListingList: AdminGamePublicListingResponseDto[];
+	startAt: string;
+	endAt?: string;
 };
 export type AdminGameVersionResponseDto = {
 	id: string;
@@ -1663,7 +1662,7 @@ export type AdminGameVersionResponseDto = {
 	description?: string;
 	runUrl: string;
 	publishedAt?: string;
-	variantList: AdminGameVariantResponseDto[];
+	publicListingList: AdminGamePublicListingResponseDto[];
 };
 export type AdminGameResponseDto = {
 	id: string;
@@ -1696,38 +1695,35 @@ export type UpdateAdminGameRequestDto = {
 	summary?: string;
 	title?: string;
 };
-export type CreateAdminGameVariantRequestDto = {
-	language: string;
-	mode: "default" | "game_based_course";
-};
 export type CreateAdminGameVersionRequestDto = {
 	publisherVersion: string;
 	description?: string;
 	runUrl: string;
 	publishedAt?: string;
-	variantList: CreateAdminGameVariantRequestDto[];
-};
-export type UpdateAdminGameVariantRequestDto = {
-	id?: string;
-	language: string;
-	mode: "default" | "game_based_course";
 };
 export type UpdateAdminGameVersionRequestDto = {
 	publisherVersion?: string;
 	description?: string;
 	runUrl?: string;
 	publishedAt?: string | null;
-	variantList?: UpdateAdminGameVariantRequestDto[];
+};
+export type AdminGameListingPriceGroupRequestDto = {
+	languageList: string[];
+	price: AdminGameListingPriceRequestDto;
 };
 export type CreateAdminPublicGameListingRequestDto = {
-	gameVariantId: string;
-	price: AdminGameListingPriceRequestDto;
+	gameVersionId: string;
+	priceGroupList: AdminGameListingPriceGroupRequestDto[];
 	available: boolean;
+	startAt?: string;
+	endAt?: string;
 	publishedAt?: string;
 };
 export type UpdateAdminPublicGameListingRequestDto = {
-	price?: AdminGameListingPriceRequestDto;
+	priceGroupList?: AdminGameListingPriceGroupRequestDto[];
 	available?: boolean;
+	startAt?: string;
+	endAt?: string | null;
 	publishedAt?: string | null;
 };
 export type AdminGameListingGameResponseDto = {
@@ -1744,10 +1740,10 @@ export type AdminGameListingVersionResponseDto = {
 	id: string;
 	publisherVersion: string;
 };
-export type AdminGameListingVariantResponseDto = {
+export type AdminGameListingPriceGroupResponseDto = {
 	id: string;
-	language: string;
-	mode: GameVariantMode;
+	price: MoneyDto;
+	languageList: string[];
 };
 export type AdminGameListingListItemResponseDto = {
 	listingType: "public" | "classroom";
@@ -1756,7 +1752,9 @@ export type AdminGameListingListItemResponseDto = {
 	game: AdminGameListingGameResponseDto;
 	publisher: AdminGameListingPublisherResponseDto;
 	gameVersion: AdminGameListingVersionResponseDto;
-	gameVariant: AdminGameListingVariantResponseDto;
+	priceGroupList?: AdminGameListingPriceGroupResponseDto[];
+	language?: string;
+	courseType?: string;
 	available?: boolean;
 	publishedAt?: string;
 	designatedPayor?: ClassroomGameListingDesignatedPayor;
@@ -1846,7 +1844,7 @@ export type GetAdminAcquisitionDetailResponseDto = {
 	gameTitle: string;
 	publisherVersion?: string;
 	language?: string;
-	mode?: string;
+	courseType?: string;
 	classroomName?: string;
 	institutionName?: string;
 	license: object;
@@ -1905,7 +1903,7 @@ export type AdminAcquisitionCodeListItemResponseDto = {
 	gameTitle?: string;
 	publisherVersion?: string;
 	language?: string;
-	mode?: string;
+	courseType?: string;
 	designatedPayor?: string;
 	licenseDurationDays?: number;
 	price?: object;
@@ -1991,6 +1989,7 @@ export type GameCheckoutResponseDto = {
 };
 export type GameAcquisitionRequestDto = {
 	publicListingId: string;
+	language: string;
 };
 export type PublisherResponseDto = {
 	id: string;
@@ -2028,12 +2027,15 @@ export type GetGameListResponseDto = {
 	gameList: GameResponseDto[];
 	totalItemCount: number;
 };
+export type PublicGameListingPriceGroupResponseDto = {
+	price: MoneyDto;
+	languageList: string[];
+};
 export type PublicGameListingResponseDto = {
 	id: string;
-	price: MoneyDto;
-	gameVariantId: string;
-	language: string;
-	mode: string;
+	priceGroupList: PublicGameListingPriceGroupResponseDto[];
+	startAt: string;
+	endAt?: string;
 };
 export type GameVersionResponseDto = {
 	id: string;
@@ -2070,12 +2072,11 @@ export type ClassroomGameListingResponseDto = {
 	game: GameResponseDto;
 	designatedPayor: ClassroomGameListingDesignatedPayor;
 	gameVersionId: string;
-	gameVariantId: string;
 	price?: MoneyDto;
 	includedLicenseQuantity?: number;
 	customizationId?: string;
 	language: string;
-	mode: string;
+	courseType: string;
 	startAt: string;
 	endAt: string;
 	licenseDurationDays: number;
@@ -2099,9 +2100,6 @@ export type UserLibraryVersionResponseDto = {
 	publisherVersion: string;
 	runUrl: string;
 };
-export type UserLibraryVariantResponseDto = {
-	id: string;
-};
 export type UserLibraryClassroomResponseDto = {
 	id: string;
 	name: string;
@@ -2111,7 +2109,8 @@ export type UserLibraryItemResponseDto = {
 	id: string;
 	game: UserLibraryGameResponseDto;
 	gameVersion: UserLibraryVersionResponseDto;
-	gameVariant: UserLibraryVariantResponseDto;
+	language: string;
+	courseType: string;
 	customizationId?: string;
 	classroom?: UserLibraryClassroomResponseDto;
 	classroomGameListingId?: string;

@@ -9,6 +9,7 @@ import { GetCatalogGameListQuery } from './query/get.catalog.game.list.query';
 import { GetCatalogInstitutionListQuery, GetCatalogInstitutionQuery } from './query/get.catalog.institution.query';
 import { GetFeaturedGameListQuery } from './query/get.featured.game.list.query';
 import { GetGameQuery } from './query/get.game.query';
+import { GetUserLibraryQuery } from './query/get.user.library.query';
 
 const educationCatalogQueryList = [
 	GetCatalogInstitutionListQuery,
@@ -27,6 +28,7 @@ const educationCatalogQueryList = [
 		GetCatalogGameListQuery,
 		GetFeaturedGameListQuery,
 		GetGameQuery,
+		GetUserLibraryQuery,
 		...educationCatalogQueryList,
 	],
 	imports: [EducationModule, GameModule],
@@ -34,6 +36,7 @@ const educationCatalogQueryList = [
 		GetCatalogGameListQuery,
 		GetFeaturedGameListQuery,
 		GetGameQuery,
+		GetUserLibraryQuery,
 		...educationCatalogQueryList,
 	],
 })

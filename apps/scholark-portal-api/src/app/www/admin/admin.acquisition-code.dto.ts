@@ -92,7 +92,7 @@ export class AdminAcquisitionCodeListItemResponseDto {
 	language?: string;
 
 	@ApiPropertyOptional()
-	mode?: string;
+	courseType?: string;
 
 	@ApiPropertyOptional()
 	designatedPayor?: string;
@@ -115,7 +115,7 @@ export class AdminAcquisitionCodeListItemResponseDto {
 		eventList: GameAcquisitionEvent[] = [],
 	): AdminAcquisitionCodeListItemResponseDto {
 		const classroomGameListing = code.classroomGameListing;
-		const variant = classroomGameListing?.gameVariant;
+		const gameVersion = classroomGameListing?.gameVersion;
 		const now = new Date();
 		const status = code.revokedAt ? 'revoked' : code.expiresAt <= now ? 'expired' : 'active';
 		return {
@@ -125,15 +125,15 @@ export class AdminAcquisitionCodeListItemResponseDto {
 			createdAt: code.createdAt,
 			designatedPayor: classroomGameListing?.designatedPayor,
 			expiresAt: code.expiresAt,
-			gameTitle: variant?.gameVersion.game.title,
+			gameTitle: gameVersion?.game.title,
 			id: code.id!,
 			institutionId: classroomGameListing?.classroom.institution.id,
 			institutionName: classroomGameListing?.classroom.institution.name,
-			language: variant?.language,
+			language: classroomGameListing?.language,
 			licenseDurationDays: classroomGameListing?.licenseDurationDays,
-			mode: variant?.mode,
+			courseType: classroomGameListing?.courseType,
 			price: classroomGameListing?.price,
-			publisherVersion: variant?.gameVersion.publisherVersion,
+			publisherVersion: gameVersion?.publisherVersion,
 			redemptionList: redemptionList.map(AdminAcquisitionCodeRedemptionResponseDto.fromEntity),
 			eventList: eventList.map(AdminAcquisitionEventResponseDto.fromEntity),
 			revokedAt: code.revokedAt,

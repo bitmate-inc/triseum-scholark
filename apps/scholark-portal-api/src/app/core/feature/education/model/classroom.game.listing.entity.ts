@@ -8,7 +8,7 @@ import {
 
 import { Money } from '../../../shared/commerce/model/money.entity';
 import { GameCustomization } from '../../game/model/game.customization.entity';
-import { GameVariant } from '../../game/model/game.variant.entity';
+import { GameVersion } from '../../game/model/game.version.entity';
 import { Classroom } from './classroom.entity';
 
 export enum ClassroomGameListingDesignatedPayor {
@@ -25,8 +25,14 @@ export class ClassroomGameListing {
 	@ManyToOne(() => Classroom, { deleteRule: 'cascade' })
 	classroom!: Classroom;
 
-	@ManyToOne(() => GameVariant, { deleteRule: 'restrict' })
-	gameVariant!: GameVariant;
+	@ManyToOne(() => GameVersion, { deleteRule: 'restrict' })
+	gameVersion!: GameVersion;
+
+	@Property()
+	language!: string;
+
+	@Property({ type: 'string' })
+	courseType!: Classroom['courseType'];
 
 	@Property({ type: 'string' })
 	designatedPayor!: ClassroomGameListingDesignatedPayor;
@@ -57,7 +63,7 @@ export class ClassroomGameListing {
 	}
 
 	isExpired(referenceDate: Date = new Date()): boolean {
-		return this.endAt < referenceDate;
+		return this.endAt <= referenceDate;
 	}
 
 	isActive(referenceDate: Date = new Date()): boolean {
@@ -66,6 +72,12 @@ export class ClassroomGameListing {
 
 	isAvailable(referenceDate: Date = new Date()): boolean {
 		return this.isPublished(referenceDate) && this.isActive(referenceDate);
+	}
+
+	canBeAcquired(referenceDate: Date = new Date()): boolean {
+		return this.isAvailable(referenceDate)
+			&& this.gameVersion.isPublished(referenceDate)
+			&& this.gameVersion.game.isPublished(referenceDate);
 	}
 
 	@Property({ onCreate: () => new Date() })

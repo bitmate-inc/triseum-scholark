@@ -56,7 +56,11 @@ export class GameController {
 		@Body() body: GameAcquisitionRequestDto,
 	): Promise<GameCheckoutResponseDto> {
 		const result = await this.createGameCheckoutCommand.createGameCheckout(
-			CreateGameCheckoutCommandData.create({ publicListingId: body.publicListingId, userId: session.user.id }),
+			CreateGameCheckoutCommandData.create({
+				language: body.language,
+				publicListingId: body.publicListingId,
+				userId: session.user.id,
+			}),
 		);
 
 		if (!!result.validationResult) {

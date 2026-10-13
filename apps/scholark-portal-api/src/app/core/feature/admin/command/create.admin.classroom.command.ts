@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	ConflictException,
 	Injectable,
@@ -9,9 +7,13 @@ import {
 import { Classroom } from '../../education/model/classroom.entity';
 import { Course } from '../../education/model/course.entity';
 import { EducationCatalogStatus } from '../../education/model/education.catalog.status';
-import { Institution } from '../../education/model/institution.entity';
 import { Instructor } from '../../education/model/instructor.entity';
+import { ClassroomRepository } from '../../education/repository/classroom.repository';
+import { CourseRepository } from '../../education/repository/course.repository';
+import { InstitutionRepository } from '../../education/repository/institution.repository';
+import { InstructorRepository } from '../../education/repository/instructor.repository';
 import { TaxonomyTerm } from '../../taxonomy/model/taxonomy.term.entity';
+import { TaxonomyTermRepository } from '../../taxonomy/repository/taxonomy.term.repository';
 
 export interface CreateAdminClassroomCommandData {
 	code: string;
@@ -31,20 +33,15 @@ export interface CreateAdminClassroomCommandData {
 export class CreateAdminClassroomCommand {
 
 	constructor(
-		@InjectRepository(Classroom)
-		private readonly classroomRepository: EntityRepository<Classroom>,
-		@InjectRepository(Course)
-		private readonly courseRepository: EntityRepository<Course>,
-		@InjectRepository(Institution)
-		private readonly institutionRepository: EntityRepository<Institution>,
-		@InjectRepository(Instructor)
-		private readonly instructorRepository: EntityRepository<Instructor>,
-		@InjectRepository(TaxonomyTerm)
-		private readonly taxonomyTermRepository: EntityRepository<TaxonomyTerm>,
+		private readonly classroomRepository: ClassroomRepository,
+		private readonly courseRepository: CourseRepository,
+		private readonly institutionRepository: InstitutionRepository,
+		private readonly instructorRepository: InstructorRepository,
+		private readonly taxonomyTermRepository: TaxonomyTermRepository,
 	) {}
 
 	async execute(data: CreateAdminClassroomCommandData): Promise<Classroom> {
-		const institution = await this.institutionRepository.findOne({ id: data.institutionId });
+		const institution = await this.institutionRepository.findOneBy({ id: data.institutionId });
 		if (!institution) {
 			throw new NotFoundException('Institution not found.');
 		}
@@ -54,10 +51,10 @@ export class CreateAdminClassroomCommand {
 
 		const slug = data.slug.trim();
 		const code = data.code.trim();
-		if (await this.classroomRepository.findOne({ slug })) {
+		if (await this.classroomRepository.findOneBy({ slug })) {
 			throw new ConflictException('A classroom with this slug already exists.');
 		}
-		if (await this.classroomRepository.findOne({ institution: institution.id, code })) {
+		if (await this.classroomRepository.findOneBy({ institution: institution.id, code })) {
 			throw new ConflictException('A classroom with this code already exists for this institution.');
 		}
 
@@ -83,9 +80,7 @@ export class CreateAdminClassroomCommand {
 		classroom.instructorList.set(instructorList);
 		classroom.taxonomyTermList.set(taxonomyTermList);
 
-		const entityManager = this.classroomRepository.getEntityManager();
-		entityManager.persist(classroom);
-		await entityManager.flush();
+		await this.classroomRepository.save(classroom);
 
 		return classroom;
 	}
@@ -98,9 +93,9 @@ export class CreateAdminClassroomCommand {
 		status: EducationCatalogStatus,
 	): Promise<{ courseList: Course[]; instructorList: Instructor[]; taxonomyTermList: TaxonomyTerm[] }> {
 		const [courseList, instructorList, taxonomyTermList] = await Promise.all([
-			this.courseRepository.find({ id: { $in: [...new Set(courseIdList)] } }),
-			this.instructorRepository.find({ id: { $in: [...new Set(instructorIdList)] } }),
-			this.taxonomyTermRepository.find({ id: { $in: [...new Set(taxonomyTermIdList)] } }),
+			this.courseRepository.findBy({ id: [...new Set(courseIdList)] }),
+			this.instructorRepository.findBy({ id: [...new Set(instructorIdList)] }),
+			this.taxonomyTermRepository.findBy({ id: [...new Set(taxonomyTermIdList)] }),
 		]);
 		if (courseList.length !== new Set(courseIdList).size
 			|| instructorList.length !== new Set(instructorIdList).size

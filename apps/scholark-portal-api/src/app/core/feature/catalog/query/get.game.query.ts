@@ -94,14 +94,11 @@ export class GetGameQuery {
 			{ orderBy: { publishedAt: 'desc' } },
 		);
 
-		const publicListingList = await this.publicListingRepository.find(
-			{
-				gameVariant: { gameVersion: { $in: gameVersionList } },
-				isAvailable: true,
-				publishedAt: { $lte: new Date() },
-			},
-			{ populate: ['gameVariant'] },
-		);
+		const currentDate = new Date();
+		const publicListingList = (await this.publicListingRepository.find(
+			{ gameVersion: { $in: gameVersionList } },
+			{ populate: ['priceGroupList.languageList'] },
+		)).filter((listing) => listing.canBeAcquired(currentDate));
 
 		return GetGameQueryResult.create({ 
 			game, gameVersionList, publicListingList

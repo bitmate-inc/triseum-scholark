@@ -4,9 +4,8 @@ import { Injectable } from '@nestjs/common';
 
 import { MikroOrmEntityRepository } from '../../../../../lib/database/mikro.orm.entity.repository';
 import { MikroOrmTransactionContext } from '../../../../../lib/database/mikro.orm.transaction.context';
-import { Game } from '../model/game.entity';
 import { GameLicense } from '../model/game.license.entity';
-import { GameVariant } from '../model/game.variant.entity';
+import { GameVersion } from '../model/game.version.entity';
 
 @Injectable()
 export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense> {
@@ -18,25 +17,19 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 		super(GameLicense, repository, transactionContext);
 	}
 
-	async findActiveByUserAndGame(userId: string, game: Game): Promise<GameLicense | undefined> {
+	async findActiveByUserAndConfiguration(
+		userId: string,
+		gameVersion: GameVersion,
+		language: string,
+		courseType: GameLicense['courseType'],
+	): Promise<GameLicense | undefined> {
 		const now = new Date();
 		return (await this.repository.findOne(
 			{
 				endAt: { $gt: now },
-				gameVariant: { gameVersion: { game } },
-				startAt: { $lte: now },
-				user: userId,
-			},
-			{ orderBy: { endAt: 'desc' } },
-		)) ?? undefined;
-	}
-
-	async findActiveByUserAndGameVariant(userId: string, gameVariant: GameVariant): Promise<GameLicense | undefined> {
-		const now = new Date();
-		return (await this.repository.findOne(
-			{
-				endAt: { $gt: now },
-				gameVariant,
+				gameVersion,
+				language,
+				courseType,
 				startAt: { $lte: now },
 				user: userId,
 			},
@@ -59,7 +52,7 @@ export class GameLicenseRepository extends MikroOrmEntityRepository<GameLicense>
 			{ id: licenseId, user: userId },
 			{
 				relations: {
-					gameVariant: { gameVersion: { game: true } },
+					gameVersion: { game: true },
 					customization: true,
 					classroomGameListing: true,
 				},

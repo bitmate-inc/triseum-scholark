@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	BadRequestException,
 	ConflictException,
@@ -8,6 +6,7 @@ import {
 } from '@nestjs/common';
 
 import { Game } from '../../game/model/game.entity';
+import { GameRepository } from '../../game/repository/game.repository';
 
 export interface UpdateAdminGameCommandData {
 	description?: string;
@@ -22,8 +21,7 @@ export interface UpdateAdminGameCommandData {
 export class UpdateAdminGameCommand {
 
 	constructor(
-		@InjectRepository(Game)
-		private readonly gameRepository: EntityRepository<Game>,
+		private readonly gameRepository: GameRepository,
 	) {}
 
 	async execute(id: string, data: UpdateAdminGameCommandData): Promise<Game> {
@@ -31,7 +29,7 @@ export class UpdateAdminGameCommand {
 			throw new BadRequestException('At least one game field must be provided.');
 		}
 
-		const game = await this.gameRepository.findOne({ id }, { populate: ['publisher'] });
+		const game = await this.gameRepository.findOneBy({ id }, { relations: { publisher: true } });
 		if (!game) {
 			throw new NotFoundException('Game not found.');
 		}
@@ -41,7 +39,7 @@ export class UpdateAdminGameCommand {
 
 		const slug = data.slug?.trim();
 		if (slug && slug !== game.slug) {
-			const existingGame = await this.gameRepository.findOne({ slug });
+			const existingGame = await this.gameRepository.findOneBy({ slug });
 			if (existingGame && existingGame.id !== id) {
 				throw new ConflictException('A game with this slug already exists.');
 			}
@@ -64,7 +62,7 @@ export class UpdateAdminGameCommand {
 			game.publishedAt = data.publishedAt ?? undefined;
 		}
 
-		await this.gameRepository.getEntityManager().flush();
+		await this.gameRepository.save(game);
 		return game;
 	}
 

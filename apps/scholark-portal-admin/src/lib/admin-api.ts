@@ -111,14 +111,13 @@ export interface ClassroomGameListing {
 	gamePublishedAt?: string;
 	gameSlug: string;
 	gameTitle: string;
-	gameVariantId: string;
 	gameVersionId: string;
 	includedLicenseQuantity?: number;
 	id: string;
 	institution: Pick<Institution, 'id' | 'name' | 'slug'>;
 	language: string;
 	licenseDurationDays: number;
-	mode: string;
+	courseType: string;
 	price?: { currency: string; minorUnitAmount: number };
 	publisherVersion: string;
 	publisher: { id: string; name: string; slug: string };
@@ -136,7 +135,7 @@ export interface CreateAdminClassroomGameListingInput {
 	customizationId?: string;
 	designatedPayor: 'student' | 'institution';
 	endAt: string;
-	gameVariantId: string;
+	gameVersionId: string;
 	includedLicenseQuantity?: number;
 	licenseDurationDays: number;
 	price?: AdminGameListingPrice;
@@ -237,16 +236,13 @@ export interface AdminGameProfile extends AdminGame {
 		publishedAt?: string;
 		publisherVersion: string;
 		runUrl: string;
-		variantList: {
+		publicListingList: {
+			available: boolean;
+			endAt?: string;
 			id: string;
-			language: string;
-			mode: 'default' | 'game_based_course';
-			publicListingList: {
-				available: boolean;
-				id: string;
-				price: { currency: string; minorUnitAmount: number };
-				publishedAt?: string;
-			}[];
+			priceGroupList: AdminGameListingPriceGroup[];
+			publishedAt?: string;
+			startAt: string;
 		}[];
 	}[];
 }
@@ -256,13 +252,10 @@ export interface AdminGameListResponse {
 	totalItemCount: number;
 }
 
-export interface AdminGameVariantOption {
+export interface AdminGameVersionOption {
 	gameId: string;
 	gameTitle: string;
-	gameVersionId: string;
 	id: string;
-	language: string;
-	mode: 'default' | 'game_based_course';
 	publisherVersion: string;
 }
 
@@ -283,17 +276,30 @@ export interface AdminGameListingPrice {
 	minorUnitAmount: number;
 }
 
+export interface AdminGameListingPriceGroupInput {
+	languageList: string[];
+	price: AdminGameListingPrice;
+}
+
+export interface AdminGameListingPriceGroup extends AdminGameListingPriceGroupInput {
+	id: string;
+}
+
 export interface CreateAdminPublicGameListingInput {
 	available: boolean;
-	gameVariantId: string;
-	price: AdminGameListingPrice;
+	endAt?: string;
+	gameVersionId: string;
+	priceGroupList: AdminGameListingPriceGroupInput[];
 	publishedAt?: string;
+	startAt?: string;
 }
 
 export interface UpdateAdminPublicGameListingInput {
 	available?: boolean;
-	price?: AdminGameListingPrice;
+	endAt?: string | null;
+	priceGroupList?: AdminGameListingPriceGroupInput[];
 	publishedAt?: string | null;
+	startAt?: string;
 }
 
 export interface CreateAdminGameVersionInput {
@@ -301,24 +307,23 @@ export interface CreateAdminGameVersionInput {
 	publishedAt?: string;
 	publisherVersion: string;
 	runUrl: string;
-	variantList: { language: string; mode: 'default' | 'game_based_course' }[];
 }
 
-export type UpdateAdminGameVersionInput = Partial<Omit<CreateAdminGameVersionInput, 'variantList'>> & {
-	variantList?: { id?: string; language: string; mode: 'default' | 'game_based_course' }[];
-};
+export type UpdateAdminGameVersionInput = Partial<Omit<CreateAdminGameVersionInput, 'publishedAt'>> & { publishedAt?: string | null };
 
 export interface AdminGameListing {
 	classroom?: { id: string; name: string; slug: string; institutionName: string };
 	available?: boolean;
 	designatedPayor?: 'student' | 'institution';
 	game: Pick<AdminGame, 'id' | 'slug' | 'title'>;
-	gameVariant: { id: string; language: string; mode: 'default' | 'game_based_course' };
 	gameVersion: { id: string; publisherVersion: string };
 	id: string;
 	includedLicenseQuantity?: number;
 	licenseDurationDays?: number;
 	listingType: 'public' | 'classroom';
+	language?: string;
+	courseType?: string;
+	priceGroupList?: AdminGameListingPriceGroup[];
 	price?: { currency: string; minorUnitAmount: number };
 	publishedAt?: string;
 	publisher: Pick<Publisher, 'id' | 'name' | 'slug'>;
@@ -398,7 +403,7 @@ export interface AdminBillingAcquisitionDetail extends AdminBillingAcquisition {
 	institutionName?: string;
 	language?: string;
 	license: { endAt: string; id: string; startAt: string; status: 'active' | 'expired' | 'scheduled' };
-	mode?: string;
+	courseType?: string;
 	paymentAttempt?: {
 		fulfilledAt?: string;
 		id: string;
@@ -454,7 +459,7 @@ export interface AdminAcquisitionCode {
 	institutionName?: string;
 	language?: string;
 	licenseDurationDays?: number;
-	mode?: string;
+	courseType?: string;
 	price?: { currency: string; minorUnitAmount: number };
 	publisherVersion?: string;
 	redemptionList: AdminAcquisitionCodeRedemption[];
@@ -936,7 +941,7 @@ export async function getAdminGame(id: string, signal?: AbortSignal): Promise<Ad
 	return result.game;
 }
 
-export async function getAllAdminGameVariants(signal?: AbortSignal): Promise<AdminGameVariantOption[]> {
+export async function getAllAdminGameVersions(signal?: AbortSignal): Promise<AdminGameVersionOption[]> {
 	const gameList: AdminGame[] = [];
 	let offset = 0;
 	let totalItemCount = 0;
@@ -949,15 +954,12 @@ export async function getAllAdminGameVariants(signal?: AbortSignal): Promise<Adm
 	} while (offset < totalItemCount && offset > 0);
 
 	const gameProfileList = await Promise.all(gameList.map((game) => getAdminGame(game.id, signal)));
-	return gameProfileList.flatMap((game) => game.versionList.flatMap((version) => version.variantList.map((variant) => ({
+	return gameProfileList.flatMap((game) => game.versionList.map((version) => ({
 		gameId: game.id,
 		gameTitle: game.title,
-		gameVersionId: version.id,
-		id: variant.id,
-		language: variant.language,
-		mode: variant.mode,
+		id: version.id,
 		publisherVersion: version.publisherVersion,
-	}))));
+	})));
 }
 
 export async function createAdminGame(input: CreateAdminGameInput): Promise<AdminGameProfile> {

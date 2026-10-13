@@ -26,13 +26,13 @@ import {
 
 import {
 	type AdminGameListingPrice,
-	type AdminGameVariantOption,
+	type AdminGameVersionOption,
 	type Classroom,
 	type ClassroomGameListing,
 	type ClassroomGameListingListResponse,
 	createAdminClassroomGameListing,
 	type CreateAdminClassroomGameListingInput,
-	getAllAdminGameVariants,
+	getAllAdminGameVersions,
 	getAllClassrooms,
 	getClassroomGameListing,
 	getClassroomGameListingList,
@@ -119,6 +119,7 @@ export function ClassroomGameListingListPage() {
 			</div>
 			{isCreateOpen && <ClassroomGameListingForm
 				initialClassroomId={classroomId}
+				initialGameVersionId=""
 				institutionId={institutionId}
 				onCancel={() => setCreateOpen(false)}
 				onSubmit={async (input) => {
@@ -179,20 +180,22 @@ function toCreateClassroomGameListingInput(input: ClassroomGameListingFormInput)
 function ClassroomGameListingForm({
 	existingListing,
 	initialClassroomId,
+	initialGameVersionId,
 	institutionId,
 	onCancel,
 	onSubmit,
 }: {
 	existingListing?: ClassroomGameListing;
 	initialClassroomId: string;
+	initialGameVersionId: string;
 	institutionId: string;
 	onCancel: () => void;
 	onSubmit: (input: ClassroomGameListingFormInput) => Promise<void>;
 }) {
 	const [classroomList, setClassroomList] = useState<Classroom[]>([]);
-	const [gameVariantList, setGameVariantList] = useState<AdminGameVariantOption[]>([]);
+	const [gameVersionList, setGameVersionList] = useState<AdminGameVersionOption[]>([]);
 	const [classroomId, setClassroomId] = useState(initialClassroomId);
-	const [gameVariantId, setGameVariantId] = useState(existingListing?.gameVariantId ?? '');
+	const [gameVersionId, setGameVersionId] = useState(existingListing?.gameVersionId ?? initialGameVersionId);
 	const [designatedPayor, setDesignatedPayor] = useState<ClassroomGameListing['designatedPayor']>(existingListing?.designatedPayor ?? 'student');
 	const [priceAmount, setPriceAmount] = useState(existingListing?.price ? (existingListing.price.minorUnitAmount / 100).toFixed(2) : '');
 	const [includedLicenseQuantity, setIncludedLicenseQuantity] = useState(existingListing?.includedLicenseQuantity == null ? '' : String(existingListing.includedLicenseQuantity));
@@ -213,18 +216,18 @@ function ClassroomGameListingForm({
 
 	useEffect(() => {
 		const controller = new AbortController();
-		Promise.all([getAllClassrooms(controller.signal), getAllAdminGameVariants(controller.signal)])
-			.then(([classrooms, gameVariants]) => {
+		Promise.all([getAllClassrooms(controller.signal), getAllAdminGameVersions(controller.signal)])
+			.then(([classrooms, gameVersions]) => {
 				const availableClassrooms = classrooms.filter((classroom) => (classroom.status === 'active' || classroom.id === existingListing?.classroomId)
 					&& (!institutionId || classroom.institution.id === institutionId));
 				setClassroomList(availableClassrooms);
-				setGameVariantList(gameVariants);
+				setGameVersionList(gameVersions);
 				setClassroomId((current) => availableClassrooms.some((classroom) => classroom.id === current)
 					? current
 					: availableClassrooms[0]?.id ?? '');
-				setGameVariantId((current) => gameVariants.some((variant) => variant.id === current)
+				setGameVersionId((current) => gameVersions.some((version) => version.id === current)
 					? current
-					: gameVariants[0]?.id ?? '');
+					: gameVersions.find((version) => version.id === initialGameVersionId)?.id ?? gameVersions[0]?.id ?? '');
 			})
 			.catch((requestError: unknown) => {
 				if (requestError instanceof DOMException && requestError.name === 'AbortError') {
@@ -235,7 +238,7 @@ function ClassroomGameListingForm({
 			.finally(() => setLoading(false));
 
 		return () => controller.abort();
-	}, [existingListing?.classroomId, institutionId]);
+	}, [existingListing?.classroomId, initialGameVersionId, institutionId]);
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
 		event.preventDefault();
@@ -252,7 +255,7 @@ function ClassroomGameListingForm({
 				customizationId: customizationId.trim() || (existingListing ? null : undefined),
 				designatedPayor,
 				endAt: new Date(endAt).toISOString(),
-				gameVariantId,
+				gameVersionId,
 				includedLicenseQuantity: includedLicenseQuantity ? Number(includedLicenseQuantity) : existingListing ? null : undefined,
 				licenseDurationDays: Number(licenseDurationDays),
 				price: designatedPayor === 'student'
@@ -275,10 +278,12 @@ function ClassroomGameListingForm({
 					<option disabled value="">Select a classroom</option>
 					{classroomList.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.institution.name} · {classroom.name}</option>)}
 				</select></label>
-				<label>Game variant<select disabled={isLoading} onChange={(event) => setGameVariantId(event.target.value)} required value={gameVariantId}>
-					<option disabled value="">Select a game variant</option>
-					{gameVariantList.map((variant) => <option key={variant.id} value={variant.id}>{variant.gameTitle} · Version {variant.publisherVersion} · {variant.language} · {variant.mode.replaceAll('_', ' ')}</option>)}
+				<label>Game version<select disabled={isLoading} onChange={(event) => setGameVersionId(event.target.value)} required value={gameVersionId}>
+					<option disabled value="">Select a game version</option>
+					{gameVersionList.map((version) => <option key={version.id} value={version.id}>{version.gameTitle} · Version {version.publisherVersion}</option>)}
 				</select></label>
+				<label>Classroom language<input readOnly value={classroomList.find((classroom) => classroom.id === classroomId)?.language ?? ''}/></label>
+				<label>Course type<input readOnly value={classroomList.find((classroom) => classroom.id === classroomId)?.courseType ?? ''}/></label>
 				<label>Designated payor<select onChange={(event) => setDesignatedPayor(event.target.value as ClassroomGameListing['designatedPayor'])} value={designatedPayor}>
 					<option value="student">Student</option>
 					<option value="institution">Institution</option>
@@ -292,11 +297,11 @@ function ClassroomGameListingForm({
 				<label>Publish at<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/></label>
 			</div>
 			{designatedPayor === 'institution' && <p className="game-empty-note">Institution-funded listings have no student price.</p>}
-			{!isLoading && (classroomList.length === 0 || gameVariantList.length === 0) && <p className="game-empty-note">An active classroom and a game variant are required.</p>}
+			{!isLoading && (classroomList.length === 0 || gameVersionList.length === 0) && <p className="game-empty-note">An active classroom and a game version are required.</p>}
 			{error && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{error}</div>}
 			<div className="institution-form-actions">
 				<Button disabled={isSaving} onClick={onCancel} size="sm" type="button" variant="outline"><X size={14}/> Cancel</Button>
-				<Button disabled={isLoading || isSaving || classroomList.length === 0 || gameVariantList.length === 0} size="sm" type="submit"><Check size={14}/>{isSaving ? 'Saving...' : existingListing ? 'Save listing' : 'Create listing'}</Button>
+				<Button disabled={isLoading || isSaving || classroomList.length === 0 || gameVersionList.length === 0} size="sm" type="submit"><Check size={14}/>{isSaving ? 'Saving...' : existingListing ? 'Save listing' : 'Create listing'}</Button>
 			</div>
 		</form>
 	);
@@ -313,7 +318,7 @@ function ClassroomGameListingRow({ classroomGameListing }: { classroomGameListin
 		<div className="institution-row classroom-row classroom-game-listing-row">
 			<div className="institution-name-cell">
 				<div className="institution-row-mark"><Gamepad2 size={17}/></div>
-				<div><Link to={`/classroom-game-listings/${classroomGameListing.id}`}>{classroomGameListing.gameTitle}</Link><span>{classroomGameListing.publisher.name} · {classroomGameListing.language} · {classroomGameListing.mode}</span></div>
+				<div><Link to={`/classroom-game-listings/${classroomGameListing.id}`}>{classroomGameListing.gameTitle}</Link><span>{classroomGameListing.publisher.name} · {classroomGameListing.language} · {classroomGameListing.courseType.replaceAll('-', ' ')}</span></div>
 			</div>
 			<Link className="listing-classroom" to={`/classrooms/${classroomGameListing.classroomId}`}>{classroomGameListing.classroomName}</Link>
 			<Link className="listing-institution" to={`/institutions/${classroomGameListing.institution.id}`}>{classroomGameListing.institution.name}</Link>
@@ -378,6 +383,7 @@ function ClassroomGameListingDetails({ classroomGameListing: initialClassroomGam
 			{isEditing && <ClassroomGameListingForm
 				existingListing={classroomGameListing}
 				initialClassroomId={classroomGameListing.classroomId}
+				initialGameVersionId={classroomGameListing.gameVersionId}
 				institutionId={classroomGameListing.institution.id}
 				onCancel={() => setEditing(false)}
 				onSubmit={async (input) => {
@@ -387,6 +393,7 @@ function ClassroomGameListingDetails({ classroomGameListing: initialClassroomGam
 			/>}
 			{isReplacementOpen && <ClassroomGameListingForm
 				initialClassroomId={classroomGameListing.classroomId}
+				initialGameVersionId={classroomGameListing.gameVersionId}
 				institutionId={classroomGameListing.institution.id}
 				onCancel={() => setReplacementOpen(false)}
 				onSubmit={async (input) => {
@@ -415,7 +422,7 @@ function ClassroomGameListingDetails({ classroomGameListing: initialClassroomGam
 					<div><dt>License duration</dt><dd>{classroomGameListing.licenseDurationDays} days</dd></div>
 					<div><dt>Game version</dt><dd>{classroomGameListing.gameVersionId}</dd></div>
 					<div><dt>Language</dt><dd>{classroomGameListing.language}</dd></div>
-					<div><dt>Mode</dt><dd>{classroomGameListing.mode}</dd></div>
+					<div><dt>Course type</dt><dd>{classroomGameListing.courseType.replaceAll('-', ' ')}</dd></div>
 					<div><dt>Listing ID</dt><dd>{classroomGameListing.id}</dd></div>
 				</dl>
 			</div>

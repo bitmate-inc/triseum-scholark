@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	BadRequestException,
 	ConflictException,
@@ -9,7 +7,8 @@ import {
 
 import { Course } from '../../education/model/course.entity';
 import { EducationCatalogStatus } from '../../education/model/education.catalog.status';
-import { Institution } from '../../education/model/institution.entity';
+import { CourseRepository } from '../../education/repository/course.repository';
+import { InstitutionRepository } from '../../education/repository/institution.repository';
 
 export interface UpdateAdminCourseCommandData {
 	description?: string;
@@ -25,10 +24,8 @@ export interface UpdateAdminCourseCommandData {
 export class UpdateAdminCourseCommand {
 
 	constructor(
-		@InjectRepository(Course)
-		private readonly courseRepository: EntityRepository<Course>,
-		@InjectRepository(Institution)
-		private readonly institutionRepository: EntityRepository<Institution>,
+		private readonly courseRepository: CourseRepository,
+		private readonly institutionRepository: InstitutionRepository,
 	) {}
 
 	async execute(id: string, data: UpdateAdminCourseCommandData): Promise<Course> {
@@ -36,13 +33,13 @@ export class UpdateAdminCourseCommand {
 			throw new BadRequestException('At least one course field must be provided.');
 		}
 
-		const course = await this.courseRepository.findOne({ id }, { populate: ['institution'] });
+		const course = await this.courseRepository.findOneBy({ id }, { relations: { institution: true } });
 		if (!course) {
 			throw new NotFoundException('Course not found.');
 		}
 
 		const institution = data.institutionId
-			? await this.institutionRepository.findOne({ id: data.institutionId })
+			? await this.institutionRepository.findOneBy({ id: data.institutionId })
 			: course.institution;
 		if (!institution) {
 			throw new NotFoundException('Institution not found.');
@@ -55,7 +52,7 @@ export class UpdateAdminCourseCommand {
 
 		const nextSlug = data.slug?.trim();
 		if (nextSlug) {
-			const existingCourse = await this.courseRepository.findOne({ slug: nextSlug });
+			const existingCourse = await this.courseRepository.findOneBy({ slug: nextSlug });
 			if (existingCourse && existingCourse.id !== id) {
 				throw new ConflictException('A course with this slug already exists.');
 			}
@@ -64,7 +61,7 @@ export class UpdateAdminCourseCommand {
 
 		const nextCode = data.code?.trim() ?? course.code;
 		if (nextCode !== course.code || institution.id !== course.institution.id) {
-			const existingCourse = await this.courseRepository.findOne({ institution: institution.id, code: nextCode });
+			const existingCourse = await this.courseRepository.findOneBy({ institution: institution.id, code: nextCode });
 			if (existingCourse && existingCourse.id !== id) {
 				throw new ConflictException('A course with this code already exists for this institution.');
 			}
@@ -83,7 +80,7 @@ export class UpdateAdminCourseCommand {
 		}
 		course.status = nextStatus;
 
-		await this.courseRepository.getEntityManager().flush();
+		await this.courseRepository.save(course);
 		return course;
 	}
 

@@ -111,7 +111,7 @@ export function GameListingListPage() {
 				</label>
 			</div>
 			<div className="table-frame">
-				<div className="institution-table-header listing-table-header"><span>Game</span><span>Variant</span><span>Student price</span><span>{listingType === 'public' ? 'Publication' : 'Listing terms'}</span><span/></div>
+				<div className="institution-table-header listing-table-header"><span>Game</span><span>Configuration</span><span>Price</span><span>{listingType === 'public' ? 'Publication' : 'Listing terms'}</span><span/></div>
 				{error && <div className="inline-error" role="alert"><AlertCircle size={17}/><span>{error}</span><Button onClick={() => setReloadKey(reloadKey + 1)} size="sm" variant="outline">Try again</Button></div>}
 				{isLoading && <div aria-label="Loading game listings" className="table-loading"><span/><span/><span/><span/></div>}
 				{!isLoading && !error && result?.listingList.length === 0 && <div className="empty-state"><div className="empty-mark"><Tags size={20}/></div><strong>{listingType === 'public' ? 'No public listings found' : 'No classroom listings found'}</strong><p>Try a different game or publisher search.</p></div>}
@@ -129,8 +129,13 @@ export function GameListingListPage() {
 }
 
 function GameListingRow({ gameListing }: { gameListing: AdminGameListing }) {
-	const variant = gameListing.gameVariant;
 	const version = gameListing.gameVersion;
+	const configuration = gameListing.listingType === 'public'
+		? [...new Set(gameListing.priceGroupList?.flatMap((priceGroup) => priceGroup.languageList) ?? [])].join(', ')
+		: [gameListing.language, gameListing.courseType?.replaceAll('-', ' ')].filter(Boolean).join(' · ');
+	const priceDescription = gameListing.listingType === 'public'
+		? gameListing.priceGroupList?.map((priceGroup) => `${formatPrice(priceGroup.price)} · ${priceGroup.languageList.join(', ')}`).join(' / ') || 'No language prices'
+		: formatPrice(gameListing.price);
 	const detailHref = gameListing.listingType === 'classroom' ? `/classroom-game-listings/${gameListing.id}` : `/games/${gameListing.game.id}`;
 	return (
 		<div className="institution-row listing-row">
@@ -138,8 +143,8 @@ function GameListingRow({ gameListing }: { gameListing: AdminGameListing }) {
 				<div className="institution-row-mark"><Tags size={16}/></div>
 				<div><Link to={detailHref}>{gameListing.game.title}</Link><span><Link className="listing-publisher-link" to={`/publishers/${gameListing.publisher.id}`}>{gameListing.publisher.name}</Link></span></div>
 			</div>
-			<div className="listing-variant"><span>Version {version.publisherVersion}</span><small>{variant.language} · {variant.mode.replaceAll('_', ' ')}</small></div>
-			<span className="listing-price">{formatPrice(gameListing.price)}</span>
+			<div className="listing-variant"><span>Version {version.publisherVersion}</span><small>{configuration || 'No language configuration'}</small></div>
+			<span className="listing-price">{priceDescription}</span>
 			<div className="listing-terms">
 				{gameListing.listingType === 'public' ? <>
 					<span className={`publication-state state-${publicationState(gameListing.publishedAt)}`}>{publicationLabel(gameListing.publishedAt)}</span>

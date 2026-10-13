@@ -101,9 +101,6 @@ export class ClassroomGameListingResponseDto {
 	@ApiProperty({ format: 'uuid' })
 	gameVersionId!: string;
 
-	@ApiProperty({ format: 'uuid' })
-	gameVariantId!: string;
-
 	@ApiPropertyOptional({ type: MoneyDto })
 	price?: MoneyDto;
 
@@ -117,7 +114,7 @@ export class ClassroomGameListingResponseDto {
 	language!: string;
 
 	@ApiProperty()
-	mode!: string;
+	courseType!: string;
 
 	@ApiProperty({ format: 'date-time', type: String })
 	startAt!: Date;
@@ -144,16 +141,15 @@ export class ClassroomGameListingResponseDto {
 			},
 			createdAt: classroomGameListing.createdAt!,
 			customizationId: classroomGameListing.customization?.id,
-			game: GameResponseDto.fromEntity(classroomGameListing.gameVariant.gameVersion.game),
+			game: GameResponseDto.fromEntity(classroomGameListing.gameVersion.game),
 			designatedPayor: classroomGameListing.designatedPayor,
-			gameVariantId: classroomGameListing.gameVariant.id!,
-			gameVersionId: classroomGameListing.gameVariant.gameVersion.id!,
+			gameVersionId: classroomGameListing.gameVersion.id!,
 			id: classroomGameListing.id!,
 			endAt: classroomGameListing.endAt,
 			includedLicenseQuantity: classroomGameListing.includedLicenseQuantity,
 			licenseDurationDays: classroomGameListing.licenseDurationDays,
-			language: classroomGameListing.gameVariant.language,
-			mode: classroomGameListing.gameVariant.mode,
+			language: classroomGameListing.language,
+			courseType: classroomGameListing.courseType,
 			price: classroomGameListing.price,
 			startAt: classroomGameListing.startAt,
 			updatedAt: classroomGameListing.updatedAt!,

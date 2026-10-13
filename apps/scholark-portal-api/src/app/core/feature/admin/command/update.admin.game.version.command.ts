@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	BadRequestException,
 	ConflictException,
@@ -7,31 +5,21 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 
-import { ClassroomGameListing } from '../../education/model/classroom.game.listing.entity';
-import { GameVariant, GameVariantMode } from '../../game/model/game.variant.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
-import { PublicGameListing } from '../../game/model/public.game.listing.entity';
+import { GameVersionRepository } from '../../game/repository/game.version.repository';
 
 export interface UpdateAdminGameVersionCommandData {
 	description?: string;
 	publishedAt?: Date | null;
 	publisherVersion?: string;
 	runUrl?: string;
-	variantList?: { id?: string; language: string; mode: GameVariantMode }[];
 }
 
 @Injectable()
 export class UpdateAdminGameVersionCommand {
 
 	constructor(
-		@InjectRepository(GameVersion)
-		private readonly gameVersionRepository: EntityRepository<GameVersion>,
-		@InjectRepository(GameVariant)
-		private readonly gameVariantRepository: EntityRepository<GameVariant>,
-		@InjectRepository(ClassroomGameListing)
-		private readonly classroomGameListingRepository: EntityRepository<ClassroomGameListing>,
-		@InjectRepository(PublicGameListing)
-		private readonly publicGameListingRepository: EntityRepository<PublicGameListing>,
+		private readonly gameVersionRepository: GameVersionRepository,
 	) {}
 
 	async execute(gameId: string, versionId: string, data: UpdateAdminGameVersionCommandData): Promise<GameVersion> {
@@ -39,7 +27,7 @@ export class UpdateAdminGameVersionCommand {
 			throw new BadRequestException('At least one game version field must be provided.');
 		}
 
-		const version = await this.gameVersionRepository.findOne({ id: versionId, game: gameId });
+		const version = await this.gameVersionRepository.findOneBy({ id: versionId, game: gameId });
 		if (!version) {
 			throw new NotFoundException('Game version not found for this game.');
 		}
@@ -49,7 +37,7 @@ export class UpdateAdminGameVersionCommand {
 
 		const publisherVersion = data.publisherVersion?.trim();
 		if (publisherVersion && publisherVersion !== version.publisherVersion) {
-			if (await this.gameVersionRepository.findOne({ game: gameId, publisherVersion })) {
+			if (await this.gameVersionRepository.findOneBy({ game: gameId, publisherVersion })) {
 				throw new ConflictException('This publisher version already exists for the game.');
 			}
 			version.publisherVersion = publisherVersion;
@@ -63,67 +51,7 @@ export class UpdateAdminGameVersionCommand {
 		if (Object.prototype.hasOwnProperty.call(data, 'publishedAt')) {
 			version.publishedAt = data.publishedAt ?? undefined;
 		}
-
-		if (data.variantList !== undefined) {
-			if (data.variantList.length === 0) {
-				throw new BadRequestException('At least one game variant is required.');
-			}
-			const currentVariantList = await this.gameVariantRepository.find({ gameVersion: version.id! });
-			const currentVariantById = new Map(currentVariantList.map((variant) => [variant.id!, variant]));
-			const requestedIdSet = new Set<string>();
-			const requestedPairSet = new Set<string>();
-			const entityManager = this.gameVariantRepository.getEntityManager();
-
-			for (const requestedVariant of data.variantList) {
-				const language = requestedVariant.language.trim();
-				if (!language) {
-					throw new BadRequestException('Variant language is required.');
-				}
-				const pair = `${language}\u0000${requestedVariant.mode}`;
-				if (requestedPairSet.has(pair)) {
-					throw new ConflictException('Game variants must have unique language and mode pairs.');
-				}
-				requestedPairSet.add(pair);
-
-				if (requestedVariant.id) {
-					const variant = currentVariantById.get(requestedVariant.id);
-					if (!variant) {
-						throw new NotFoundException('Game variant not found for this version.');
-					}
-					const conflictingVariant = currentVariantList.find((current) => current.id !== variant.id
-						&& current.language === language && current.mode === requestedVariant.mode);
-					if (conflictingVariant) {
-						throw new ConflictException('A variant with this language and mode already exists.');
-					}
-					variant.language = language;
-					variant.mode = requestedVariant.mode;
-					requestedIdSet.add(variant.id!);
-				} else {
-					const entity = this.gameVariantRepository.create({
-						gameVersion: version,
-						language,
-						mode: requestedVariant.mode,
-					});
-					entityManager.persist(entity);
-				}
-			}
-
-			for (const variant of currentVariantList) {
-				if (requestedIdSet.has(variant.id!)) {
-					continue;
-				}
-				const [classroomListing, publicListing] = await Promise.all([
-					this.classroomGameListingRepository.findOne({ gameVariant: variant.id }),
-					this.publicGameListingRepository.findOne({ gameVariant: variant.id }),
-				]);
-				if (classroomListing || publicListing) {
-					throw new ConflictException('Variants referenced by listings cannot be removed.');
-				}
-				entityManager.remove(variant);
-			}
-		}
-
-		await this.gameVersionRepository.getEntityManager().flush();
+		await this.gameVersionRepository.save(version);
 		return version;
 	}
 

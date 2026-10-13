@@ -15,10 +15,13 @@ const classroomGameListingId = '00000000-0000-4000-8000-000000000002';
 function createDependencies() {
 	const classroomGameListing = {
 		classroom: { institution: {} },
+		canBeAcquired: jest.fn().mockReturnValue(true),
+		courseType: 'standard',
 		designatedPayor: ClassroomGameListingDesignatedPayor.INSTITUTION,
-		gameVariant: {},
+		gameVersion: { id: 'version-id' },
 		id: classroomGameListingId,
 		isAvailable: () => true,
+		language: 'en',
 		licenseDurationDays: 30,
 		price: undefined,
 	};
@@ -41,6 +44,7 @@ function createDependencies() {
 		} as unknown as AcquisitionCodeRepository,
 		classroomGameListingRepository: {
 			findForAcquisition: jest.fn().mockResolvedValue(classroomGameListing),
+			findForLicenseIssuance: jest.fn().mockResolvedValue(classroomGameListing),
 		} as unknown as ClassroomGameListingRepository,
 		gameAcquisitionRepository: {
 			save: jest.fn().mockImplementation(async (value) => value),
@@ -84,7 +88,7 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 		}));
 
 		expect(result.validationResult?.errorList).toBeDefined();
-		expect(dependencies.classroomGameListingRepository.findForAcquisition).not.toHaveBeenCalled();
+		expect(dependencies.classroomGameListingRepository.findForLicenseIssuance).not.toHaveBeenCalled();
 	});
 
 	it('creates an institution-funded license and claims the code', async () => {
@@ -154,7 +158,7 @@ describe(RedeemAcquisitionCodeCommand.name, () => {
 	it('rejects a code used for a different classroom listing', async () => {
 		const { command, dependencies, classroomGameListing } = createDependencies();
 		const otherClassroomGameListingId = '00000000-0000-4000-8000-000000000006';
-		(dependencies.classroomGameListingRepository.findForAcquisition as jest.Mock).mockResolvedValue({
+		(dependencies.classroomGameListingRepository.findForLicenseIssuance as jest.Mock).mockResolvedValue({
 			...classroomGameListing,
 			id: otherClassroomGameListingId,
 		});

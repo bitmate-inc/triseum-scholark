@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	BadRequestException,
 	ConflictException,
@@ -10,6 +8,9 @@ import {
 import { Classroom } from '../../education/model/classroom.entity';
 import { Institution } from '../../education/model/institution.entity';
 import { Instructor } from '../../education/model/instructor.entity';
+import { ClassroomRepository } from '../../education/repository/classroom.repository';
+import { InstitutionRepository } from '../../education/repository/institution.repository';
+import { InstructorRepository } from '../../education/repository/instructor.repository';
 
 export interface UpdateAdminInstructorCommandData {
 	classroomIdList?: string[];
@@ -22,12 +23,9 @@ export interface UpdateAdminInstructorCommandData {
 export class UpdateAdminInstructorCommand {
 
 	constructor(
-		@InjectRepository(Classroom)
-		private readonly classroomRepository: EntityRepository<Classroom>,
-		@InjectRepository(Institution)
-		private readonly institutionRepository: EntityRepository<Institution>,
-		@InjectRepository(Instructor)
-		private readonly instructorRepository: EntityRepository<Instructor>,
+		private readonly classroomRepository: ClassroomRepository,
+		private readonly institutionRepository: InstitutionRepository,
+		private readonly instructorRepository: InstructorRepository,
 	) {}
 
 	async execute(id: string, data: UpdateAdminInstructorCommandData): Promise<Instructor> {
@@ -35,14 +33,14 @@ export class UpdateAdminInstructorCommand {
 			throw new BadRequestException('At least one instructor field must be provided.');
 		}
 
-		const instructor = await this.instructorRepository.findOne({ id });
+		const instructor = await this.instructorRepository.findOneBy({ id });
 		if (!instructor) {
 			throw new NotFoundException('Instructor not found.');
 		}
 
 		if (typeof data.slug !== 'undefined') {
 			const slug = data.slug.trim();
-			const existingInstructor = await this.instructorRepository.findOne({ slug });
+			const existingInstructor = await this.instructorRepository.findOneBy({ slug });
 			if (existingInstructor && existingInstructor.id !== id) {
 				throw new ConflictException('An instructor with this slug already exists.');
 			}
@@ -53,8 +51,8 @@ export class UpdateAdminInstructorCommand {
 		}
 
 		const [currentInstitutionList, currentClassroomList, nextInstitutionList, nextClassroomList] = await Promise.all([
-			data.institutionIdList ? this.institutionRepository.find({ instructorList: id }, { populate: ['instructorList'] }) : [],
-			data.classroomIdList ? this.classroomRepository.find({ instructorList: id }, { populate: ['instructorList'] }) : [],
+			data.institutionIdList ? this.institutionRepository.findBy({ instructorList: id }, { relations: { instructorList: true } }) : [],
+			data.classroomIdList ? this.classroomRepository.findBy({ instructorList: id }, { relations: { instructorList: true } }) : [],
 			data.institutionIdList ? this.loadInstitutions(data.institutionIdList) : [],
 			data.classroomIdList ? this.loadClassrooms(data.classroomIdList) : [],
 		]);
@@ -80,15 +78,15 @@ export class UpdateAdminInstructorCommand {
 			}
 		}
 
-		await this.instructorRepository.getEntityManager().flush();
+		await this.instructorRepository.save(instructor);
 		return instructor;
 	}
 
 	private async loadInstitutions(idList: string[]): Promise<Institution[]> {
 		const uniqueIdList = [...new Set(idList)];
-		const institutionList = await this.institutionRepository.find(
-			{ id: { $in: uniqueIdList } },
-			{ populate: ['instructorList'] },
+		const institutionList = await this.institutionRepository.findBy(
+			{ id: uniqueIdList },
+			{ relations: { instructorList: true } },
 		);
 		if (institutionList.length !== uniqueIdList.length) {
 			throw new NotFoundException('One or more selected institutions were not found.');
@@ -98,9 +96,9 @@ export class UpdateAdminInstructorCommand {
 
 	private async loadClassrooms(idList: string[]): Promise<Classroom[]> {
 		const uniqueIdList = [...new Set(idList)];
-		const classroomList = await this.classroomRepository.find(
-			{ id: { $in: uniqueIdList } },
-			{ populate: ['instructorList'] },
+		const classroomList = await this.classroomRepository.findBy(
+			{ id: uniqueIdList },
+			{ relations: { instructorList: true } },
 		);
 		if (classroomList.length !== uniqueIdList.length) {
 			throw new NotFoundException('One or more selected classrooms were not found.');

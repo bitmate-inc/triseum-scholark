@@ -462,7 +462,8 @@ describe('AppController (e2e)', () => {
 		const classroomSlug = `e2e-listing-classroom-${suffix}`;
 		let publisherId: string | undefined;
 		let gameId: string | undefined;
-		let gameVariantId: string | undefined;
+		let gameVersionId: string | undefined;
+		let publicListingId: string | undefined;
 		let institutionId: string | undefined;
 		let classroomId: string | undefined;
 		let classroomGameListingId: string | undefined;
@@ -520,17 +521,15 @@ describe('AppController (e2e)', () => {
 				description: 'Version description',
 				publisherVersion: '1.0.0-e2e',
 				runUrl: 'https://example.com/e2e',
-				variantList: [{ language: 'en', mode: 'default' }, { language: 'es', mode: 'default' }],
 			};
 			const gameVersionResponse = await agent
 				.post(`/api/v1/admin/games/${gameId}/versions`)
 				.send(gameVersionInput)
 				.expect(201);
 			const gameVersion = gameVersionResponse.body.game.versionList[0];
-			const gameVersionId = gameVersion.id as string;
+			gameVersionId = gameVersion.id as string;
 			expect(gameVersion).toMatchObject({ description: 'Version description', publisherVersion: '1.0.0-e2e', runUrl: 'https://example.com/e2e' });
-			expect(gameVersion.variantList).toHaveLength(2);
-			gameVariantId = gameVersion.variantList[0].id as string;
+			expect(gameVersion.publicListingList).toEqual([]);
 			await agent
 				.patch(`/api/v1/admin/games/${gameId}/versions/${gameVersionId}`)
 				.send({ description: 'Updated version description', publishedAt: '2000-01-01T00:00:00.000Z' })
@@ -543,44 +542,60 @@ describe('AppController (e2e)', () => {
 				.post(`/api/v1/admin/games/${gameId}/versions`)
 				.send(gameVersionInput)
 				.expect(409);
-			await agent
-				.post(`/api/v1/admin/games/${gameId}/versions`)
-				.send({ ...gameVersionInput, publisherVersion: 'duplicate-variants', variantList: [{ language: 'en', mode: 'default' }, { language: 'en', mode: 'default' }] })
-				.expect(409);
-			await agent
-				.post(`/api/v1/admin/games/${gameId}/versions`)
-				.send({ ...gameVersionInput, publisherVersion: 'missing-variant', variantList: [] })
-				.expect(400);
 
 			await agent
 				.post(`/api/v1/admin/games/${gameId}/public-listings`)
-				.send({ available: true, gameVariantId, price: { currency: 'USD', minorUnitAmount: 1800 } })
+				.send({
+					available: true,
+					gameVersionId,
+					priceGroupList: [{ languageList: ['en', 'es'], price: { currency: 'USD', minorUnitAmount: 1800 } }],
+				})
 				.expect(201);
 			const listingListResponse = await agent
 				.get('/api/v1/admin/game-listings?type=public&limit=10&offset=0&q=E2E Game')
 				.expect(200);
-			const publicListingId = listingListResponse.body.listingList[0].id as string;
+			publicListingId = listingListResponse.body.listingList[0].id as string;
 			const publicListingUpdateResponse = await agent
 				.patch(`/api/v1/admin/games/${gameId}/public-listings/${publicListingId}`)
-				.send({ available: false, price: { currency: 'USD', minorUnitAmount: 1999 }, publishedAt: null })
+				.send({
+					available: false,
+					priceGroupList: [{ languageList: ['en', 'es'], price: { currency: 'USD', minorUnitAmount: 1999 } }],
+				})
 				.expect(200);
-			const publicListing = publicListingUpdateResponse.body.game.versionList[0].variantList[0].publicListingList[0];
-			expect(publicListing).toMatchObject({ available: false, price: { currency: 'USD', minorUnitAmount: 1999 } });
+			const publicListing = publicListingUpdateResponse.body.game.versionList[0].publicListingList[0];
+			expect(publicListing).toMatchObject({
+				available: false,
+				priceGroupList: [{ languageList: ['en', 'es'], price: { currency: 'USD', minorUnitAmount: 1999 } }],
+			});
 			expect(publicListing.publishedAt).toBeUndefined();
 			await agent
 				.patch(`/api/v1/admin/games/${gameId}/public-listings/${publicListingId}`)
 				.send({ publishedAt: '2000-01-01T00:00:00.000Z' })
 				.expect(200);
+			const closeAt = '2099-01-01T00:00:00.000Z';
+			await agent
+				.patch(`/api/v1/admin/games/${gameId}/public-listings/${publicListingId}`)
+				.send({ endAt: closeAt })
+				.expect(200);
 			await agent
 				.patch(`/api/v1/admin/games/${gameId}/public-listings/${publicListingId}`)
 				.send({ available: true })
+				.expect(409);
+			await agent
+				.post(`/api/v1/admin/games/${gameId}/public-listings`)
+				.send({
+					available: true,
+					gameVersionId,
+					priceGroupList: [{ languageList: ['en'], price: { currency: 'USD', minorUnitAmount: 500 } }],
+					startAt: '2000-01-01T00:00:00.000Z',
+				})
 				.expect(409);
 
 			const listingInput = {
 				classroomId,
 				designatedPayor: 'student',
 				endAt: '2027-01-01T00:00:00.000Z',
-				gameVariantId,
+				gameVersionId,
 				includedLicenseQuantity: 5,
 				licenseDurationDays: 90,
 				price: { currency: 'USD', minorUnitAmount: 1200 },
@@ -593,11 +608,12 @@ describe('AppController (e2e)', () => {
 			classroomGameListingId = listingResponse.body.classroomGameListing.id;
 			expect(listingResponse.body.classroomGameListing).toMatchObject({
 				classroomId,
+				courseType: 'standard',
 				designatedPayor: 'student',
-				gameVariantId,
-				gameVersionId: expect.any(String),
+				gameVersionId,
 				includedLicenseQuantity: 5,
 				licenseDurationDays: 90,
+				language: 'en',
 				price: { currency: 'USD', minorUnitAmount: 1200 },
 				startAt: listingInput.startAt,
 				endAt: listingInput.endAt,
@@ -616,7 +632,7 @@ describe('AppController (e2e)', () => {
 				.expect(409);
 			const replacementResponse = await agent
 				.post('/api/v1/admin/classroom-game-listings')
-				.send({ ...listingInput, endAt: '2027-06-01T00:00:00.000Z', publishedAt: '2000-01-01T00:00:00.000Z', startAt: listingInput.endAt })
+				.send({ ...listingInput, endAt: '2027-06-01T00:00:00.000Z', publishedAt: '2000-01-01T00:00:00.000Z', startAt: '2027-02-01T00:00:00.000Z' })
 				.expect(201);
 			replacementClassroomGameListingId = replacementResponse.body.classroomGameListing.id;
 			expect(replacementClassroomGameListingId).not.toBe(classroomGameListingId);
@@ -626,7 +642,7 @@ describe('AppController (e2e)', () => {
 				.expect(400);
 			await agent
 				.post(`/api/v1/admin/games/${publisherId}/public-listings`)
-				.send({ available: true, gameVariantId, price: { currency: 'USD', minorUnitAmount: 500 } })
+				.send({ available: true, gameVersionId, priceGroupList: [{ languageList: ['en'], price: { currency: 'USD', minorUnitAmount: 500 } }] })
 				.expect(404);
 		} finally {
 			if (classroomGameListingId) {
@@ -635,8 +651,8 @@ describe('AppController (e2e)', () => {
 			if (replacementClassroomGameListingId) {
 				await app.get(MikroORM).em.getConnection().execute('DELETE FROM classroom_game_listing WHERE id = ?', [replacementClassroomGameListingId]);
 			}
-			if (gameVariantId) {
-				await app.get(MikroORM).em.getConnection().execute('DELETE FROM public_game_listing WHERE game_variant_id = ?', [gameVariantId]);
+			if (publicListingId) {
+				await app.get(MikroORM).em.getConnection().execute('DELETE FROM public_game_listing WHERE id = ?', [publicListingId]);
 			}
 			if (gameId) {
 				await app.get(MikroORM).em.getConnection().execute('DELETE FROM game WHERE id = ?', [gameId]);
@@ -790,7 +806,7 @@ describe('AppController (e2e)', () => {
 		const seedClassroomGameListing = await entityManager.findOne(
 			ClassroomGameListing,
 			{ id: '00000000-0000-4000-8000-000000000941' },
-			{ populate: ['classroom.institution'] },
+			{ populate: ['classroom.institution', 'gameVersion'] },
 		);
 		expect(seedClassroomGameListing).toBeDefined();
 		const suffix = `${Date.now()}`;
@@ -806,9 +822,11 @@ describe('AppController (e2e)', () => {
 		const now = new Date();
 		const classroomGameListing = entityManager.create(ClassroomGameListing, {
 			classroom,
+			courseType: seedClassroomGameListing!.courseType,
 			designatedPayor: ClassroomGameListingDesignatedPayor.INSTITUTION,
 			endAt: new Date(now.getTime() + 86_400_000),
-			gameVariant: seedClassroomGameListing!.gameVariant,
+			gameVersion: seedClassroomGameListing!.gameVersion,
+			language: seedClassroomGameListing!.language,
 			licenseDurationDays: 120,
 			publishedAt: now,
 			startAt: new Date(now.getTime() - 60_000),

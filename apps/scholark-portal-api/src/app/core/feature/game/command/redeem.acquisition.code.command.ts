@@ -93,11 +93,12 @@ export class RedeemAcquisitionCodeCommand {
 			return RedeemAcquisitionCodeCommandResult.fail({ validationResult });
 		}
 
-		const classroomGameListing = await this.classroomGameListingRepository.findForAcquisition(data.classroomGameListingId);
+		const classroomGameListing = await this.classroomGameListingRepository.findForLicenseIssuance(data.classroomGameListingId);
 		const user = await this.userRepository.findOneBy({ id: data.userId });
 		const acquisitionCode = await this.acquisitionCodeRepository.findForRedemption(digestAcquisitionCode(data.code));
 
-		if (!classroomGameListing || !user || !classroomGameListing.isAvailable()) {
+		if (!classroomGameListing || !user || !classroomGameListing.canBeAcquired()
+			|| (classroomGameListing.customization && !classroomGameListing.customization.isPublished())) {
 			return RedeemAcquisitionCodeCommandResult.unavailableFail();
 		}
 
@@ -128,7 +129,9 @@ export class RedeemAcquisitionCodeCommand {
 			{
 				classroomGameListing: classroomGameListing,
 				customization: classroomGameListing.customization,
-				gameVariant: classroomGameListing.gameVariant,
+				courseType: classroomGameListing.courseType,
+				gameVersion: classroomGameListing.gameVersion,
+				language: classroomGameListing.language,
 				user,
 			},
 		));

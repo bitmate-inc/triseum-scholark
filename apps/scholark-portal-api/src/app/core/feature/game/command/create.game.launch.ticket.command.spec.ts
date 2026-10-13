@@ -9,11 +9,9 @@ const currentTime = new Date('2026-09-27T12:00:00.000Z');
 function createCommand(ticketTtlSeconds: number, licenseTtlSeconds: number) {
 	const license = {
 		endAt: new Date(currentTime.getTime() + licenseTtlSeconds * 1000),
-		gameVariant: {
-			gameVersion: {
-				id: '00000000-0000-4000-8000-000000000003',
-				isPublished: () => true,
-			},
+		gameVersion: {
+			id: '00000000-0000-4000-8000-000000000003',
+			isPublished: () => true,
 		},
 		id: licenseId,
 		isActive: () => true,

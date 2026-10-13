@@ -117,7 +117,7 @@ function rewriteProxyPath(path: string, request: GameProxyRequest): string {
 		throw new Error('Game content path does not match its license');
 	}
 
-	const upstream = new URL(license.gameVariant.gameVersion.runUrl);
+	const upstream = new URL(license.gameVersion.runUrl);
 	const basePath = upstream.pathname.endsWith('/') ? upstream.pathname : `${upstream.pathname}/`;
 	const suffix = requestUrl.pathname.slice(prefix.length).replace(/^\/+/, '');
 	return `${basePath}${suffix}${requestUrl.search}`;

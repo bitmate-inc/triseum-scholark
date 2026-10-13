@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	BadRequestException,
 	ConflictException,
@@ -10,9 +8,13 @@ import {
 import { Classroom } from '../../education/model/classroom.entity';
 import { Course } from '../../education/model/course.entity';
 import { EducationCatalogStatus } from '../../education/model/education.catalog.status';
-import { Institution } from '../../education/model/institution.entity';
 import { Instructor } from '../../education/model/instructor.entity';
+import { ClassroomRepository } from '../../education/repository/classroom.repository';
+import { CourseRepository } from '../../education/repository/course.repository';
+import { InstitutionRepository } from '../../education/repository/institution.repository';
+import { InstructorRepository } from '../../education/repository/instructor.repository';
 import { TaxonomyTerm } from '../../taxonomy/model/taxonomy.term.entity';
+import { TaxonomyTermRepository } from '../../taxonomy/repository/taxonomy.term.repository';
 
 export interface UpdateAdminClassroomCommandData {
 	code?: string;
@@ -33,16 +35,11 @@ export interface UpdateAdminClassroomCommandData {
 export class UpdateAdminClassroomCommand {
 
 	constructor(
-		@InjectRepository(Classroom)
-		private readonly classroomRepository: EntityRepository<Classroom>,
-		@InjectRepository(Course)
-		private readonly courseRepository: EntityRepository<Course>,
-		@InjectRepository(Institution)
-		private readonly institutionRepository: EntityRepository<Institution>,
-		@InjectRepository(Instructor)
-		private readonly instructorRepository: EntityRepository<Instructor>,
-		@InjectRepository(TaxonomyTerm)
-		private readonly taxonomyTermRepository: EntityRepository<TaxonomyTerm>,
+		private readonly classroomRepository: ClassroomRepository,
+		private readonly courseRepository: CourseRepository,
+		private readonly institutionRepository: InstitutionRepository,
+		private readonly instructorRepository: InstructorRepository,
+		private readonly taxonomyTermRepository: TaxonomyTermRepository,
 	) {}
 
 	async execute(id: string, data: UpdateAdminClassroomCommandData): Promise<Classroom> {
@@ -50,16 +47,16 @@ export class UpdateAdminClassroomCommand {
 			throw new BadRequestException('At least one classroom field must be provided.');
 		}
 
-		const classroom = await this.classroomRepository.findOne(
+		const classroom = await this.classroomRepository.findOneBy(
 			{ id },
-			{ populate: ['institution', 'courseList', 'instructorList', 'taxonomyTermList'] },
+			{ relations: { institution: true, courseList: true, instructorList: true, taxonomyTermList: true } },
 		);
 		if (!classroom) {
 			throw new NotFoundException('Classroom not found.');
 		}
 
 		const institution = data.institutionId
-			? await this.institutionRepository.findOne({ id: data.institutionId })
+			? await this.institutionRepository.findOneBy({ id: data.institutionId })
 			: classroom.institution;
 		if (!institution) {
 			throw new NotFoundException('Institution not found.');
@@ -72,7 +69,7 @@ export class UpdateAdminClassroomCommand {
 
 		const nextSlug = data.slug?.trim();
 		if (nextSlug) {
-			const existingClassroom = await this.classroomRepository.findOne({ slug: nextSlug });
+			const existingClassroom = await this.classroomRepository.findOneBy({ slug: nextSlug });
 			if (existingClassroom && existingClassroom.id !== id) {
 				throw new ConflictException('A classroom with this slug already exists.');
 			}
@@ -81,7 +78,7 @@ export class UpdateAdminClassroomCommand {
 
 		const nextCode = data.code?.trim() ?? classroom.code;
 		if (nextCode !== classroom.code || institution.id !== classroom.institution.id) {
-			const existingClassroom = await this.classroomRepository.findOne({ institution: institution.id, code: nextCode });
+			const existingClassroom = await this.classroomRepository.findOneBy({ institution: institution.id, code: nextCode });
 			if (existingClassroom && existingClassroom.id !== id) {
 				throw new ConflictException('A classroom with this code already exists for this institution.');
 			}
@@ -124,7 +121,7 @@ export class UpdateAdminClassroomCommand {
 			classroom.taxonomyTermList.set(taxonomyTermList);
 		}
 
-		await this.classroomRepository.getEntityManager().flush();
+		await this.classroomRepository.save(classroom);
 		return classroom;
 	}
 
@@ -134,7 +131,7 @@ export class UpdateAdminClassroomCommand {
 		status: EducationCatalogStatus,
 	): Promise<Course[]> {
 		const uniqueIdList = [...new Set(idList)];
-		const courseList = await this.courseRepository.find({ id: { $in: uniqueIdList } });
+		const courseList = await this.courseRepository.findBy({ id: uniqueIdList });
 		if (courseList.length !== uniqueIdList.length) {
 			throw new NotFoundException('One or more selected courses were not found.');
 		}
@@ -149,7 +146,7 @@ export class UpdateAdminClassroomCommand {
 
 	private async resolveInstructors(idList: string[]): Promise<Instructor[]> {
 		const uniqueIdList = [...new Set(idList)];
-		const instructorList = await this.instructorRepository.find({ id: { $in: uniqueIdList } });
+		const instructorList = await this.instructorRepository.findBy({ id: uniqueIdList });
 		if (instructorList.length !== uniqueIdList.length) {
 			throw new NotFoundException('One or more selected instructors were not found.');
 		}
@@ -158,7 +155,7 @@ export class UpdateAdminClassroomCommand {
 
 	private async resolveTaxonomyTerms(idList: string[]): Promise<TaxonomyTerm[]> {
 		const uniqueIdList = [...new Set(idList)];
-		const taxonomyTermList = await this.taxonomyTermRepository.find({ id: { $in: uniqueIdList } });
+		const taxonomyTermList = await this.taxonomyTermRepository.findBy({ id: uniqueIdList });
 		if (taxonomyTermList.length !== uniqueIdList.length) {
 			throw new NotFoundException('One or more selected taxonomy terms were not found.');
 		}

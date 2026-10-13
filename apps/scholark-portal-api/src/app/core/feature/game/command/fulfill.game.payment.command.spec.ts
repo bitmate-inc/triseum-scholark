@@ -9,10 +9,12 @@ function createCommand(purchaseType: 'public' | 'classroom') {
 	const classroomGameListing = purchaseType === 'classroom' ? { id: '00000000-0000-4000-8000-000000000004' } : undefined;
 	const attempt = {
 		classroomGameListing,
+		courseType: 'standard',
 		customization: undefined,
 		id: '00000000-0000-4000-8000-000000000005',
 		licenseDurationDays: 90,
 		price: { currency: 'USD', minorUnitAmount: 1200 },
+		language: 'en',
 		publicListing,
 		stripeCheckoutSessionId: undefined as string | undefined,
 		status: GamePaymentAttemptStatus.PENDING,
@@ -71,6 +73,7 @@ describe(FulfillGamePaymentCommand.name, () => {
 			? context.acquirePublicGameListingCommand
 			: context.acquireClassroomGameListingCommand;
 		expect(acquireCommand.execute).toHaveBeenCalledTimes(1);
+		expect(acquireCommand.execute).toHaveBeenCalledWith(expect.objectContaining({ paymentAttempt: context.attempt }));
 		expect(context.attempt.status).toBe(GamePaymentAttemptStatus.FULFILLED);
 		expect(context.attempt.stripeCheckoutSessionId).toBe('cs_test_123');
 		expect(context.acquisitionEventRepository.save).toHaveBeenCalledWith(expect.objectContaining({

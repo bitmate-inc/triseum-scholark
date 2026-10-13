@@ -19,14 +19,14 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 	async findByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
 			{ stripeCheckoutSessionId },
-			{ populate: ['classroomGameListing'] },
+			{ populate: ['classroomGameListing', 'publicListing'] },
 		)) ?? undefined;
 	}
 
 	async findById(id: string): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
 			{ id },
-			{ populate: ['classroomGameListing', 'customization'] },
+			{ populate: ['classroomGameListing', 'customization', 'publicListing'] },
 		)) ?? undefined;
 	}
 
@@ -49,8 +49,8 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 			{
 				orderBy: { createdAt: 'DESC' },
 				populate: [
-					'publicListing.gameVariant.gameVersion.game',
-					'classroomGameListing.gameVariant.gameVersion.game',
+					'publicListing.gameVersion.game',
+					'classroomGameListing.gameVersion.game',
 				],
 			},
 		);
@@ -61,8 +61,8 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 			{ id, user: userId },
 			{
 				populate: [
-					'publicListing.gameVariant.gameVersion.game',
-					'classroomGameListing.gameVariant.gameVersion.game',
+					'publicListing.gameVersion.game',
+					'classroomGameListing.gameVersion.game',
 				],
 			},
 		)) ?? undefined;
@@ -74,13 +74,13 @@ export class GamePaymentAttemptRepository extends MikroOrmEntityRepository<GameP
 	): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
 			{ stripeCheckoutSessionId, user: userId },
-			{ populate: ['classroomGameListing', 'customization'] },
+			{ populate: ['classroomGameListing', 'customization', 'publicListing'] },
 		)) ?? undefined;
 	}
 
-	async findPendingByUserAndPublicListing(userId: string, publicListingId: string): Promise<GamePaymentAttempt | undefined> {
+	async findPendingByUserAndPublicListing(userId: string, publicListingId: string, language: string): Promise<GamePaymentAttempt | undefined> {
 		return (await this.repository.findOne(
-			{ publicListing: publicListingId, status: GamePaymentAttemptStatus.PENDING, user: userId },
+			{ language, publicListing: publicListingId, status: GamePaymentAttemptStatus.PENDING, user: userId },
 			{ orderBy: { createdAt: 'DESC' }, populate: ['user', 'publicListing'] },
 		)) ?? undefined;
 	}

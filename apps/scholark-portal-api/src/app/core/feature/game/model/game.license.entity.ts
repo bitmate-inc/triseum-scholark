@@ -6,10 +6,11 @@ import {
 } from '@mikro-orm/decorators/legacy';
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
+import type { Classroom } from '../../education/model/classroom.entity';
 import { ClassroomGameListing } from '../../education/model/classroom.game.listing.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
-import { GameVariant } from './game.variant.entity';
+import { GameVersion } from './game.version.entity';
 
 @Entity({ tableName: 'game_license' })
 export class GameLicense extends StaticFactory {
@@ -23,8 +24,14 @@ export class GameLicense extends StaticFactory {
 	@ManyToOne(() => ClassroomGameListing, { nullable: true, deleteRule: 'restrict' })
 	classroomGameListing?: ClassroomGameListing;
 
-	@ManyToOne(() => GameVariant, { deleteRule: 'restrict' })
-	gameVariant!: GameVariant;
+	@ManyToOne(() => GameVersion, { deleteRule: 'restrict' })
+	gameVersion!: GameVersion;
+
+	@Property()
+	language!: string;
+
+	@Property({ type: 'string' })
+	courseType!: Classroom['courseType'];
 
 	@ManyToOne(() => GameCustomization, { nullable: true, deleteRule: 'restrict' })
 	customization?: GameCustomization;

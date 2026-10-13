@@ -47,8 +47,7 @@ function addClassroomGameListingRelations(
 	queryBuilder
 		.leftJoinAndSelect('classroomGameListing.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
-		.leftJoinAndSelect('classroomGameListing.gameVariant', 'gameVariant')
-		.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+		.leftJoinAndSelect('classroomGameListing.gameVersion', 'gameVersion')
 		.leftJoinAndSelect('gameVersion.game', 'game')
 		.leftJoinAndSelect('game.publisher', 'publisher')
 		.leftJoinAndSelect('game.taxonomyList', 'gameTaxonomy')
@@ -68,7 +67,13 @@ export class GetCatalogClassroomGameListingListQuery {
 
 		addClassroomGameListingRelations(queryBuilder);
 
-		queryBuilder.distinct().andWhere({ gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } } });
+		const currentDate = new Date();
+		queryBuilder.distinct().andWhere({
+			endAt: { $gt: currentDate },
+			gameVersion: { publishedAt: { $lte: currentDate }, game: { publishedAt: { $lte: currentDate } } },
+			publishedAt: { $lte: currentDate },
+			startAt: { $lte: currentDate },
+		});
 
 		if (data.filterBy?.id) {
 			queryBuilder.andWhere({ id: { $in: data.filterBy.id } });
@@ -83,11 +88,11 @@ export class GetCatalogClassroomGameListingListQuery {
 		}
 
 		if (data.filterBy?.gameId) {
-			queryBuilder.andWhere({ gameVariant: { gameVersion: { game: data.filterBy.gameId } } });
+			queryBuilder.andWhere({ gameVersion: { game: data.filterBy.gameId } });
 		}
 
 		if (data.filterBy?.taxonomyTermId) {
-			queryBuilder.andWhere({ gameVariant: { gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } } });
+			queryBuilder.andWhere({ gameVersion: { game: { taxonomyList: { taxonomyTerm: data.filterBy.taxonomyTermId } } } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();
@@ -124,9 +129,13 @@ export class GetCatalogClassroomGameListingQuery {
 
 		addClassroomGameListingRelations(queryBuilder);
 		
+		const currentDate = new Date();
 		queryBuilder.where({
-			gameVariant: { gameVersion: { game: { publishedAt: { $lte: new Date() } } } },
+			endAt: { $gt: currentDate },
+			gameVersion: { publishedAt: { $lte: currentDate }, game: { publishedAt: { $lte: currentDate } } },
 			id: data.filterBy.id,
+			publishedAt: { $lte: currentDate },
+			startAt: { $lte: currentDate },
 		});
 
 		const classroomGameListing = await queryBuilder.getSingleResult();

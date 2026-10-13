@@ -28,13 +28,6 @@ class UserLibraryVersionResponseDto {
 
 }
 
-class UserLibraryVariantResponseDto {
-
-	@ApiProperty({ format: 'uuid' })
-	id!: string;
-
-}
-
 class UserLibraryClassroomResponseDto {
 
 	@ApiProperty()
@@ -59,8 +52,11 @@ class UserLibraryItemResponseDto {
 	@ApiProperty({ type: UserLibraryVersionResponseDto })
 	gameVersion!: UserLibraryVersionResponseDto;
 
-	@ApiProperty({ type: UserLibraryVariantResponseDto })
-	gameVariant!: UserLibraryVariantResponseDto;
+	@ApiProperty()
+	language!: string;
+
+	@ApiProperty()
+	courseType!: string;
 
 	@ApiPropertyOptional()
 	customizationId?: string;
@@ -114,20 +110,19 @@ export class UserLibraryResponseDto {
 					endAt: license.endAt,
 					createdAt: license.createdAt!,
 					game: {
-						id: license.gameVariant.gameVersion.game.id!,
-						slug: license.gameVariant.gameVersion.game.slug,
-						title: license.gameVariant.gameVersion.game.title,
+						id: license.gameVersion.game.id!,
+						slug: license.gameVersion.game.slug,
+						title: license.gameVersion.game.title,
 					},
 					gameVersion: {
-						id: license.gameVariant.gameVersion.id!,
-						publisherVersion: license.gameVariant.gameVersion.publisherVersion,
-						runUrl: license.gameVariant.gameVersion.runUrl,
-					},
-					gameVariant: {
-						id: license.gameVariant.id!,
+						id: license.gameVersion.id!,
+						publisherVersion: license.gameVersion.publisherVersion,
+						runUrl: license.gameVersion.runUrl,
 					},
 					id: license.id!,
 					isActive: license.isActive(),
+					language: license.language,
+					courseType: license.courseType,
 					startAt: license.startAt,
 					status: license.isActive(now) ? 'active' : license.startAt > now ? 'scheduled' : 'expired',
 					acquisitionMechanism: acquisition?.mechanism ?? 'unknown',

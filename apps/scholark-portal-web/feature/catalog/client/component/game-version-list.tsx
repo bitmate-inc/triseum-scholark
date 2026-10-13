@@ -16,6 +16,7 @@ import {
 	formatListingPriceRange,
 	type GameDetails,
 	type GameVersion,
+	getPublicGameListingOptionList,
 	type PublicGameListing,
 } from "../../shared/model/game";
 
@@ -34,46 +35,51 @@ function ListingSelector({
 }) {
 	const locale = useLocale();
 	const t = useTranslations("catalog");
-	const sortedListingList = [...listingList].sort((firstListing, secondListing) =>
-		formatListingLanguage(firstListing.language, locale).localeCompare(formatListingLanguage(secondListing.language, locale))
-			|| firstListing.price.minorUnitAmount - secondListing.price.minorUnitAmount
-			|| firstListing.id.localeCompare(secondListing.id),
+	const sortedOptionList = getPublicGameListingOptionList(listingList).sort((firstOption, secondOption) =>
+		formatListingLanguage(firstOption.language, locale).localeCompare(formatListingLanguage(secondOption.language, locale))
+			|| firstOption.price.minorUnitAmount - secondOption.price.minorUnitAmount
+			|| firstOption.id.localeCompare(secondOption.id),
 	);
-	const [selectedListingId, setSelectedListingId] = useState(sortedListingList[0]?.id ?? "");
-	const selectedListing = sortedListingList.find((listing) => listing.id === selectedListingId) ?? sortedListingList[0];
-	if (!selectedListing) {
+	const [selectedOptionId, setSelectedOptionId] = useState(sortedOptionList[0]?.id ?? "");
+	const selectedOption = sortedOptionList.find((option) => option.id === selectedOptionId) ?? sortedOptionList[0];
+	if (!selectedOption) {
 		return null;
 	}
+	const selectedListing = listingList.find((listing) => listing.id === selectedOption.listingId);
+	if (!selectedListing) return null;
 
 	const selectedLicenseList = licenseList.filter(
 		(item) => item.game.id === game.id
 			&& item.gameVersion.id === version.id
-			&& item.gameVariant.id === selectedListing.gameVariantId,
+			&& item.language === selectedOption.language
+			&& item.courseType === "standard"
+			&& !item.classroomGameListingId
+			&& !item.customizationId,
 	);
 	const activeLicense = selectedLicenseList.find((item) => item.isActive);
 	const hasExpiredLicense = selectedLicenseList.length > 0;
-	const hasMultiplePrices = new Set(sortedListingList.map((listing) => `${listing.price.currency}:${listing.price.minorUnitAmount}`)).size > 1;
+	const hasMultiplePrices = new Set(sortedOptionList.map((option) => `${option.price.currency}:${option.price.minorUnitAmount}`)).size > 1;
 
 	return (
 		<>
 			{hasMultiplePrices ? (
-				<div className={styles.listingPriceRange} aria-label={t("availablePriceRange", { priceRange: formatListingPriceRange(sortedListingList, locale) })}>
-					<strong>{formatListingPriceRange(sortedListingList, locale)}</strong>
+				<div className={styles.listingPriceRange} aria-label={t("availablePriceRange", { priceRange: formatListingPriceRange(sortedOptionList, locale) })}>
+					<strong>{formatListingPriceRange(sortedOptionList, locale)}</strong>
 				</div>
 			) : null}
 			<div className={styles.versionAction}>
 				<div className={styles.listingSelectionControls}>
-					<select aria-label={t("chooseLanguageAndPrice")} value={selectedListing.id} onChange={(event) => setSelectedListingId(event.target.value)}>
-						{sortedListingList.map((listing) => (
-							<option key={listing.id} value={listing.id}>
-								{formatListingLanguage(listing.language, locale)} · {formatListingPrice(listing, locale)}
+					<select aria-label={t("chooseLanguageAndPrice")} value={selectedOption.id} onChange={(event) => setSelectedOptionId(event.target.value)}>
+						{sortedOptionList.map((option) => (
+							<option key={option.id} value={option.id}>
+								{formatListingLanguage(option.language, locale)} · {formatListingPrice(option.price, locale)}
 							</option>
 						))}
 					</select>
 					<div className={styles.listingSelectionAction}>
 						{activeLicense ? <Badge><CheckCircle2 data-icon="inline-start"/>{t("inLibrary")}</Badge> : hasExpiredLicense ? <Badge variant="outline">{t("expired")}</Badge> : null}
 						{!activeLicense && canAcquire ? (
-							<Link className={buttonVariants({ size: "sm" })} href={`/game/${game.slug}/acquire?listing=${encodeURIComponent(selectedListing.id)}`}>
+							<Link className={buttonVariants({ size: "sm" })} href={`/game/${game.slug}/acquire?listing=${encodeURIComponent(selectedListing.id)}&language=${encodeURIComponent(selectedOption.language)}`}>
 								<MonitorPlay data-icon="inline-start"/>{t("acquire")}
 							</Link>
 						) : null}

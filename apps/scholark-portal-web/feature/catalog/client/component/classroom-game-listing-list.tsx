@@ -18,9 +18,9 @@ import { useAuthGetSessionQuery } from "../../../api/client/api/generated-api";
 import { useGetUserLibraryQuery } from "../../../library/client/api/library-api";
 import type { ClassroomGameListing } from "../../shared/model/education";
 import {
+	formatCourseType,
 	formatEstimatedLength,
 	formatListingLanguage,
-	formatListingMode,
 	getGameTagList
 } from "../../shared/model/game";
 
@@ -65,7 +65,7 @@ export function ClassroomGameListingList({ classroomGameListingList }: { classro
 							</div>
 							<div className={styles.classroomGameFacts}>
 								<span><Clock3 aria-hidden="true"/>{formatEstimatedLength(classroomGameListing.game, locale) ?? t("lengthVaries")}</span>
-								<span>{formatListingLanguage(classroomGameListing.language ?? "en", locale)} · {formatListingMode(classroomGameListing.mode ?? "default")}</span>
+								<span>{formatListingLanguage(classroomGameListing.language, locale)} · {formatCourseType(classroomGameListing.courseType)}</span>
 								<span>{institutionFunded ? t("institutionFunded") : t("studentPaid")}{!institutionFunded && formatPrice(classroomGameListing.price, locale) ? ` · ${formatPrice(classroomGameListing.price, locale)}` : ""}</span>
 								<span>{t("validRange", { start: formatDateTime(classroomGameListing.startAt, locale), end: formatDateTime(classroomGameListing.endAt, locale) })}</span>
 							</div>

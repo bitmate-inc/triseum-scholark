@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	ConflictException,
 	Injectable,
@@ -8,7 +6,8 @@ import {
 
 import { Course } from '../../education/model/course.entity';
 import { EducationCatalogStatus } from '../../education/model/education.catalog.status';
-import { Institution } from '../../education/model/institution.entity';
+import { CourseRepository } from '../../education/repository/course.repository';
+import { InstitutionRepository } from '../../education/repository/institution.repository';
 
 export interface CreateAdminCourseCommandData {
 	description?: string;
@@ -23,14 +22,12 @@ export interface CreateAdminCourseCommandData {
 export class CreateAdminCourseCommand {
 
 	constructor(
-		@InjectRepository(Course)
-		private readonly courseRepository: EntityRepository<Course>,
-		@InjectRepository(Institution)
-		private readonly institutionRepository: EntityRepository<Institution>,
+		private readonly courseRepository: CourseRepository,
+		private readonly institutionRepository: InstitutionRepository,
 	) {}
 
 	async execute(data: CreateAdminCourseCommandData): Promise<Course> {
-		const institution = await this.institutionRepository.findOne({ id: data.institutionId });
+		const institution = await this.institutionRepository.findOneBy({ id: data.institutionId });
 		if (!institution) {
 			throw new NotFoundException('Institution not found.');
 		}
@@ -40,11 +37,11 @@ export class CreateAdminCourseCommand {
 
 		const slug = data.slug.trim();
 		const code = data.code.trim();
-		const existingCourse = await this.courseRepository.findOne({ slug });
+		const existingCourse = await this.courseRepository.findOneBy({ slug });
 		if (existingCourse) {
 			throw new ConflictException('A course with this slug already exists.');
 		}
-		if (await this.courseRepository.findOne({ institution: institution.id, code })) {
+		if (await this.courseRepository.findOneBy({ institution: institution.id, code })) {
 			throw new ConflictException('A course with this code already exists for this institution.');
 		}
 
@@ -57,9 +54,7 @@ export class CreateAdminCourseCommand {
 			status: EducationCatalogStatus.ACTIVE,
 			summary: data.summary?.trim() || undefined,
 		});
-		const entityManager = this.courseRepository.getEntityManager();
-		entityManager.persist(course);
-		await entityManager.flush();
+		await this.courseRepository.save(course);
 
 		return course;
 	}

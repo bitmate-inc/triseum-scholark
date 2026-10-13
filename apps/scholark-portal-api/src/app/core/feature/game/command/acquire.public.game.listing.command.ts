@@ -1,18 +1,12 @@
+import { LockMode } from '@mikro-orm/core';
 import { Injectable } from '@nestjs/common';
 import { Exclude } from 'class-transformer';
-import {
-	IsInt,
-	IsNotEmpty,
-	IsOptional,
-	IsUUID,
-	Min,
-} from 'class-validator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
 import { CommandResult } from '../../../../../lib/entity/command/command.result';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { ValidationResult } from '../../../../../lib/validator/model/validation.result';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
-import { Money } from '../../../shared/commerce/model/money.entity';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
 import { Game } from '../model/game.entity';
@@ -20,6 +14,7 @@ import { GameLicense } from '../model/game.license.entity';
 import { GamePaymentAttempt } from '../model/game.payment.attempt.entity';
 import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
 import { GameLicenseRepository } from '../repository/game.license.repository';
+import { GameVersionRepository } from '../repository/game.version.repository';
 import { PublicGameListingRepository } from '../repository/public.game.listing.repository';
 
 export class AcquirePublicListingCommandData extends StaticFactory {
@@ -32,14 +27,6 @@ export class AcquirePublicListingCommandData extends StaticFactory {
 
 	@IsNotEmpty()
 	paymentAttempt!: GamePaymentAttempt;
-
-	@IsInt()
-	@IsOptional()
-	@Min(1)
-	licenseDurationDays?: number;
-
-	@IsOptional()
-	price?: Money;
 
 }
 
@@ -82,6 +69,7 @@ export class AcquirePublicListingCommand {
 		private readonly gameLicenseRepository: GameLicenseRepository,
 		private readonly gameAcquisitionRepository: GameAcquisitionRepository,
 		private readonly userRepository: UserEntityRepository,
+		private readonly gameVersionRepository: GameVersionRepository,
 	) {}
 
 	async execute(data: AcquirePublicListingCommandData): Promise<AcquirePublicListingCommandResult> {
@@ -92,14 +80,22 @@ export class AcquirePublicListingCommand {
 		}
 
 		const publicListing = await this.publicListingRepository.findForAcquisition(data.publicListingId);
+		const paymentAttempt = data.paymentAttempt;
+		const paymentAttemptCreatedAt = paymentAttempt.createdAt;
+		const listingEndAt = paymentAttempt.publicListingEndAtSnapshotted
+			? paymentAttempt.publicListingEndAtSnapshot
+			: publicListing?.endAt;
 
-		if (!publicListing || !publicListing.publishedAt || publicListing.publishedAt > new Date()
-			|| !publicListing.gameVariant.gameVersion.isPublished()
-			|| !publicListing.gameVariant.gameVersion.game.isPublished()) {
+		if (!publicListing || !paymentAttemptCreatedAt
+			|| paymentAttempt.publicListing?.id !== publicListing.id
+			|| paymentAttempt.user.id !== data.userId
+			|| !publicListing.canBeAcquired(paymentAttemptCreatedAt, listingEndAt)
+			|| !publicListing.gameVersion.isPublished(paymentAttemptCreatedAt)
+			|| !publicListing.gameVersion.game.isPublished(paymentAttemptCreatedAt)) {
 			return AcquirePublicListingCommandResult.publicListingNotFoundFail();
 		}
 
-		const game = publicListing.gameVariant.gameVersion.game;
+		const game = publicListing.gameVersion.game;
 
 		const user = await this.userRepository.findOneBy({ id: data.userId });
 
@@ -107,25 +103,38 @@ export class AcquirePublicListingCommand {
 			return AcquirePublicListingCommandResult.userNotFoundFail();
 		}
 
-		const currentLicense = await this.gameLicenseRepository.findActiveByUserAndGameVariant(
+		const courseType = 'standard';
+		if (data.paymentAttempt.courseType !== courseType) {
+			return AcquirePublicListingCommandResult.publicListingNotFoundFail();
+		}
+		const gameVersion = await this.gameVersionRepository.findOneBy(
+			{ id: publicListing.gameVersion.id },
+			{ lockMode: LockMode.PESSIMISTIC_WRITE },
+		);
+		if (!gameVersion) {
+			return AcquirePublicListingCommandResult.publicListingNotFoundFail();
+		}
+		const currentLicense = await this.gameLicenseRepository.findActiveByUserAndConfiguration(
 			data.userId,
-			publicListing.gameVariant,
+			gameVersion,
+			data.paymentAttempt.language,
+			courseType,
 		);
 
 		if (currentLicense) {
 			return AcquirePublicListingCommandResult.alreadyAcquiredFail();
 		}
 
-		const licenseDuration = data.licenseDurationDays ?? 6 * 30;
-
-		let license = GameLicense.createForDuration(licenseDuration, {
-			gameVariant: publicListing.gameVariant,
+		let license = GameLicense.createForDuration(data.paymentAttempt.licenseDurationDays, {
+			courseType,
+			gameVersion,
+			language: data.paymentAttempt.language,
 			user,
 		});
 
 		license = await this.gameLicenseRepository.save(license);
 
-		const acquisitionPrice = data.price ?? publicListing.price;
+		const acquisitionPrice = data.paymentAttempt.price;
 
 		const acquisition = await this.gameAcquisitionRepository.save(GameAcquisition.create({
 			license,

@@ -18,9 +18,10 @@ import { GameCustomization } from '../app/core/feature/game/model/game.customiza
 import { Game } from '../app/core/feature/game/model/game.entity';
 import { GameLicense } from '../app/core/feature/game/model/game.license.entity';
 import { GameTaxonomyTerm } from '../app/core/feature/game/model/game.taxonomy.term.entity';
-import { GameVariant, GameVariantMode } from '../app/core/feature/game/model/game.variant.entity';
 import { GameVersion } from '../app/core/feature/game/model/game.version.entity';
 import { PublicGameListing } from '../app/core/feature/game/model/public.game.listing.entity';
+import { PublicGameListingPriceGroup } from '../app/core/feature/game/model/public.game.listing.price.group.entity';
+import { PublicGameListingPriceGroupLanguage } from '../app/core/feature/game/model/public.game.listing.price.group.language.entity';
 import { Publisher } from '../app/core/feature/publisher/model/publisher.entity';
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 import { User } from '../app/core/feature/user/model/user.entity';
@@ -54,7 +55,6 @@ export class DatabaseSeeder extends Seeder {
 			const institutionMap = new Map<string, Institution>();
 			const instructorMap = new Map<string, Instructor>();
 			const gameVersionSeedMap = new Map<string, GameVersion>();
-			const gameVariantSeedMap = new Map<string, GameVariant>();
 			const publicListingSeedMap = new Map<string, PublicGameListing>();
 			const gameCustomizationMap = new Map<string, GameCustomization>();
 			const classroomGameListingSeedMap = new Map<string, ClassroomGameListing>();
@@ -247,52 +247,48 @@ export class DatabaseSeeder extends Seeder {
 
 			await transactionalEm.flush();
 
-			// Each public listing seed targets a distinct language variant, always on the default mode.
 			for (const publicListingSeed of publicListingSeedList) {
-				const gameVariantKey = `${publicListingSeed.gameVersionSeedId}:${publicListingSeed.language}`;
-				if (gameVariantSeedMap.has(gameVariantKey)) {
-					continue;
+				const gameVersion = gameVersionSeedMap.get(publicListingSeed.gameVersionSeedId);
+				if (!gameVersion) {
+					throw new Error(`Missing seeded game version: ${publicListingSeed.gameVersionSeedId}`);
 				}
 
-				const gameVersion = gameVersionSeedMap.get(publicListingSeed.gameVersionSeedId)!;
-				let gameVariant = await transactionalEm.findOne(GameVariant, {
-					gameVersion,
-					language: publicListingSeed.language,
-					mode: GameVariantMode.DEFAULT,
-				});
-				if (!gameVariant) {
-					gameVariant = transactionalEm.create(GameVariant, {
-						gameVersion,
-						language: publicListingSeed.language,
-						mode: GameVariantMode.DEFAULT,
-					});
-				}
-				gameVariantSeedMap.set(gameVariantKey, gameVariant);
-			}
-
-			for (const publicListingSeed of publicListingSeedList) {
-				const gameVariantKey = `${publicListingSeed.gameVersionSeedId}:${publicListingSeed.language}`;
-				const gameVariant = gameVariantSeedMap.get(gameVariantKey);
-				if (!gameVariant) {
-					throw new Error(`Missing seeded game variant: ${gameVariantKey}`);
-				}
-
-				let publicListing = await transactionalEm.findOne(PublicGameListing, { id: publicListingSeed.id });
+				let publicListing: PublicGameListing | null = await transactionalEm.findOne(
+					PublicGameListing,
+					{ id: publicListingSeed.id },
+					{ populate: ['priceGroupList.languageList'] },
+				);
 				if (!publicListing) {
 					publicListing = transactionalEm.create(PublicGameListing, {
 						id: publicListingSeed.id,
-						gameVariant,
+						gameVersion,
 						isAvailable: true,
-						price: publicListingSeed.price,
-						publishedAt: gameVariant.gameVersion.publishedAt,
+						publishedAt: gameVersion.publishedAt,
+						startAt: gameVersion.publishedAt,
 					});
 				} else {
+					publicListing.priceGroupList.removeAll();
 					transactionalEm.assign(publicListing, {
-						gameVariant,
+						endAt: undefined,
+						gameVersion,
 						isAvailable: true,
-						price: publicListingSeed.price,
-						publishedAt: gameVariant.gameVersion.publishedAt,
+						publishedAt: gameVersion.publishedAt,
+						startAt: gameVersion.publishedAt,
 					});
+				}
+				for (const priceGroupSeed of publicListingSeed.priceGroupList) {
+					const priceGroup = transactionalEm.create(PublicGameListingPriceGroup, {
+						price: priceGroupSeed.price,
+						publicGameListing: publicListing,
+					});
+					for (const language of priceGroupSeed.languageList) {
+						priceGroup.languageList.add(transactionalEm.create(PublicGameListingPriceGroupLanguage, {
+							language,
+							priceGroup,
+							publicGameListing: publicListing,
+						}));
+					}
+					publicListing.priceGroupList.add(priceGroup);
 				}
 				publicListingSeedMap.set(publicListingSeed.id, publicListing);
 			}
@@ -330,26 +326,35 @@ export class DatabaseSeeder extends Seeder {
 
 			for (const classroomGameListingSeed of classroomGameListingSeedList) {
 				const classroom = classroomMap.get(classroomGameListingSeed.classroomSlug)!;
-				const publicListing = publicListingSeedMap.get(classroomGameListingSeed.publicListingSeedId);
-				if (!publicListing) {
-					throw new Error(`Missing seeded public listing for classroom listing ${classroomGameListingSeed.id}.`);
+				const gameVersion = gameVersionSeedMap.get(classroomGameListingSeed.gameVersionSeedId);
+				const publicListingSeed = publicListingSeedList.find((seed) => seed.gameVersionSeedId === classroomGameListingSeed.gameVersionSeedId);
+				if (!gameVersion || !publicListingSeed) {
+					throw new Error(`Missing seeded game version or public listing price groups for classroom listing ${classroomGameListingSeed.id}.`);
 				}
 				const customization = classroomGameListingSeed.customizationSeedId
 					? gameCustomizationMap.get(classroomGameListingSeed.customizationSeedId)
 					: undefined;
+				const classroomPriceGroupSeed = publicListingSeed.priceGroupList.find((priceGroup) =>
+					priceGroup.languageList.includes(classroom.language),
+				);
+				if (classroomGameListingSeed.designatedPayor === ClassroomGameListingDesignatedPayor.STUDENT && !classroomPriceGroupSeed) {
+					throw new Error(`No public listing price group matches classroom language ${classroom.language}.`);
+				}
 				const classroomGameListing = await transactionalEm.findOne(ClassroomGameListing, { id: classroomGameListingSeed.id })
-					?? await transactionalEm.findOne(ClassroomGameListing, { classroom, gameVariant: publicListing.gameVariant });
+					?? await transactionalEm.findOne(ClassroomGameListing, { classroom, gameVersion });
 				const classroomGameListingData = {
 					classroom,
+					courseType: classroom.courseType,
 					customization,
 					designatedPayor: classroomGameListingSeed.designatedPayor,
 					endAt: new Date('2026-12-31T23:59:59.999Z'),
-					gameVariant: publicListing.gameVariant,
+					gameVersion,
+					language: classroom.language,
 					licenseDurationDays: 120,
-					price: classroomGameListingSeed.designatedPayor === ClassroomGameListingDesignatedPayor.STUDENT
+					price: classroomGameListingSeed.designatedPayor === ClassroomGameListingDesignatedPayor.STUDENT && classroomPriceGroupSeed
 						? {
-							currency: publicListing.price.currency,
-							minorUnitAmount: Math.round(publicListing.price.minorUnitAmount * 0.8),
+							currency: classroomPriceGroupSeed.price.currency,
+							minorUnitAmount: Math.round(classroomPriceGroupSeed.price.minorUnitAmount * 0.8),
 						}
 						: undefined,
 					publishedAt: new Date(),
@@ -425,18 +430,22 @@ export class DatabaseSeeder extends Seeder {
 			for (const licenseSeed of userGameLicenseSeedList) {
 				const user = await transactionalEm.findOne(User, { email: licenseSeed.email });
 				const publicListingSeed = publicListingSeedList.find((seed) => seed.id === licenseSeed.publicListingSeedId);
-				const gameVariant = publicListingSeed
-					? gameVariantSeedMap.get(`${publicListingSeed.gameVersionSeedId}:${publicListingSeed.language}`)
-					: undefined;
 				const publicListing = publicListingSeedMap.get(licenseSeed.publicListingSeedId);
-				const customization = licenseSeed.customizationSeedId
-					? gameCustomizationMap.get(licenseSeed.customizationSeedId)
-					: undefined;
 				const classroomGameListing = licenseSeed.classroomGameListingSeedId
 					? classroomGameListingSeedMap.get(licenseSeed.classroomGameListingSeedId)
 					: undefined;
+				const gameVersion = classroomGameListing?.gameVersion
+					?? (publicListingSeed ? gameVersionSeedMap.get(publicListingSeed.gameVersionSeedId) : undefined);
+				const language = classroomGameListing?.language ?? licenseSeed.language;
+				const courseType = classroomGameListing?.courseType ?? 'standard';
+				const customization = licenseSeed.customizationSeedId
+					? gameCustomizationMap.get(licenseSeed.customizationSeedId)
+					: classroomGameListing?.customization;
+				const priceGroup = publicListing?.priceGroupList.getItems().find((group) =>
+					group.languageList.getItems().some((languageItem) => languageItem.language === language),
+				);
 
-				if (!user || !gameVariant || !publicListing) {
+				if (!user || !gameVersion || !publicListing || !priceGroup) {
 					throw new Error(`Missing seeded user or public listing for license: ${licenseSeed.id}`);
 				}
 
@@ -445,9 +454,11 @@ export class DatabaseSeeder extends Seeder {
 					gameLicense = transactionalEm.create(GameLicense, {
 						classroomGameListing,
 						customization,
+						courseType,
 						endAt: licenseSeed.endAt,
-						gameVariant,
+						gameVersion,
 						id: licenseSeed.id,
+						language,
 						startAt: licenseSeed.startAt,
 						user,
 					});
@@ -455,8 +466,10 @@ export class DatabaseSeeder extends Seeder {
 					transactionalEm.assign(gameLicense, {
 						classroomGameListing,
 						customization,
+						courseType,
 						endAt: licenseSeed.endAt,
-						gameVariant,
+						gameVersion,
+						language,
 						startAt: licenseSeed.startAt,
 						user,
 					});
@@ -470,7 +483,7 @@ export class DatabaseSeeder extends Seeder {
 						classroomGameListing,
 						license: gameLicense,
 						mechanism: GameAcquisitionMechanism.COMPLIMENTARY,
-						price: publicListing.price,
+						price: classroomGameListing?.price ?? priceGroup.price,
 						publicListing,
 						user,
 					});

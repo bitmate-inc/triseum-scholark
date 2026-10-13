@@ -8,7 +8,7 @@ describe(GameInteractionService.name, () => {
 	it('records events idempotently against the exact licensed Game Version', async () => {
 		const gameVersion = { id: 'version-id' };
 		const license = {
-			gameVariant: { gameVersion },
+			gameVersion,
 			id: 'license-id',
 		};
 		const entityManager = { upsert: jest.fn() };
@@ -42,7 +42,7 @@ describe(GameInteractionService.name, () => {
 
 	it('rejects oversized state before attempting to persist it', async () => {
 		const license = {
-			gameVariant: { gameVersion: { id: 'version-id' } },
+			gameVersion: { id: 'version-id' },
 			id: 'license-id',
 		};
 		const entityManager = { upsert: jest.fn() };

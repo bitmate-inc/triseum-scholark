@@ -23,9 +23,11 @@ describe(GameContentProxyMiddleware.name, () => {
 		const upstreamPort = (upstreamServer.address() as AddressInfo).port;
 		const runUrl = `http://127.0.0.1:${upstreamPort}/mecenas/2.0/`;
 		const license = {
-			gameVariant: { gameVersion: { runUrl } },
+			courseType: 'standard',
+			gameVersion: { runUrl },
 			id: licenseId,
-		} as GameLicense;
+			language: 'en',
+		} as unknown as GameLicense;
 		const gameLaunchSessionService = {
 			authorizeGameSession: jest.fn().mockResolvedValue(license),
 			gameSessionCookieName: 'scholark_game',

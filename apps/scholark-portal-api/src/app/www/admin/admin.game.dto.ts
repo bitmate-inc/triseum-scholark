@@ -8,7 +8,6 @@ import {
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import type { GetAdminGameListQueryData } from '../../core/feature/admin/query/get.admin.game.query';
 import { Game } from '../../core/feature/game/model/game.entity';
-import { GameVariant, GameVariantMode } from '../../core/feature/game/model/game.variant.entity';
 import { GameVersion } from '../../core/feature/game/model/game.version.entity';
 import { PublicGameListing } from '../../core/feature/game/model/public.game.listing.entity';
 import { MoneyDto } from '../catalog/game.dto';
@@ -83,7 +82,7 @@ export class AdminGameListItemResponseDto {
 
 }
 
-export class AdminGamePublicListingResponseDto {
+export class AdminGamePublicListingPriceGroupResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
@@ -91,31 +90,45 @@ export class AdminGamePublicListingResponseDto {
 	@ApiProperty({ type: MoneyDto })
 	price!: MoneyDto;
 
+	@ApiProperty({ type: [String] })
+	languageList!: string[];
+
+}
+
+export class AdminGamePublicListingResponseDto {
+
+	@ApiProperty({ format: 'uuid' })
+	id!: string;
+
+	@ApiProperty({ type: [AdminGamePublicListingPriceGroupResponseDto] })
+	priceGroupList!: AdminGamePublicListingPriceGroupResponseDto[];
+
 	@ApiProperty()
 	available!: boolean;
 
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;
 
+	@ApiProperty({ format: 'date-time', type: String })
+	startAt!: Date;
+
+	@ApiPropertyOptional({ format: 'date-time', type: String })
+	endAt?: Date;
+
 	static fromEntity(listing: PublicGameListing): AdminGamePublicListingResponseDto {
-		return { available: listing.isAvailable, id: listing.id!, price: listing.price, publishedAt: listing.publishedAt ?? undefined };
+		return {
+			available: listing.isAvailable,
+			endAt: listing.endAt,
+			id: listing.id!,
+			priceGroupList: listing.priceGroupList.getItems().map((priceGroup) => ({
+				id: priceGroup.id!,
+				languageList: priceGroup.languageList.getItems().map((language) => language.language),
+				price: priceGroup.price,
+			})),
+			publishedAt: listing.publishedAt ?? undefined,
+			startAt: listing.startAt!,
+		};
 	}
-
-}
-
-export class AdminGameVariantResponseDto {
-
-	@ApiProperty({ format: 'uuid' })
-	id!: string;
-
-	@ApiProperty()
-	language!: string;
-
-	@ApiProperty({ enum: GameVariantMode, enumName: 'GameVariantMode' })
-	mode!: GameVariantMode;
-
-	@ApiProperty({ type: [AdminGamePublicListingResponseDto] })
-	publicListingList!: AdminGamePublicListingResponseDto[];
 
 }
 
@@ -136,8 +149,8 @@ export class AdminGameVersionResponseDto {
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;
 
-	@ApiProperty({ type: [AdminGameVariantResponseDto] })
-	variantList!: AdminGameVariantResponseDto[];
+	@ApiProperty({ type: [AdminGamePublicListingResponseDto] })
+	publicListingList!: AdminGamePublicListingResponseDto[];
 
 }
 
@@ -173,22 +186,14 @@ export class AdminGameResponseDto {
 	static fromQueryResult(result: {
 		game: Game;
 		gameVersionList: GameVersion[];
-		gameVariantList: GameVariant[];
 		publicGameListingList: PublicGameListing[];
 	}): AdminGameResponseDto {
-		const variantsByVersionId = new Map<string, GameVariant[]>();
-		for (const variant of result.gameVariantList) {
-			const versionId = variant.gameVersion.id!;
-			const variants = variantsByVersionId.get(versionId) ?? [];
-			variants.push(variant);
-			variantsByVersionId.set(versionId, variants);
-		}
-		const publicListingsByVariantId = new Map<string, PublicGameListing[]>();
+		const publicListingsByVersionId = new Map<string, PublicGameListing[]>();
 		for (const listing of result.publicGameListingList) {
-			const variantId = listing.gameVariant.id!;
-			const listings = publicListingsByVariantId.get(variantId) ?? [];
+			const versionId = listing.gameVersion.id!;
+			const listings = publicListingsByVersionId.get(versionId) ?? [];
 			listings.push(listing);
-			publicListingsByVariantId.set(variantId, listings);
+			publicListingsByVersionId.set(versionId, listings);
 		}
 		return {
 			description: result.game.description,
@@ -209,12 +214,7 @@ export class AdminGameResponseDto {
 				publishedAt: version.publishedAt,
 				publisherVersion: version.publisherVersion,
 				runUrl: version.runUrl,
-				variantList: (variantsByVersionId.get(version.id!) ?? []).map((variant) => ({
-					id: variant.id!,
-					language: variant.language,
-					mode: variant.mode,
-					publicListingList: (publicListingsByVariantId.get(variant.id!) ?? []).map(AdminGamePublicListingResponseDto.fromEntity),
-				})),
+				publicListingList: (publicListingsByVersionId.get(version.id!) ?? []).map(AdminGamePublicListingResponseDto.fromEntity),
 			})),
 		};
 	}

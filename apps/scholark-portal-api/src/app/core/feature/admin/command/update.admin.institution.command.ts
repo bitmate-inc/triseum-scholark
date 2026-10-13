@@ -1,5 +1,3 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import {
 	BadRequestException,
 	ConflictException,
@@ -7,10 +5,11 @@ import {
 	NotFoundException
 } from '@nestjs/common';
 
-import { Classroom } from '../../education/model/classroom.entity';
-import { Course } from '../../education/model/course.entity';
 import { EducationCatalogStatus } from '../../education/model/education.catalog.status';
 import { Institution } from '../../education/model/institution.entity';
+import { ClassroomRepository } from '../../education/repository/classroom.repository';
+import { CourseRepository } from '../../education/repository/course.repository';
+import { InstitutionRepository } from '../../education/repository/institution.repository';
 
 export interface UpdateAdminInstitutionCommandData {
 	description?: string;
@@ -25,12 +24,9 @@ export interface UpdateAdminInstitutionCommandData {
 export class UpdateAdminInstitutionCommand {
 
 	constructor(
-		@InjectRepository(Institution)
-		private readonly institutionRepository: EntityRepository<Institution>,
-		@InjectRepository(Course)
-		private readonly courseRepository: EntityRepository<Course>,
-		@InjectRepository(Classroom)
-		private readonly classroomRepository: EntityRepository<Classroom>,
+		private readonly institutionRepository: InstitutionRepository,
+		private readonly courseRepository: CourseRepository,
+		private readonly classroomRepository: ClassroomRepository,
 	) {}
 
 	async execute(id: string, data: UpdateAdminInstitutionCommandData): Promise<Institution> {
@@ -38,13 +34,13 @@ export class UpdateAdminInstitutionCommand {
 			throw new BadRequestException('At least one institution field must be provided.');
 		}
 
-		const institution = await this.institutionRepository.findOne({ id });
+		const institution = await this.institutionRepository.findOneBy({ id });
 		if (!institution) {
 			throw new NotFoundException('Institution not found.');
 		}
 
 		if (typeof data.slug !== 'undefined') {
-			const existingInstitution = await this.institutionRepository.findOne({ slug: data.slug.trim() });
+			const existingInstitution = await this.institutionRepository.findOneBy({ slug: data.slug.trim() });
 			if (existingInstitution && existingInstitution.id !== id) {
 				throw new ConflictException('An institution with this slug already exists.');
 			}
@@ -64,8 +60,8 @@ export class UpdateAdminInstitutionCommand {
 		}
 		if (data.status === EducationCatalogStatus.INACTIVE) {
 			const [activeCourseCount, activeClassroomCount] = await Promise.all([
-				this.courseRepository.count({ institution: id, status: EducationCatalogStatus.ACTIVE }),
-				this.classroomRepository.count({ institution: id, status: EducationCatalogStatus.ACTIVE }),
+				this.courseRepository.countActiveByInstitution(id),
+				this.classroomRepository.countActiveByInstitution(id),
 			]);
 			if (activeCourseCount > 0 || activeClassroomCount > 0) {
 				throw new ConflictException('Deactivate or reassign active courses and classrooms before deactivating this institution.');
@@ -75,7 +71,7 @@ export class UpdateAdminInstitutionCommand {
 			institution.status = data.status;
 		}
 
-		await this.institutionRepository.getEntityManager().flush();
+		await this.institutionRepository.save(institution);
 		return institution;
 	}
 

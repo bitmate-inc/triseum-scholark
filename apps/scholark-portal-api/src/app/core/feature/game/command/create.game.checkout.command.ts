@@ -8,7 +8,11 @@ import {
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import type { RedisClientType } from '@redis/client';
-import { IsUUID } from 'class-validator';
+import {
+	IsNotEmpty,
+	IsString,
+	IsUUID
+} from 'class-validator';
 import type Stripe from 'stripe';
 
 import stripeConfig from '../../../../../config/stripe';
@@ -23,7 +27,7 @@ import { ClassroomGameListingDesignatedPayor } from '../../education/model/class
 import { ClassroomGameListingRepository } from '../../education/repository/classroom.game.listing.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GamePaymentAttempt, GamePaymentAttemptStatus } from '../model/game.payment.attempt.entity';
-import type { GameVariant } from '../model/game.variant.entity';
+import { normalizeLanguageTag } from '../model/public.game.listing.price.group.util';
 import { GameLicenseRepository } from '../repository/game.license.repository';
 import { GamePaymentAttemptRepository } from '../repository/game.payment.attempt.repository';
 import { PublicGameListingRepository } from '../repository/public.game.listing.repository';
@@ -36,6 +40,10 @@ export class CreateGameCheckoutCommandData extends StaticFactory {
 
 	@IsUUID()
 	publicListingId!: string;
+
+	@IsString()
+	@IsNotEmpty()
+	language!: string;
 
 }
 
@@ -95,9 +103,9 @@ export class CreateGameCheckoutCommand {
 			this.userRepository.findOneBy({ id: data.userId }),
 		]);
 
-		if (!publicListing || !publicListing.publishedAt || publicListing.publishedAt > new Date()
-			|| !publicListing.gameVariant.gameVersion.isPublished()
-			|| !publicListing.gameVariant.gameVersion.game.isPublished()) {
+		if (!publicListing || !publicListing.canBeAcquired()
+			|| !publicListing.gameVersion.isPublished()
+			|| !publicListing.gameVersion.game.isPublished()) {
 			return CreateGameCheckoutCommandResult.unavailableFail();
 		}
 
@@ -105,25 +113,36 @@ export class CreateGameCheckoutCommand {
 			return CreateGameCheckoutCommandResult.userNotFoundFail();
 		}
 
-		const activeLicense = await this.gameLicenseRepository.findActiveByUserAndGameVariant(
+		const language = normalizeLanguageTag(data.language);
+		const matchedPriceGroupList = publicListing.priceGroupList.getItems().filter((priceGroup) =>
+			priceGroup.languageList.getItems().some((languageItem) => languageItem.language === language),
+		);
+		if (matchedPriceGroupList.length !== 1) {
+			return CreateGameCheckoutCommandResult.unavailableFail();
+		}
+		const priceGroup = matchedPriceGroupList[0];
+		const courseType = 'standard';
+		const activeLicense = await this.gameLicenseRepository.findActiveByUserAndConfiguration(
 			data.userId,
-			publicListing.gameVariant,
+			publicListing.gameVersion,
+			language,
+			courseType,
 		);
 
 		if (activeLicense) {
 			return CreateGameCheckoutCommandResult.alreadyAcquiredFail();
 		}
 
-		const game = publicListing.gameVariant.gameVersion.game;
-		return this.withCheckoutCreationLock(`scholark:checkout:${user.id}:public:${publicListing.id}`, async () => {
+		const game = publicListing.gameVersion.game;
+		return this.withCheckoutCreationLock(`scholark:checkout:${user.id}:public:${publicListing.id}:${language}`, async () => {
 			const sessionData = {
 				attemptType: 'public' as const,
-				cancelUrl: `${this.config.portalUrl}/game/${game.slug}/acquire?listing=${publicListing.id}`,
-				publicListing,
+				cancelUrl: `${this.config.portalUrl}/game/${game.slug}/acquire?listing=${publicListing.id}&language=${encodeURIComponent(language)}`,
+				publicListing: { gameTitle: game.title, id: publicListing.id, price: priceGroup.price },
 				successUrl: `${this.config.portalUrl}/game/${game.slug}/acquire/success?checkout_session_id={CHECKOUT_SESSION_ID}`,
 				userId: user.id!,
 			};
-			const pendingAttempt = await this.paymentAttemptRepository.findPendingByUserAndPublicListing(user.id!, publicListing.id!);
+			const pendingAttempt = await this.paymentAttemptRepository.findPendingByUserAndPublicListing(user.id!, publicListing.id!, language);
 
 			if (pendingAttempt) {
 				const resumed = await this.resumePendingAttempt(pendingAttempt, sessionData);
@@ -133,9 +152,14 @@ export class CreateGameCheckoutCommand {
 			}
 
 			const attempt = GamePaymentAttempt.create({
+				courseType,
 				licenseDurationDays: 6 * 30,
-				price: publicListing.price,
+				language,
+				price: priceGroup.price,
+				publicListingEndAtSnapshot: publicListing.endAt ?? null,
+				publicListingEndAtSnapshotted: true,
 				publicListing,
+				publicListingPriceGroup: priceGroup,
 				status: GamePaymentAttemptStatus.PENDING,
 				user,
 			});
@@ -156,7 +180,7 @@ export class CreateGameCheckoutCommand {
 			this.userRepository.findOneBy({ id: data.userId }),
 		]);
 
-		if (!classroomGameListing || !classroomGameListing.isAvailable()) {
+		if (!classroomGameListing || !classroomGameListing.canBeAcquired()) {
 			return CreateGameCheckoutCommandResult.unavailableFail();
 		}
 
@@ -167,7 +191,8 @@ export class CreateGameCheckoutCommand {
 		const price = classroomGameListing.price;
 		if (classroomGameListing.designatedPayor !== ClassroomGameListingDesignatedPayor.STUDENT || !price
 			|| (classroomGameListing.customization
-				&& classroomGameListing.customization.gameVersion !== classroomGameListing.gameVariant.gameVersion)) {
+				&& (!classroomGameListing.customization.isPublished()
+					|| classroomGameListing.customization.gameVersion.id !== classroomGameListing.gameVersion.id))) {
 			return CreateGameCheckoutCommandResult.unavailableFail();
 		}
 
@@ -184,7 +209,7 @@ export class CreateGameCheckoutCommand {
 			const sessionData = {
 				attemptType: 'classroom' as const,
 				cancelUrl: `${this.config.portalUrl}/classroom-game-listing/${classroomGameListing.id}/acquire`,
-				publicListing: { gameVariant: classroomGameListing.gameVariant, id: classroomGameListing.id, price },
+				publicListing: { gameTitle: classroomGameListing.gameVersion.game.title, id: classroomGameListing.id, price },
 				classroomGameListingId: classroomGameListing.id!,
 				successUrl: `${this.config.portalUrl}/classroom-game-listing/${classroomGameListing.id}/acquire/success?checkout_session_id={CHECKOUT_SESSION_ID}`,
 				userId: user.id!,
@@ -200,6 +225,8 @@ export class CreateGameCheckoutCommand {
 
 			const attempt = GamePaymentAttempt.create({
 				classroomGameListing,
+				courseType: classroomGameListing.courseType,
+				language: classroomGameListing.language,
 				licenseDurationDays: classroomGameListing.licenseDurationDays,
 				price,
 				status: GamePaymentAttemptStatus.PENDING,
@@ -362,7 +389,7 @@ export class CreateGameCheckoutCommand {
 			line_items: [{
 				price_data: {
 					currency: data.publicListing.price.currency.toLowerCase(),
-					product_data: { name: data.publicListing.gameVariant.gameVersion.game.title },
+					product_data: { name: data.publicListing.gameTitle },
 					unit_amount: data.publicListing.price.minorUnitAmount,
 				},
 				quantity: 1,
@@ -394,5 +421,5 @@ type CheckoutSessionData = {
 type CheckoutListing = {
 	id?: string;
 	price: Money;
-	gameVariant: GameVariant;
+	gameTitle: string;
 };

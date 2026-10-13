@@ -44,19 +44,18 @@ This living document tracks questions raised after the client-delivered scope ba
 
 **Question:** How should catalog availability and game-specific integration contracts be managed?
 
-**Context:** Integration requirements vary by game and are validated through game-specific contracts. No supported-language, mode, or capability lists are modeled on GameVersion for the MVP; do not add capability fields to GameVersion.
+**Context:** Integration requirements vary by game and are validated through game-specific contracts. Public listing price groups explicitly cover languages; classroom listings snapshot the classroom's language and course type. No language, mode, or capability lists are modeled on GameVersion for the MVP.
 
 **Open details:**
 
 - Which records control general catalog visibility and availability, independently of classroom listing availability.
 - Which launch, event, state, configuration, and customization contracts each supported game/version must satisfy.
-- How classroom-only GameVariants are excluded from general catalog discovery.
 
 ## OQ-002 - Classroom Game Listings and Publishing
 
 **Question:** Which roles use the new Admin app to create and publish classroom game listings, and which listing actions are available to authorized Instructors?
 
-**Context:** Standalone sales remain `PublicGameListing` records. Classroom terms are represented by `ClassroomGameListing`, directly linked to one Classroom and one GameVariant. The listing stores designated payor, optional student price, informational included quantity, license duration, optional customization, availability dates, and publication state. There is no separate institution-game contract or `ClassroomGame` assignment entity. Once published, a listing cannot be changed; a replacement listing is required. Institutional billing is out of scope.
+**Context:** Standalone sales use `PublicGameListing` records directly linked to a GameVersion, with explicit language price groups and no fallback. Classroom terms use `ClassroomGameListing`, directly linked to one Classroom and one GameVersion, with language and course type snapshotted from the classroom. The listing stores designated payor, optional student price, informational included quantity, license duration, optional customization, availability dates, and publication state. There is no separate institution-game contract or `ClassroomGame` assignment entity. Published classroom listing terms are immutable; published public listing terms are immutable except for moving `endAt` earlier to close the listing. Institutional billing is out of scope.
 
 **Decision criteria:**
 

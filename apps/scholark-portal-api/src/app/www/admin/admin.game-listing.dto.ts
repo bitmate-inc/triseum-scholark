@@ -4,7 +4,6 @@ import { IsEnum } from 'class-validator';
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import type { GetAdminGameListingListQueryData } from '../../core/feature/admin/query/get.admin.game.listing.query';
 import { ClassroomGameListing, ClassroomGameListingDesignatedPayor } from '../../core/feature/education/model/classroom.game.listing.entity';
-import { GameVariantMode } from '../../core/feature/game/model/game.variant.entity';
 import { PublicGameListing } from '../../core/feature/game/model/public.game.listing.entity';
 import { MoneyDto } from '../catalog/game.dto';
 
@@ -61,16 +60,16 @@ class AdminGameListingVersionResponseDto {
 
 }
 
-class AdminGameListingVariantResponseDto {
+class AdminGameListingPriceGroupResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
 
-	@ApiProperty()
-	language!: string;
+	@ApiProperty({ type: MoneyDto })
+	price!: MoneyDto;
 
-	@ApiProperty({ enum: GameVariantMode, enumName: 'GameVariantMode' })
-	mode!: GameVariantMode;
+	@ApiProperty({ type: [String] })
+	languageList!: string[];
 
 }
 
@@ -94,8 +93,14 @@ export class AdminGameListingListItemResponseDto {
 	@ApiProperty({ type: AdminGameListingVersionResponseDto })
 	gameVersion!: AdminGameListingVersionResponseDto;
 
-	@ApiProperty({ type: AdminGameListingVariantResponseDto })
-	gameVariant!: AdminGameListingVariantResponseDto;
+	@ApiPropertyOptional({ type: [AdminGameListingPriceGroupResponseDto] })
+	priceGroupList?: AdminGameListingPriceGroupResponseDto[];
+
+	@ApiPropertyOptional()
+	language?: string;
+
+	@ApiPropertyOptional()
+	courseType?: string;
 
 	@ApiPropertyOptional()
 	available?: boolean;
@@ -122,15 +127,12 @@ export class AdminGameListingListItemResponseDto {
 	endAt?: Date;
 
 	static fromEntity(listing: PublicGameListing | ClassroomGameListing): AdminGameListingListItemResponseDto {
-		const variant = listing.gameVariant;
-		const version = variant.gameVersion;
+		const version = listing.gameVersion;
 		const game = version.game;
 		const base = {
 			game: { id: game.id!, slug: game.slug, title: game.title },
-			gameVariant: { id: variant.id!, language: variant.language, mode: variant.mode },
 			gameVersion: { id: version.id!, publisherVersion: version.publisherVersion },
 			id: listing.id!,
-			price: listing.price,
 			publisher: { id: game.publisher.id!, name: game.publisher.name, slug: game.publisher.slug },
 		};
 
@@ -138,13 +140,21 @@ export class AdminGameListingListItemResponseDto {
 			return {
 				...base,
 				available: listing.isAvailable,
+				endAt: listing.endAt,
 				listingType: 'public',
+				priceGroupList: listing.priceGroupList.getItems().map((priceGroup) => ({
+					id: priceGroup.id!,
+					languageList: priceGroup.languageList.getItems().map((language) => language.language),
+					price: priceGroup.price,
+				})),
 				publishedAt: listing.publishedAt ?? undefined,
+				startAt: listing.startAt,
 			};
 		}
 
 		return {
 			...base,
+			courseType: listing.courseType,
 			classroom: {
 				id: listing.classroom.id!,
 				institutionName: listing.classroom.institution.name,
@@ -154,8 +164,10 @@ export class AdminGameListingListItemResponseDto {
 			designatedPayor: listing.designatedPayor,
 			endAt: listing.endAt,
 			includedLicenseQuantity: listing.includedLicenseQuantity,
+			language: listing.language,
 			licenseDurationDays: listing.licenseDurationDays,
 			listingType: 'classroom',
+			price: listing.price,
 			publishedAt: listing.publishedAt,
 			startAt: listing.startAt,
 		};

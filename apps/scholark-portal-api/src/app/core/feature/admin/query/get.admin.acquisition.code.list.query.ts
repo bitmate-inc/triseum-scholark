@@ -38,8 +38,7 @@ export class GetAdminAcquisitionCodeListQuery {
 			.leftJoinAndSelect('acquisitionCode.classroomGameListing', 'classroomGameListing')
 			.leftJoinAndSelect('classroomGameListing.classroom', 'classroom')
 			.leftJoinAndSelect('classroom.institution', 'institution')
-			.leftJoinAndSelect('classroomGameListing.gameVariant', 'gameVariant')
-			.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+			.leftJoinAndSelect('classroomGameListing.gameVersion', 'gameVersion')
 			.leftJoinAndSelect('gameVersion.game', 'game');
 
 		if (data.filterBy?.id) {

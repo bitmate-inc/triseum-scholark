@@ -116,7 +116,7 @@ Student and Instructor are the target portal User Types. Authorized ScholArk adm
 
 ## Student
 
-Students can register, sign in, maintain a profile, select a language, view and acquire publicly catalog-visible base Game Versions or GameVariants made available through classroom game listings, select institutions/courses/classrooms, purchase games through the ScholArk store, launch and resume games, review progress and grading information, and access support.
+Students can register, sign in, maintain a profile, select a language, view and acquire publicly listed GameVersions with explicit language prices or GameVersions made available through classroom game listings, select institutions/courses/classrooms, purchase games through the ScholArk store, launch and resume games, review progress and grading information, and access support.
 
 ## Instructor
 
@@ -124,18 +124,20 @@ Instructors establish accounts by invitation, access assigned classrooms across 
 
 ## ScholArk Administration
 
-The new Admin app will provide the approved workflows for public listings, institutions, classrooms, instructors, course data, ClassroomGameListings, game usage, classroom language and course type, catalog entries, integrations, and configuration. Authorized users create each listing directly for a Classroom and GameVariant, setting its designated payor, optional student price, informational included quantity, license duration, optional customization, availability dates, and publication state. Institution-funded listings have no student price, and included quantity is not enforced. Exact workflows, permissions, and pilot sequence will be baselined in Milestone 2. Game Company Support and Administrator portals remain future work.
+The new Admin app will provide the approved workflows for public listings, institutions, classrooms, instructors, course data, ClassroomGameListings, game usage, classroom language and course type, catalog entries, integrations, and configuration. Public listings reference GameVersions and group prices by explicit language membership, with no fallback. Authorized users create each classroom listing directly for a Classroom and GameVersion, snapshotting classroom language and course type and setting its designated payor, optional student price, informational included quantity, license duration, optional customization, availability dates, and publication state. Institution-funded listings have no student price, and included quantity is not enforced. Published classroom listing terms are immutable; published public listing terms permit only an earlier `endAt` to close. Exact workflows, permissions, and pilot sequence will be baselined in Milestone 2. Game Company Support and Administrator portals remain future work.
 
 # 7. Initial Domain Model
 
 The following represents the initial domain model derived from the current requirements. It is intended as an architectural starting point and will be validated against the new platform design, detailed requirements, and any approved legacy migration data during discovery.
 
-Initial domain concepts include User, User Type, User Profile, Institution, Course, Classroom, Instructor, Student, Game, Game Version, GameVariant, PublicGameListing, ClassroomGameListing, GameCustomization, Student Game, Game Acquisition, Game License, Game Configuration, Game-Play Record, Game-State Record, Progress, Grade, Support Request, and LMS Integration. In this initial model, **Student Game** represents a Student's persistent relationship and history for a particular Game, and **Game License** represents a time-bounded right to access one exact Game Version with an optional published GameCustomization and an optional direct link to the ClassroomGameListing that supplies classroom context. Pricing, SKUs, and purchase-product modeling are outside this domain-model decision.
+Initial domain concepts include User, User Type, User Profile, Institution, Course, Classroom, Instructor, Student, Game, Game Version, PublicGameListing, public price groups and language memberships, ClassroomGameListing, GameCustomization, Student Game, Game Acquisition, Game License, Game Configuration, Game-Play Record, Game-State Record, Progress, Grade, Support Request, and LMS Integration. In this initial model, **Student Game** represents a Student's persistent relationship and history for a particular Game, and **Game License** represents a time-bounded right to access one exact GameVersion with language and course-type snapshots, an optional published GameCustomization, and an optional direct link to the ClassroomGameListing that supplies classroom context. Pricing, SKUs, and purchase-product modeling are outside this domain-model decision.
 
 ```text
 Publisher -> Game catalog and PublicGameListing
 Institution -> Course -> Classroom (section) -> Instructor, Student, ClassroomGameListing
-Game -> one or more publisher-owned immutable Game Versions -> GameVariant
+Game -> one or more publisher-owned immutable Game Versions -> public or classroom listings
+PublicGameListing -> one GameVersion, language-specific price groups
+ClassroomGameListing -> one Classroom and one GameVersion, classroom language/course-type snapshots
 Game Version -> GameCustomization, Configuration, Record Structure
 GameCustomization -> one Game Version
 Student -> Game Acquisition
@@ -144,7 +146,7 @@ Student -> Student Game -> Game
 Student Game -> one or more Game Licenses
 Student Game -> Game-Play Records, Game-State Records -> source Game Version
 Game License -> optional ClassroomGameListing -> Classroom
-ClassroomGameListing -> one Classroom, one GameVariant, designated payor, optional student price, informational included quantity, license duration, optional GameCustomization, active period
+ClassroomGameListing -> one Classroom, one GameVersion, language, courseType, designated payor, optional student price, informational included quantity, license duration, optional GameCustomization, active period
 ```
 
 The proposed minimal fields are:
@@ -160,9 +162,18 @@ GameCustomization
   content
   publishedAt            // null means draft; non-null means immutable
 
+PublicGameListing
+  gameVersionId
+  priceGroupList          // each group has a price and explicit languageList
+  startAt
+  endAt
+  publishedAt
+
 ClassroomGameListing
   classroomId
-  gameVariantId
+  gameVersionId
+  language                // snapshot of Classroom.language
+  courseType              // snapshot of Classroom.courseType
   designatedPayor        // student or institution
   price                  // optional; absent for institution-funded listings
   includedLicenseQuantity // informational only; not enforced
@@ -175,13 +186,15 @@ ClassroomGameListing
 License
   userId
   gameVersionId
+  language
+  courseType
   classroomGameListingId // optional; direct classroom context when applicable
   customizationId       // optional; must reference the same GameVersion
   startAt
   endAt
 ```
 
-`publisherVersion` is an opaque publisher-provided label. It may be `1.4.1`, `v1.4.1-demo`, `2026.09`, or another format. `GameCustomization` is data-driven only; it does not contain a separate executable. A customization is a draft while `publishedAt` is null and becomes immutable when published. `ClassroomGameListing` directly links one Classroom to one GameVariant and stores the classroom access terms. Institution-funded listings have no student price, and `includedLicenseQuantity` is informational and not enforced. A published listing is immutable; changes require a replacement listing. `startAt` and `endAt` belong to `ClassroomGameListing` and `License`, not to `GameCustomization`. Classroom retains its own `language` and `courseType`; GameVersion has no supported-language, mode, or capability lists in this initial model.
+`publisherVersion` is an opaque publisher-provided label. It may be `1.4.1`, `v1.4.1-demo`, `2026.09`, or another format. `GameCustomization` is data-driven only; it does not contain a separate executable. A customization is a draft while `publishedAt` is null and becomes immutable when published. `PublicGameListing` directly links to one GameVersion and its price groups explicitly assign every available language to one price; there is no fallback. `ClassroomGameListing` directly links one Classroom to one GameVersion and snapshots the classroom's language and course type. Institution-funded listings have no student price, and `includedLicenseQuantity` is informational and not enforced. Published classroom listing terms are immutable; published public listing terms are immutable except for moving `endAt` earlier to close the listing. Listing windows are half-open `[startAt, endAt)` intervals and cannot overlap for the same owner and configuration. `startAt` and `endAt` belong to listings and licenses, not to `GameCustomization`. GameVersion has no supported-language, mode, or capability lists in this initial model.
 
 Game-play and game-state records are therefore related to the Student's Game rather than only to the catalog Game or classroom listing. For-credit classroom context is available through the ClassroomGameListing referenced by a Game License. Discovery must determine how pre-existing personal activity is treated when a Student later acquires through a classroom listing.
 
@@ -189,14 +202,14 @@ An expired license prevents further game access but does not delete acquisition 
 
 # 8. Student Game Acquisition
 
-Game acquisition has two independent dimensions: **acquisition path** and **purchase type**. Publishers define standalone `PublicGameListing` records. Each `ClassroomGameListing` directly links a Classroom and GameVariant and determines the designated payor, optional student price, informational included quantity, license duration, availability dates, and optional published GameCustomization. Institution-funded listings have no student price, and included quantity is not enforced.
+Game acquisition has two independent dimensions: **acquisition path** and **purchase type**. Publishers define standalone `PublicGameListing` records with explicit language-based price groups. Each `ClassroomGameListing` directly links a Classroom and GameVersion, snapshots classroom language and course type, and determines the designated payor, optional student price, informational included quantity, license duration, availability dates, and optional published GameCustomization. Institution-funded listings have no student price, and included quantity is not enforced.
 
 In the **for-credit acquisition path**, a Student selects an institution, optionally defaulting to the last active institution, then selects a course, classroom, and ClassroomGameListing for that classroom not already acquired by the Student. Unlisted institutions, courses, or games generate support requests. The listing determines the purchase type and license duration:
 
 - **Institution-funded listing:** The Student enters an acquisition code to activate a fixed-term license.
 - **Student-purchased:** The Student purchases a fixed-term license through Stripe.
 
-In the **not-for-credit acquisition path**, a Student browses the ScholArk game catalog and purchases a fixed-term license for a publicly available base Game Version through Stripe without an institution, course, or classroom association. Classroom GameVariants, including customized variants, are shown only through the relevant ClassroomGameListing. This path is always Student-purchased.
+In the **not-for-credit acquisition path**, a Student browses public listings, explicitly selects a priced language, and purchases a fixed-term standard license for the listed GameVersion through Stripe without an institution, course, or classroom association. This path is always Student-purchased.
 
 Access is permitted only during an active license term and to the exact Game Version referenced by the license. When a license expires, launch and resume access are disabled, while acquisition, license, game-play, and game-state history remains available according to the approved visibility rules. A later acquisition creates a new license and does not extend or renew the expired term. For-credit licenses reference their ClassroomGameListing directly; not-for-credit licenses have no classroom listing reference.
 
@@ -204,7 +217,7 @@ Institution billing and invoicing are outside the MVP. Acquisition codes remain 
 
 # 9. Classroom and Game Catalog
 
-A classroom is a specific course section and can hold institution, course number/name, instructor, ClassroomGameListings, language, and course type. Each listing directly links the classroom to a GameVariant and stores designated payor, optional student price, informational included quantity, license duration, availability dates, and optional published customization. Students acquire the listed variant under those terms. A published listing cannot be changed; a replacement listing is required.
+A classroom is a specific course section and can hold institution, course number/name, instructor, ClassroomGameListings, language, and course type. Each listing directly links the classroom to a GameVersion, snapshots the classroom language and course type, and stores designated payor, optional student price, informational included quantity, license duration, availability dates, and optional published customization. Students acquire the listed GameVersion under those terms. Published classroom terms cannot be changed; a replacement listing is required.
 
 Catalog onboarding may require game metadata, website, configuration, and game-play/game-state mapping. Mapping the MVP game data to ScholArk's generic record structure is required. Milestone 2 will determine whether this is implemented through configuration, scripts, administrative tooling, or another maintainable mechanism. ScholArk may eventually sell games without providing all other platform services.
 
@@ -521,9 +534,9 @@ Discovery must resolve:
 - User Type permissions, invitation workflow, and multi-User-Type switching.
 - Institution/course/classroom ownership and multi-institution enrollment rules.
 - Whether an Instructor can browse the game catalog, and which games, metadata, pricing, availability, and filters are visible in that context.
-- Whether an Instructor can submit a request to create a ClassroomGameListing for a catalog GameVariant in one of their classrooms; if so, define the request data, eligibility rules, approval and notification workflow, support or administration owner, and system that records the approved listing.
+- Whether an Instructor can submit a request to create a ClassroomGameListing for a GameVersion in one of their classrooms; if so, define the request data, eligibility rules, approval and notification workflow, support or administration owner, and system that records the approved listing.
 - Game API/SDK approach, authentication, identifiers, event/state processing, canonical records, mapping ownership, and grading data.
-- Game Version identity and release lifecycle; GameVariant selection through a ClassroomGameListing; listing replacement rights and fresh-acquisition rules; state compatibility and migration; record provenance; and the effect of changed play structure on progress and grading rules. The target requirement is that licenses reference exact immutable Game Versions.
+- Game Version identity and release lifecycle; GameVersion selection through a ClassroomGameListing with classroom language/course-type snapshots; listing replacement rights and fresh-acquisition rules; state compatibility and migration; record provenance; and the effect of changed play structure on progress and grading rules. The target requirement is that licenses reference exact immutable GameVersions.
 - Versioned JSON schemas, transport, validation, retry, and error-handling contracts for game data pipelines.
 - Configuration authoring, versioning, classroom applicability, and distribution.
 - Grading models, calculation, storage, and manual adjustment.

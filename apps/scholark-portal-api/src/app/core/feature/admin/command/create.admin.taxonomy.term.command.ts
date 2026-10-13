@@ -1,8 +1,7 @@
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import { ConflictException, Injectable } from '@nestjs/common';
 
 import { TaxonomyTerm, TaxonomyType } from '../../taxonomy/model/taxonomy.term.entity';
+import { TaxonomyTermRepository } from '../../taxonomy/repository/taxonomy.term.repository';
 
 export interface CreateAdminTaxonomyTermCommandData {
 	label: string;
@@ -14,13 +13,12 @@ export interface CreateAdminTaxonomyTermCommandData {
 export class CreateAdminTaxonomyTermCommand {
 
 	constructor(
-		@InjectRepository(TaxonomyTerm)
-		private readonly taxonomyTermRepository: EntityRepository<TaxonomyTerm>,
+		private readonly taxonomyTermRepository: TaxonomyTermRepository,
 	) {}
 
 	async execute(data: CreateAdminTaxonomyTermCommandData): Promise<TaxonomyTerm> {
 		const slug = data.slug.trim();
-		if (await this.taxonomyTermRepository.findOne({ slug, type: data.type })) {
+		if (await this.taxonomyTermRepository.findOneBy({ slug, type: data.type })) {
 			throw new ConflictException('A taxonomy term with this type and slug already exists.');
 		}
 
@@ -29,9 +27,7 @@ export class CreateAdminTaxonomyTermCommand {
 			slug,
 			type: data.type,
 		});
-		const entityManager = this.taxonomyTermRepository.getEntityManager();
-		entityManager.persist(taxonomyTerm);
-		await entityManager.flush();
+		await this.taxonomyTermRepository.save(taxonomyTerm);
 
 		return taxonomyTerm;
 	}

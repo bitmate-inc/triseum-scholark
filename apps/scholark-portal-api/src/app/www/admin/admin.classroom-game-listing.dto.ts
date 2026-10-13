@@ -92,9 +92,6 @@ export class AdminClassroomGameListingResponseDto {
 	@ApiProperty({ format: 'uuid' })
 	gameVersionId!: string;
 
-	@ApiProperty({ format: 'uuid' })
-	gameVariantId!: string;
-
 	@ApiProperty()
 	publisherVersion!: string;
 
@@ -117,7 +114,7 @@ export class AdminClassroomGameListingResponseDto {
 	language!: string;
 
 	@ApiProperty()
-	mode!: string;
+	courseType!: string;
 
 	@ApiProperty({ format: 'date-time', type: String })
 	startAt!: Date;
@@ -132,7 +129,7 @@ export class AdminClassroomGameListingResponseDto {
 	gamePublishedAt?: Date;
 
 	static fromEntity(classroomGameListing: ClassroomGameListing): AdminClassroomGameListingResponseDto {
-		const game = classroomGameListing.gameVariant.gameVersion.game;
+		const game = classroomGameListing.gameVersion.game;
 		return {
 			classroomId: classroomGameListing.classroom.id!,
 			classroomName: classroomGameListing.classroom.name,
@@ -143,18 +140,17 @@ export class AdminClassroomGameListingResponseDto {
 			gamePublishedAt: game.publishedAt,
 			gameSlug: game.slug,
 			gameTitle: game.title,
-			gameVersionId: classroomGameListing.gameVariant.gameVersion.id!,
-			gameVariantId: classroomGameListing.gameVariant.id!,
+			gameVersionId: classroomGameListing.gameVersion.id!,
 			id: classroomGameListing.id!,
 			institution: {
 				id: classroomGameListing.classroom.institution.id!,
 				name: classroomGameListing.classroom.institution.name,
 				slug: classroomGameListing.classroom.institution.slug,
 			},
-			language: classroomGameListing.gameVariant.language,
+			language: classroomGameListing.language,
 			includedLicenseQuantity: classroomGameListing.includedLicenseQuantity,
 			licenseDurationDays: classroomGameListing.licenseDurationDays,
-			mode: classroomGameListing.gameVariant.mode,
+			courseType: classroomGameListing.courseType,
 			price: classroomGameListing.price,
 			customizationId: classroomGameListing.customization?.id,
 			publisher: {
@@ -163,7 +159,7 @@ export class AdminClassroomGameListingResponseDto {
 				slug: game.publisher.slug,
 			},
 			publishedAt: classroomGameListing.publishedAt,
-			publisherVersion: classroomGameListing.gameVariant.gameVersion.publisherVersion,
+			publisherVersion: classroomGameListing.gameVersion.publisherVersion,
 			startAt: classroomGameListing.startAt,
 		};
 	}

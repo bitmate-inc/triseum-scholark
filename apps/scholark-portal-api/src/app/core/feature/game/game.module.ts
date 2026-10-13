@@ -1,7 +1,6 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Global, Module } from '@nestjs/common';
 
-import { GetUserLibraryQuery } from '../catalog/query/get.user.library.query';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { AcquirePublicListingCommand } from './command/acquire.public.game.listing.command';
 import { CreateGameCheckoutCommand } from './command/create.game.checkout.command';
@@ -17,17 +16,21 @@ import { Game } from './model/game.entity';
 import { GameLicense } from './model/game.license.entity';
 import { GamePaymentAttempt } from './model/game.payment.attempt.entity';
 import { GameTaxonomyTerm } from './model/game.taxonomy.term.entity';
-import { GameVariant } from './model/game.variant.entity';
 import { GameVersion } from './model/game.version.entity';
 import { PublicGameListing } from './model/public.game.listing.entity';
+import { PublicGameListingPriceGroup } from './model/public.game.listing.price.group.entity';
+import { PublicGameListingPriceGroupLanguage } from './model/public.game.listing.price.group.language.entity';
 import { StripeWebhookEvent } from './model/stripe.webhook.event.entity';
 import { GetGameListQuery } from './query/get.game.list.query';
 import { GameAcquisitionEventRepository } from './repository/game.acquisition.event.repository';
 import { GameAcquisitionRepository } from './repository/game.acquisition.repository';
+import { GameCustomizationRepository } from './repository/game.customization.repository';
 import { GameLicenseRepository } from './repository/game.license.repository';
 import { GamePaymentAttemptRepository } from './repository/game.payment.attempt.repository';
 import { GameRepository } from './repository/game.repository';
 import { GameVersionRepository } from './repository/game.version.repository';
+import { PublicGameListingPriceGroupLanguageRepository } from './repository/public.game.listing.price.group.language.repository';
+import { PublicGameListingPriceGroupRepository } from './repository/public.game.listing.price.group.repository';
 import { PublicGameListingRepository } from './repository/public.game.listing.repository';
 import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.repository';
 
@@ -40,7 +43,12 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		ProcessGamePaymentWebhookCommand,
 		RevalidateGamePaymentAttemptCommand,
 		GameLicenseRepository,
+		GameCustomizationRepository,
+		GameRepository,
+		GameVersionRepository,
 		PublicGameListingRepository,
+		PublicGameListingPriceGroupRepository,
+		PublicGameListingPriceGroupLanguageRepository,
 		GameAcquisitionRepository,
 		GameAcquisitionEventRepository,
 		GamePaymentAttemptRepository,
@@ -49,7 +57,6 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		GetGameListQuery,
 		CreateGameLaunchTicketCommand,
 		ExpireGamePaymentAttemptCommand,
-		GetUserLibraryQuery,
 	],
 	imports: [
 		MikroOrmModule.forFeature([
@@ -61,8 +68,9 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 			StripeWebhookEvent,
 			GameLicense,
 			PublicGameListing,
+			PublicGameListingPriceGroup,
+			PublicGameListingPriceGroupLanguage,
 			GameTaxonomyTerm,
-			GameVariant,
 			GameVersion,
 		]),
 		TaxonomyModule,
@@ -74,17 +82,19 @@ import { StripeWebhookEventRepository } from './repository/stripe.webhook.event.
 		ProcessGamePaymentWebhookCommand,
 		RevalidateGamePaymentAttemptCommand,
 		GameLicenseRepository,
+		GameCustomizationRepository,
+		GameRepository,
+		GameVersionRepository,
 		PublicGameListingRepository,
+		PublicGameListingPriceGroupRepository,
+		PublicGameListingPriceGroupLanguageRepository,
 		GameAcquisitionRepository,
 		GameAcquisitionEventRepository,
 		GamePaymentAttemptRepository,
 		StripeWebhookEventRepository,
-		GameRepository,
-		GameVersionRepository,
 		GetGameListQuery,
 		CreateGameLaunchTicketCommand,
 		ExpireGamePaymentAttemptCommand,
-		GetUserLibraryQuery,
 	],
 })
 export class GameModule {}

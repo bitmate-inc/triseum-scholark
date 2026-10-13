@@ -1,24 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Exclude } from 'class-transformer';
-import {
-	IsInt,
-	IsNotEmpty,
-	IsOptional,
-	IsUUID,
-	Min,
-} from 'class-validator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
 import { MikroOrmUnitOfWork } from '../../../../../lib/database/mikro.orm.unit.of.work';
 import { CommandResult } from '../../../../../lib/entity/command/command.result';
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { ValidationResult } from '../../../../../lib/validator/model/validation.result';
 import { Validator } from '../../../infrastructure/validation/validator/validator';
-import { Money } from '../../../shared/commerce/model/money.entity';
 import { ClassroomGameListing , ClassroomGameListingDesignatedPayor } from '../../education/model/classroom.game.listing.entity';
 import { ClassroomGameListingRepository } from '../../education/repository/classroom.game.listing.repository';
 import { UserEntityRepository } from '../../user/repository/user.entity.repository';
 import { GameAcquisition, GameAcquisitionMechanism } from '../model/game.acquisition.entity';
-import { GameCustomization } from '../model/game.customization.entity';
 import { GameLicense } from '../model/game.license.entity';
 import { GamePaymentAttempt } from '../model/game.payment.attempt.entity';
 import { GameAcquisitionRepository } from '../repository/game.acquisition.repository';
@@ -34,17 +26,6 @@ export class AcquireClassroomGameListingCommandData extends StaticFactory {
 
 	@IsNotEmpty()
 	paymentAttempt!: GamePaymentAttempt;
-
-	@IsInt()
-	@IsOptional()
-	@Min(1)
-	licenseDurationDays?: number;
-
-	@IsOptional()
-	price?: Money;
-
-	@IsOptional()
-	customization?: GameCustomization;
 
 }
 
@@ -107,14 +88,19 @@ export class AcquireClassroomGameListingCommand {
 			return AcquireClassroomGameListingCommandResult.fail({ validationResult });
 		}
 
-		const classroomGameListing = await this.classroomGameListingRepository.findForAcquisition(data.classroomGameListingId);
+		const classroomGameListing = await this.classroomGameListingRepository.findForLicenseIssuance(data.classroomGameListingId);
+		const paymentAttempt = data.paymentAttempt;
+		const paymentAttemptCreatedAt = paymentAttempt.createdAt;
 
-		if (!classroomGameListing) {
+		if (!classroomGameListing || !paymentAttemptCreatedAt
+			|| !classroomGameListing.canBeAcquired(paymentAttemptCreatedAt)
+			|| paymentAttempt.classroomGameListing?.id !== classroomGameListing.id
+			|| paymentAttempt.user.id !== data.userId
+			|| paymentAttempt.language !== classroomGameListing.language
+			|| paymentAttempt.courseType !== classroomGameListing.courseType
+			|| paymentAttempt.licenseDurationDays !== classroomGameListing.licenseDurationDays
+			|| paymentAttempt.customization?.id !== classroomGameListing.customization?.id) {
 			return AcquireClassroomGameListingCommandResult.classroomGameListingNotFoundFail();
-		}
-
-		if (!classroomGameListing.isAvailable()) {
-			return AcquireClassroomGameListingCommandResult.classroomGameListingUnavailableFail();
 		}
 
 		const user = await this.userRepository.findOneBy({ id: data.userId });
@@ -127,8 +113,9 @@ export class AcquireClassroomGameListingCommand {
 			return AcquireClassroomGameListingCommandResult.classroomGameListingUnavailableFail();
 		}
 
-		if (classroomGameListing.customization
-			&& classroomGameListing.customization.gameVersion !== classroomGameListing.gameVariant.gameVersion) {
+		if (paymentAttempt.customization
+			&& (!paymentAttempt.customization.isPublished(paymentAttemptCreatedAt)
+				|| paymentAttempt.customization.gameVersion.id !== classroomGameListing.gameVersion.id)) {
 			return AcquireClassroomGameListingCommandResult.classroomGameListingUnavailableFail();
 		}
 
@@ -141,9 +128,9 @@ export class AcquireClassroomGameListingCommand {
 			return AcquireClassroomGameListingCommandResult.classroomGameListingAlreadyAcquiredFail();
 		}
 
-		const customization = data.customization ?? classroomGameListing.customization;
-		const licenseDurationDays = data.licenseDurationDays ?? classroomGameListing.licenseDurationDays;
-		const acquisitionPrice = data.price ?? classroomGameListing.price;
+		const customization = paymentAttempt.customization;
+		const licenseDurationDays = paymentAttempt.licenseDurationDays;
+		const acquisitionPrice = paymentAttempt.price;
 		if (!acquisitionPrice) {
 			return AcquireClassroomGameListingCommandResult.classroomGameListingUnavailableFail();
 		}
@@ -153,7 +140,9 @@ export class AcquireClassroomGameListingCommand {
 			{
 				classroomGameListing: classroomGameListing,
 				customization,
-				gameVariant: classroomGameListing.gameVariant,
+				courseType: data.paymentAttempt.courseType,
+				gameVersion: classroomGameListing.gameVersion,
+				language: data.paymentAttempt.language,
 				user,
 			},
 		);

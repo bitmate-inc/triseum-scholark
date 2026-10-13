@@ -58,7 +58,7 @@ export class CreateGameLaunchTicketCommand {
 		}
 
 		const license = await this.gameLicenseRepository.findOwnedById(data.userId, data.licenseId);
-		if (!license || !license.isActive() || !license.gameVariant.gameVersion.isPublished()) {
+		if (!license || !license.isActive() || !license.gameVersion.isPublished()) {
 			return CreateGameLaunchTicketCommandResult.unavailableFail();
 		}
 
@@ -75,8 +75,7 @@ export class CreateGameLaunchTicketCommand {
 		}
 
 		const launchTicket = await this.jwtService.signAsync({
-			gameVariantId: license.gameVariant.id!,
-			gameVersionId: license.gameVariant.gameVersion.id!,
+			gameVersionId: license.gameVersion.id!,
 			licenseId: license.id!,
 			purpose: 'game_launch',
 			sub: data.userId,

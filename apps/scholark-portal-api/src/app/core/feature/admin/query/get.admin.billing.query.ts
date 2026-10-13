@@ -44,8 +44,7 @@ export class GetAdminAcquisitionListQuery {
 		queryBuilder
 			.leftJoinAndSelect('acquisition.user', 'user')
 			.leftJoinAndSelect('acquisition.license', 'license')
-			.leftJoinAndSelect('license.gameVariant', 'gameVariant')
-			.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+			.leftJoinAndSelect('license.gameVersion', 'gameVersion')
 			.leftJoinAndSelect('gameVersion.game', 'game');
 
 		if (data.filterBy?.mechanism) {
@@ -74,7 +73,7 @@ export class GetAdminAcquisitionListQuery {
 		const acquisition = await entityManager.findOne(GameAcquisition, { id }, {
 			populate: [
 				'user',
-				'license.gameVariant.gameVersion.game',
+				'license.gameVersion.game',
 				'license.classroomGameListing.classroom.institution',
 				'paymentAttempt',
 				'codeRedemption.acquisitionCode',
@@ -107,12 +106,10 @@ export class GetAdminPaymentAttemptListQuery {
 		queryBuilder
 			.leftJoinAndSelect('paymentAttempt.user', 'user')
 			.leftJoinAndSelect('paymentAttempt.publicListing', 'publicListing')
-			.leftJoinAndSelect('publicListing.gameVariant', 'publicGameVariant')
-			.leftJoinAndSelect('publicGameVariant.gameVersion', 'publicGameVersion')
+			.leftJoinAndSelect('publicListing.gameVersion', 'publicGameVersion')
 			.leftJoinAndSelect('publicGameVersion.game', 'publicGame')
 			.leftJoinAndSelect('paymentAttempt.classroomGameListing', 'classroomGameListing')
-			.leftJoinAndSelect('classroomGameListing.gameVariant', 'classroomGameListingVariant')
-			.leftJoinAndSelect('classroomGameListingVariant.gameVersion', 'classroomGameListingVersion')
+			.leftJoinAndSelect('classroomGameListing.gameVersion', 'classroomGameListingVersion')
 			.leftJoinAndSelect('classroomGameListingVersion.game', 'classroomGameListingTitle');
 
 		if (data.filterBy?.status) {
@@ -153,8 +150,7 @@ export class GetAdminLicenseListQuery {
 		const queryBuilder = this.licenseRepository.createQueryBuilder('gameLicense');
 		queryBuilder
 			.leftJoinAndSelect('gameLicense.user', 'user')
-			.leftJoinAndSelect('gameLicense.gameVariant', 'gameVariant')
-			.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+			.leftJoinAndSelect('gameLicense.gameVersion', 'gameVersion')
 			.leftJoinAndSelect('gameVersion.game', 'game');
 
 		const now = new Date();

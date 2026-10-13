@@ -18,8 +18,8 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-08 | Mixed | Student submission and routing are MVP; Milestone 2 selects the routing mechanism, while ScholArk Support resolution UI/workflow is future work. |
 | UC-09 | Mixed | Student submission and routing are MVP; Milestone 2 selects the routing mechanism, while ScholArk Support resolution UI/workflow is future work. |
 | UC-10 | Mixed | Student submission and routing are MVP; Milestone 2 selects the routing mechanism, while ScholArk Support resolution UI/workflow is future work. |
-| UC-11 | MVP | Not-for-credit catalog acquisition of a fixed-term license for a publicly available base Game Version through Stripe checkout and webhook confirmation, without a classroom association; classroom-associated versions are excluded from catalog discovery. |
-| UC-12 | MVP | For-credit acquisition of a fixed-term license for the GameVariant selected by a ClassroomGameListing; the license links directly to the listing; purchase is Student-paid or institution-funded by code redemption; institution invoicing is excluded. |
+| UC-11 | MVP | Not-for-credit catalog acquisition of a fixed-term license for a publicly listed GameVersion through Stripe checkout and webhook confirmation, with explicit language selection and no classroom association; public checkout creates a standard license. |
+| UC-12 | MVP | For-credit acquisition of a fixed-term license for the GameVersion selected by a ClassroomGameListing, with classroom language and course type snapshots; the license links directly to the listing; purchase is Student-paid or institution-funded by code redemption; institution invoicing is excluded. |
 | UC-13 | MVP | Launch of the exact permitted web-game version while the license is active; native desktop launching is excluded. |
 | UC-14 | MVP | Resume behavior for the representative MVP game under the approved cross-version state policy. |
 | UC-15 | MVP | Student progress presentation using the mapping applicable to each source Game Version. |
@@ -48,7 +48,7 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-38 | MVP | An Instructor initiates an LMS-oriented grade-file export for an authorized classroom. Discovery baselines the finite target-MVP format list and classroom/student mapping; later formats require explicit scope and forecast revision. |
 | UC-39 | MVP | Within the for-credit path, the Student redeems an institution-funded ClassroomGameListing using an acquisition code that activates a fixed-term license; code generation and license authority are discovery decisions. |
 | UC-40 | MVP | After expiry, the Student can acquire a separate new license; expired license history is retained. |
-| UC-41 | MVP | An authorized user creates a ClassroomGameListing directly for a Classroom and GameVariant, including payer, optional student price, duration, and availability terms; included quantity is informational and institutional billing is out of scope. |
+| UC-41 | MVP | An authorized user creates a ClassroomGameListing directly for a Classroom and GameVersion, snapshotting classroom language and course type and including payer, optional student price, duration, and availability terms; included quantity is informational and institutional billing is out of scope. |
 | UC-42 | MVP | An authorized user publishes an immutable ClassroomGameListing; changes require a replacement listing. |
 | UC-43 | Future | Game Forge can create a data-only GameCustomization for a selected Game Version; unpublished customizations are drafts and published customizations are immutable. |
 
@@ -110,7 +110,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 9. Student selects a classroom.
 10. ScholArk presents the published, active ClassroomGameListings for that classroom.
 11. Student selects a listing not already acquired by that Student.
-12. If the Student already has not-for-credit Student Game or license history for that GameVariant, ScholArk follows the license reuse and historical-record rules established during discovery.
+12. If the Student already has not-for-credit Student Game or license history for the same GameVersion, language, and course type, ScholArk follows the license reuse and historical-record rules established during discovery.
 13. Otherwise, the listing's designated payor determines whether the purchase is Student-paid or institution-funded.
 14. Student continues through the corresponding Stripe purchase or acquisition-code redemption flow.
 
@@ -156,20 +156,20 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 
 1. Student indicates that the game is not for educational credit.
 2. Student browses the ScholArk game catalog without selecting an institution, course, or classroom.
-3. Student selects a publicly available base Game Version.
-4. Student purchases the game through Stripe.
-5. ScholArk activates a Student-paid fixed-term license without a classroom association.
+3. Student selects a publicly listed GameVersion and a language explicitly covered by one of its price groups.
+4. Student purchases the selected language through Stripe.
+5. ScholArk activates a Student-paid fixed-term license with `courseType = standard`, preserving the selected language and with no classroom association.
 
 ### UC-12 — Student acquires a classroom game listing
 **Actor:** Student
 
-1. Student opens the selected classroom and sees its ClassroomGameListings, each linked directly to a GameVariant.
+1. Student opens the selected classroom and sees its ClassroomGameListings, each linked directly to a GameVersion and carrying the classroom's language and course-type snapshots.
 2. Student selects a listing not already acquired by that Student for the selected classroom.
-3. If the Student already has a not-for-credit Student Game or license history for that GameVariant, ScholArk applies the existing-license and historical-record rules established during discovery.
+3. If the Student already has a not-for-credit Student Game or license history for the same GameVersion, language, and course type, ScholArk applies the existing-license and historical-record rules established during discovery.
 4. Otherwise, the listing's designated payor determines the purchase type as Student-purchased or institution-funded.
 5. For a Student-purchased game, the Student pays through Stripe and ScholArk activates a fixed-term license.
 6. For an institution-funded listing, the Student continues to acquisition-code redemption.
-7. ScholArk activates a license for the exact GameVersion associated with the listing's GameVariant, using the listing's configured license duration.
+7. ScholArk activates a license for the exact GameVersion associated with the listing, using the listing's language and course-type snapshots and configured license duration.
 8. The license references the ClassroomGameListing directly, preserving its classroom context without a separate classroom-game enrollment entity.
 
 ### UC-39 — Student redeems an institution-funded listing
@@ -179,7 +179,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 2. ScholArk asks the student for an acquisition code.
 3. Student enters the acquisition code.
 4. ScholArk validates the code using the mechanism established during discovery.
-5. ScholArk activates or records the Student's fixed-term license for the GameVersion associated with the listing's GameVariant.
+5. ScholArk activates or records the Student's fixed-term license for the listing's exact GameVersion, language, and course type.
 6. Institution invoicing remains outside the MVP.
 
 ### UC-40 — Student acquires a new license after expiry
@@ -296,10 +296,10 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 3. Employee specifies course number/name.
 4. Employee specifies how the game will be used.
 5. Employee specifies the language.
-6. Employee selects a GameVariant and creates a ClassroomGameListing directly for the classroom.
+6. Employee selects a GameVersion and creates a ClassroomGameListing directly for the classroom; the listing snapshots the classroom's language and course type.
 7. Employee specifies the listing's designated payor, optional student price, informational included quantity, license duration, and availability period.
 8. Employee may select a compatible customization and publication time.
-9. The listing's GameVariant and terms govern acquisition; included quantity does not limit acquisitions.
+9. The listing's GameVersion and snapshotted terms govern acquisition; included quantity does not limit acquisitions.
 
 ### UC-25 — ScholArk employee assigns an instructor
 **Actor:** ScholArk Employee
@@ -311,10 +311,10 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 **Actor:** ScholArk Employee
 
 1. Employee configures a classroom.
-2. Employee selects a GameVariant and creates a ClassroomGameListing directly linked to that classroom.
+2. Employee selects a GameVersion and creates a ClassroomGameListing directly linked to that classroom.
 3. Employee configures designated payor, student price when applicable, informational included quantity, license duration, optional customization, and availability dates.
 4. Once published, the listing cannot be edited; a replacement listing is required for a change.
-5. The listed GameVariant is available for student acquisition while the listing is active and published.
+5. The listed GameVersion is available for student acquisition while the listing is active and published.
 
 ### UC-27 — ScholArk employee configures game usage
 **Actor:** ScholArk Employee
@@ -326,7 +326,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 ### UC-41 — Authorized user creates a classroom game listing
 **Actor:** ScholArk Employee
 
-1. Employee selects a Classroom and GameVariant.
+1. Employee selects a Classroom and GameVersion.
 2. Employee creates a ClassroomGameListing directly linked to both.
 3. Employee sets designated payor, optional student price, informational included quantity, license duration, availability dates, and optional customization.
 4. Institution-funded listings have no student price; included quantity is not enforced.
@@ -335,7 +335,7 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 ### UC-42 — Authorized user publishes a classroom game listing
 **Actor:** ScholArk Employee / Authorized Instructor
 
-1. Authorized user reviews the ClassroomGameListing's Classroom, GameVariant, payer, price, duration, and availability terms.
+1. Authorized user reviews the ClassroomGameListing's Classroom, GameVersion, language/course-type snapshots, payer, price, duration, and availability terms.
 2. ScholArk validates that institution-funded listings have no student price and that any customization belongs to the selected GameVersion.
 3. ScholArk publishes the listing.
 4. After publication, the listing cannot be changed; the authorized user creates a replacement listing instead.

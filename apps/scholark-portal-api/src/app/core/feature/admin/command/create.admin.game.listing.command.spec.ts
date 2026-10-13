@@ -4,24 +4,31 @@ import { Currency } from '../../../shared/commerce/model/currency';
 import { CreateAdminGameListingCommand } from './create.admin.game.listing.command';
 
 describe('CreateAdminGameListingCommand', () => {
-	it('rejects a second public listing for the same variant', async () => {
-		const gameVariantRepository = {
-			findOne: jest.fn().mockResolvedValue({ id: 'variant-id' }),
-		};
+	it('rejects overlapping public listing windows for a game version', async () => {
+		const gameVersionRepository = { findOneBy: jest.fn().mockResolvedValue({ id: 'version-id' }) };
 		const publicGameListingRepository = {
-			findOne: jest.fn().mockResolvedValue({ id: 'existing-listing-id' }),
+			findByGameVersion: jest.fn().mockResolvedValue([{ endAt: undefined, startAt: new Date('2020-01-01T00:00:00.000Z') }]),
+			save: jest.fn(),
 		};
+		const unitOfWork = { transactional: jest.fn((work: () => Promise<unknown>) => work()) };
 		const command = new CreateAdminGameListingCommand(
-			gameVariantRepository as never,
+			gameVersionRepository as never,
 			publicGameListingRepository as never,
+			{} as never,
+			{} as never,
+			unitOfWork as never,
 		);
 
 		await expect(command.createPublic({
 			available: true,
 			gameId: 'game-id',
-			gameVariantId: 'variant-id',
-			price: { currency: Currency.USD, minorUnitAmount: 1000 },
+			gameVersionId: 'version-id',
+			priceGroupList: [{
+				languageList: ['en'],
+				price: { currency: Currency.USD, minorUnitAmount: 1000 },
+			}],
 		})).rejects.toThrow(ConflictException);
-		expect(publicGameListingRepository.findOne).toHaveBeenCalledWith({ gameVariant: 'variant-id' });
+		expect(publicGameListingRepository.findByGameVersion).toHaveBeenCalledWith('version-id');
+		expect(publicGameListingRepository.save).not.toHaveBeenCalled();
 	});
 });

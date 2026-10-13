@@ -255,7 +255,7 @@ export function AcquisitionDetailPage() {
 					<dl className="detail-grid">
 						<div><dt>Recorded</dt><dd>{formatDetailDate(acquisition.createdAt)}</dd></div>
 						<div><dt>Price</dt><dd>{formatDetailPrice(acquisition.price)}</dd></div>
-						<div><dt>Game version</dt><dd>{acquisition.publisherVersion ?? 'Unknown'}{acquisition.language ? ` · ${acquisition.language}` : ''}{acquisition.mode ? ` · ${acquisition.mode.replaceAll('_', ' ')}` : ''}</dd></div>
+						<div><dt>Game version</dt><dd>{acquisition.publisherVersion ?? 'Unknown'}{acquisition.language ? ` · ${acquisition.language}` : ''}{acquisition.courseType ? ` · ${acquisition.courseType.replaceAll('-', ' ')}` : ''}</dd></div>
 						<div><dt>Assignment</dt><dd>{acquisition.classroomName ?? 'Public listing'}{acquisition.institutionName ? ` · ${acquisition.institutionName}` : ''}</dd></div>
 						<div><dt>License status</dt><dd>{acquisition.license.status}</dd></div>
 						<div><dt>License period</dt><dd>{formatDetailDate(acquisition.license.startAt)} – {formatDetailDate(acquisition.license.endAt)}</dd></div>

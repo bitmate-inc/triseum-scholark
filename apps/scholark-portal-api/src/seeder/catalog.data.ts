@@ -54,8 +54,7 @@ export interface GameVersionSeed {
 export interface PublicListingSeed {
 	id: string;
 	gameVersionSeedId: string;
-	language: string;
-	price: MoneySeed;
+	priceGroupList: { languageList: string[]; price: MoneySeed }[];
 }
 
 export interface GameCustomizationSeed {
@@ -116,7 +115,7 @@ export interface ClassroomGameListingSeed {
 	id: string;
 	classroomSlug: string;
 	gameSlug: string;
-	publicListingSeedId: string;
+	gameVersionSeedId: string;
 	designatedPayor: ClassroomGameListingDesignatedPayor;
 	customizationSeedId?: string;
 }
@@ -124,6 +123,7 @@ export interface ClassroomGameListingSeed {
 export interface UserGameLicenseSeed {
 	id: string;
 	email: string;
+	language: string;
 	publicListingSeedId: string;
 	customizationSeedId?: string;
 	classroomGameListingSeedId?: string;
@@ -411,16 +411,18 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 
 const publicListingLanguageList = ['en', 'es'];
 
-// Each game version gets one public listing per language, all on default-mode game variants.
-export const publicListingSeedList: PublicListingSeed[] = gameVersionSeedList.flatMap((gameVersionSeed, versionIndex) => publicListingLanguageList.map((language, languageIndex) => ({
-	id: `00000000-0000-4000-8000-${String(601 + versionIndex * publicListingLanguageList.length + languageIndex).padStart(12, '0')}`,
+// Each version has one listing, with an explicit price group for each supported language.
+export const publicListingSeedList: PublicListingSeed[] = gameVersionSeedList.map((gameVersionSeed, versionIndex) => ({
+	id: `00000000-0000-4000-8000-${String(601 + versionIndex * 2).padStart(12, '0')}`,
 	gameVersionSeedId: gameVersionSeed.id,
-	language,
-	price: {
-		minorUnitAmount: createPublicListingMoneyAmount(),
-		currency: Currency.USD,
-	},
-})));
+	priceGroupList: publicListingLanguageList.map((language) => ({
+		languageList: [language],
+		price: {
+			minorUnitAmount: createPublicListingMoneyAmount(),
+			currency: Currency.USD,
+		},
+	})),
+}));
 
 export const gameCustomizationSeedList: GameCustomizationSeed[] = [
 	{
@@ -683,7 +685,7 @@ export const classroomGameListingSeedList: ClassroomGameListingSeed[] = [
 	{
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'arte-mecenas',
-		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000312')!.id,
+		gameVersionSeedId: '00000000-0000-4000-8000-000000000312',
 		designatedPayor: ClassroomGameListingDesignatedPayor.STUDENT,
 		customizationSeedId: '00000000-0000-4000-8000-000000000322',
 		id: '00000000-0000-4000-8000-000000000231',
@@ -691,14 +693,14 @@ export const classroomGameListingSeedList: ClassroomGameListingSeed[] = [
 	{
 		classroomSlug: 'florence-seminar-fall-2026',
 		gameSlug: 'shadow-of-the-plague',
-		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'shadow-of-the-plague')!.id)!.id,
+		gameVersionSeedId: gameVersionSeedList.find((version) => version.gameSlug === 'shadow-of-the-plague')!.id,
 		designatedPayor: ClassroomGameListingDesignatedPayor.STUDENT,
 		id: '00000000-0000-4000-8000-000000000232',
 	},
 	{
 		classroomSlug: 'limits-lab-fall-2026',
 		gameSlug: 'variant-limits',
-		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'variant-limits')!.id)!.id,
+		gameVersionSeedId: gameVersionSeedList.find((version) => version.gameSlug === 'variant-limits')!.id,
 		designatedPayor: ClassroomGameListingDesignatedPayor.STUDENT,
 		id: '00000000-0000-4000-8000-000000000233',
 	},
@@ -716,12 +718,11 @@ function createAdditionalClassroomGameListingSeedList(): ClassroomGameListingSee
 
 		return gameSlugList.map((gameSlug, gameIndex) => {
 			const gameVersion = gameVersionSeedList.find((seed) => seed.gameSlug === gameSlug)!;
-			const publicListing = publicListingSeedList.find((seed) => seed.gameVersionSeedId === gameVersion.id)!;
 
 			return {
 				classroomSlug: classroom.slug,
 				gameSlug,
-				publicListingSeedId: publicListing.id,
+				gameVersionSeedId: gameVersion.id,
 				designatedPayor: classroom.institutionSlug === 'pinecrest-community-college'
 					|| institutionSeedList.slice(2).findIndex((institution) => institution.slug === classroom.institutionSlug) % 3 === 0
 					? ClassroomGameListingDesignatedPayor.INSTITUTION
@@ -738,6 +739,7 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		customizationSeedId: '00000000-0000-4000-8000-000000000322',
 		email: 'user1@scholark.com',
 		endAt: new Date('2026-10-30T23:59:59.999Z'),
+		language: 'en',
 		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000312')!.id,
 		id: '00000000-0000-4000-8000-000000000341',
 		startAt: new Date('2026-06-01T00:00:00.000Z'),
@@ -746,6 +748,7 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		classroomGameListingSeedId: '00000000-0000-4000-8000-000000000232',
 		email: 'user1@scholark.com',
 		endAt: new Date('2026-12-15T23:59:59.999Z'),
+		language: 'en',
 		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'shadow-of-the-plague')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000342',
 		startAt: new Date('2026-08-20T00:00:00.000Z'),
@@ -753,6 +756,7 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 	{
 		email: 'user1@scholark.com',
 		endAt: new Date('2026-05-01T23:59:59.999Z'),
+		language: 'en',
 		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'variant-limits')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000343',
 		startAt: new Date('2026-01-20T00:00:00.000Z'),
@@ -760,6 +764,7 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 	{
 		email: 'student2@scholark.com',
 		endAt: new Date('2027-01-31T23:59:59.999Z'),
+		language: 'en',
 		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === gameVersionSeedList.find((version) => version.gameSlug === 'econland')!.id)!.id,
 		id: '00000000-0000-4000-8000-000000000344',
 		startAt: new Date('2026-09-01T00:00:00.000Z'),
@@ -768,6 +773,7 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		classroomGameListingSeedId: '00000000-0000-4000-8000-000000000233',
 		email: 'student2@scholark.com',
 		endAt: new Date('2026-12-20T23:59:59.999Z'),
+		language: 'en',
 		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000313')!.id,
 		id: '00000000-0000-4000-8000-000000000345',
 		startAt: new Date('2026-09-01T00:00:00.000Z'),

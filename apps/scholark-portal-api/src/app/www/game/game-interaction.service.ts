@@ -15,15 +15,14 @@ export class GameInteractionService {
 
 	async getConfiguration(cookieHeader?: string) {
 		const license = await this.gameLaunchSessionService.authorizeGameSession(cookieHeader);
-		const gameVariant = license.gameVariant;
 		const customization = license.customization;
 
 		return {
 			customization: customization?.isPublished() ? customization.content : undefined,
-			gameVariantId: gameVariant.id!,
-			gameVersionId: gameVariant.gameVersion.id!,
-			publisherVersion: gameVariant.gameVersion.publisherVersion,
-			runtimeConfiguration: gameVariant.runtimeConfiguration,
+			courseType: license.courseType,
+			gameVersionId: license.gameVersion.id!,
+			language: license.language,
+			publisherVersion: license.gameVersion.publisherVersion,
 		};
 	}
 
@@ -41,7 +40,7 @@ export class GameInteractionService {
 			eventId: eventData.eventId,
 			eventType: eventData.eventType,
 			gameLicense: license,
-			gameVersion: license.gameVariant.gameVersion,
+			gameVersion: license.gameVersion,
 			occurredAt: new Date(eventData.occurredAt),
 			payload: eventData.payload,
 			schemaVersion: eventData.schemaVersion,
@@ -63,7 +62,7 @@ export class GameInteractionService {
 			schemaVersion: gameState.schemaVersion,
 			state: gameState.content,
 		} : {
-			gameVersionId: license.gameVariant.gameVersion.id,
+			gameVersionId: license.gameVersion.id,
 			savedAt: undefined,
 			schemaVersion: undefined,
 			state: null,
@@ -81,7 +80,7 @@ export class GameInteractionService {
 		await this.entityManager.upsert(GameState, {
 			content: stateData.state,
 			gameLicense: license,
-			gameVersion: license.gameVariant.gameVersion,
+			gameVersion: license.gameVersion,
 			savedAt,
 			schemaVersion: stateData.schemaVersion,
 		}, {

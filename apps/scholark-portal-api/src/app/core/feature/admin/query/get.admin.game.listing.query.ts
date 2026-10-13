@@ -32,31 +32,20 @@ export class GetAdminGameListingListQuery {
 		const searchQuery = data.filterBy?.q?.trim();
 		if (listingType === 'public') {
 			const queryBuilder = this.publicGameListingRepository.createQueryBuilder('listing')
-				.leftJoinAndSelect('listing.gameVariant', 'gameVariant')
-				.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+				.leftJoinAndSelect('listing.gameVersion', 'gameVersion')
 				.leftJoinAndSelect('gameVersion.game', 'game')
-				.leftJoinAndSelect('game.publisher', 'publisher');
+				.leftJoinAndSelect('game.publisher', 'publisher')
+				.leftJoinAndSelect('listing.priceGroupList', 'priceGroup')
+				.leftJoinAndSelect('priceGroup.languageList', 'priceGroupLanguage');
 
 			if (searchQuery) {
 				const searchPattern = `%${searchQuery}%`;
 				queryBuilder.andWhere({
 					$or: [
-						{ gameVariant: { gameVersion: { game: { title: { $ilike: searchPattern } } } } },
-						{ gameVariant: { gameVersion: { game: { slug: { $ilike: searchPattern } } } } },
-						{
-							gameVariant: {
-								gameVersion: {
-									game: { publisher: { name: { $ilike: searchPattern } } },
-								},
-							},
-						},
-						{
-							gameVariant: {
-								gameVersion: {
-									game: { publisher: { slug: { $ilike: searchPattern } } },
-								},
-							},
-						},
+						{ gameVersion: { game: { title: { $ilike: searchPattern } } } },
+						{ gameVersion: { game: { slug: { $ilike: searchPattern } } } },
+						{ gameVersion: { game: { publisher: { name: { $ilike: searchPattern } } } } },
+						{ gameVersion: { game: { publisher: { slug: { $ilike: searchPattern } } } } },
 					],
 				});
 			}
@@ -70,8 +59,7 @@ export class GetAdminGameListingListQuery {
 		const queryBuilder = this.classroomGameListingRepository.createQueryBuilder('listing')
 			.leftJoinAndSelect('listing.classroom', 'classroom')
 			.leftJoinAndSelect('classroom.institution', 'institution')
-			.leftJoinAndSelect('listing.gameVariant', 'gameVariant')
-			.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+			.leftJoinAndSelect('listing.gameVersion', 'gameVersion')
 			.leftJoinAndSelect('gameVersion.game', 'game')
 			.leftJoinAndSelect('game.publisher', 'publisher');
 
@@ -79,23 +67,15 @@ export class GetAdminGameListingListQuery {
 			const searchPattern = `%${searchQuery}%`;
 			queryBuilder.andWhere({
 				$or: [
-					{ gameVariant: { gameVersion: { game: { title: { $ilike: searchPattern } } } } },
-					{ gameVariant: { gameVersion: { game: { slug: { $ilike: searchPattern } } } } },
+					{ gameVersion: { game: { title: { $ilike: searchPattern } } } },
+					{ gameVersion: { game: { slug: { $ilike: searchPattern } } } },
 					{ classroom: { name: { $ilike: searchPattern } } },
 					{ classroom: { institution: { name: { $ilike: searchPattern } } } },
 					{
-						gameVariant: {
-							gameVersion: {
-								game: { publisher: { name: { $ilike: searchPattern } } },
-							},
-						},
+						gameVersion: { game: { publisher: { name: { $ilike: searchPattern } } } },
 					},
 					{
-						gameVariant: {
-							gameVersion: {
-								game: { publisher: { slug: { $ilike: searchPattern } } },
-							},
-						},
+						gameVersion: { game: { publisher: { slug: { $ilike: searchPattern } } } },
 					},
 				],
 			});

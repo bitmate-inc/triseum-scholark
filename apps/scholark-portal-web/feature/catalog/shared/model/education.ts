@@ -55,15 +55,14 @@ export type ClassroomGameListing = {
 	game: Game;
 	designatedPayor: "student" | "institution";
 	gameVersionId: string;
-	gameVariantId: string;
+	language: string;
+	courseType: string;
 	customizationId?: string;
 	price?: {
 		minorUnitAmount: number;
 		currency: string;
 	};
 	includedLicenseQuantity?: number;
-	language?: string;
-	mode?: string;
 	startAt: string;
 	endAt: string;
 	licenseDurationDays: number;

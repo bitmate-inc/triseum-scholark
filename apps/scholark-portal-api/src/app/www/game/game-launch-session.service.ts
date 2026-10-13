@@ -18,7 +18,6 @@ const gameAudience = 'scholark-game-api';
 const tokenIssuer = 'scholark-portal-api';
 
 export type GameSessionClaims = {
-	gameVariantId: string;
 	gameVersionId: string;
 	licenseId: string;
 	purpose: 'game_session';
@@ -26,7 +25,6 @@ export type GameSessionClaims = {
 };
 
 type GameLaunchTicketClaims = {
-	gameVariantId: string;
 	gameVersionId: string;
 	licenseId: string;
 	purpose: 'game_launch';
@@ -60,7 +58,7 @@ export class GameLaunchSessionService {
 			throw new UnauthorizedException('Invalid game launch ticket');
 		}
 
-		if (ticket.purpose !== 'game_launch' || !ticket.sub || !ticket.licenseId || !ticket.gameVersionId || !ticket.gameVariantId || !ticket.jti || !ticket.exp) {
+		if (ticket.purpose !== 'game_launch' || !ticket.sub || !ticket.licenseId || !ticket.gameVersionId || !ticket.jti || !ticket.exp) {
 			throw new UnauthorizedException('Invalid game launch ticket');
 		}
 
@@ -94,7 +92,6 @@ export class GameLaunchSessionService {
 		}
 
 		const sessionToken = await this.jwtService.signAsync({
-			gameVariantId: ticket.gameVariantId,
 			gameVersionId: ticket.gameVersionId,
 			licenseId: ticket.licenseId,
 			purpose: 'game_session',
@@ -126,7 +123,7 @@ export class GameLaunchSessionService {
 			throw new UnauthorizedException('Game session is invalid or expired');
 		}
 
-		if (session.purpose !== 'game_session' || !session.sub || !session.licenseId || !session.gameVersionId || !session.gameVariantId) {
+		if (session.purpose !== 'game_session' || !session.sub || !session.licenseId || !session.gameVersionId) {
 			throw new UnauthorizedException('Game session is invalid');
 		}
 
@@ -139,7 +136,7 @@ export class GameLaunchSessionService {
 	}
 
 	getLicensedUpstream(license: GameLicense): URL {
-		const upstream = new URL(license.gameVariant.gameVersion.runUrl);
+		const upstream = new URL(license.gameVersion.runUrl);
 		if (upstream.username || upstream.password || upstream.hash) {
 			throw new UnauthorizedException('Game upstream URL is invalid');
 		}
@@ -156,15 +153,14 @@ export class GameLaunchSessionService {
 
 	private isMatchingActiveLicense(
 		license: GameLicense | undefined,
-		claims: Pick<GameSessionClaims, 'gameVariantId' | 'gameVersionId'> & { licenseId: string },
+		claims: Pick<GameSessionClaims, 'gameVersionId'> & { licenseId: string },
 	): license is GameLicense {
 		return Boolean(
 			license
 				&& license.id === claims.licenseId
 				&& license.isActive()
-				&& license.gameVariant.id === claims.gameVariantId
-				&& license.gameVariant.gameVersion.id === claims.gameVersionId
-				&& license.gameVariant.gameVersion.isPublished(),
+				&& license.gameVersion.id === claims.gameVersionId
+				&& license.gameVersion.isPublished(),
 		);
 	}
 

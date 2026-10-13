@@ -31,8 +31,7 @@ function addClassroomGameListingRelations(
 	queryBuilder
 		.leftJoinAndSelect('classroomGameListing.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
-		.leftJoinAndSelect('classroomGameListing.gameVariant', 'gameVariant')
-		.leftJoinAndSelect('gameVariant.gameVersion', 'gameVersion')
+		.leftJoinAndSelect('classroomGameListing.gameVersion', 'gameVersion')
 		.leftJoinAndSelect('gameVersion.game', 'game')
 		.leftJoinAndSelect('game.publisher', 'publisher');
 }
@@ -56,7 +55,7 @@ export class GetAdminClassroomGameListingListQuery {
 			queryBuilder.andWhere({ classroom: data.filterBy.classroomId });
 		}
 		if (data.filterBy?.gameId) {
-			queryBuilder.andWhere({ gameVariant: { gameVersion: { game: data.filterBy.gameId } } });
+			queryBuilder.andWhere({ gameVersion: { game: data.filterBy.gameId } });
 		}
 
 		const searchQuery = data.filterBy?.q?.trim();

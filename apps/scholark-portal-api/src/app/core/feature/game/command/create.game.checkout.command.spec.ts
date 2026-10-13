@@ -15,28 +15,39 @@ function createContext(purchaseType: 'public' | 'classroom', sessionOverrides: P
 		slug: 'test-game',
 		title: 'Test Game',
 	};
-	const gameVersion = { game, isPublished: jest.fn().mockReturnValue(true) };
-	const gameVariant = { gameVersion };
-	const publicListing = {
-		gameVariant,
-		id: '00000000-0000-4000-8000-000000000003',
+	const gameVersion = { game, id: '00000000-0000-4000-8000-000000000007', isPublished: jest.fn().mockReturnValue(true) };
+	const priceGroup = {
+		id: '00000000-0000-4000-8000-000000000008',
+		languageList: { getItems: () => [{ language: 'en' }] },
 		price: { currency: 'USD', minorUnitAmount: 1200 },
+	};
+	const publicListing = {
+		canBeAcquired: jest.fn().mockReturnValue(true),
+		gameVersion,
+		id: '00000000-0000-4000-8000-000000000003',
+		endAt: new Date('2024-12-31T00:00:00.000Z'),
+		priceGroupList: { getItems: () => [priceGroup] },
 		publishedAt: new Date(Date.now() - 1000),
 	};
 	const classroomGameListing = {
+		canBeAcquired: jest.fn().mockReturnValue(true),
 		customization: undefined,
 		designatedPayor: 'student',
-		gameVariant,
+		courseType: 'standard',
+		gameVersion,
 		id: '00000000-0000-4000-8000-000000000004',
 		isAvailable: jest.fn().mockReturnValue(true),
+		language: 'en',
 		licenseDurationDays: 180,
-		price: publicListing.price,
+		price: priceGroup.price,
 	};
 	const attempt = {
 		classroomGameListing: purchaseType === 'classroom' ? classroomGameListing : undefined,
+		courseType: 'standard',
 		id: '00000000-0000-4000-8000-000000000005',
 		price: { currency: 'USD', minorUnitAmount: 1200 },
 		publicListing: purchaseType === 'public' ? publicListing : undefined,
+		language: 'en',
 		status: GamePaymentAttemptStatus.PENDING,
 		stripeCheckoutSessionId: 'cs_test_existing',
 		user,
@@ -91,7 +102,7 @@ function createContext(purchaseType: 'public' | 'classroom', sessionOverrides: P
 		{ validate: jest.fn().mockResolvedValue(undefined) } as never,
 		{ findForAcquisition: jest.fn().mockResolvedValue(publicListing) } as never,
 		{
-			findActiveByUserAndGameVariant: jest.fn().mockResolvedValue(undefined),
+			findActiveByUserAndConfiguration: jest.fn().mockResolvedValue(undefined),
 			findByUserAndClassroomGameListing: jest.fn().mockResolvedValue(undefined),
 		} as never,
 		{ findOneBy: jest.fn().mockResolvedValue(user) } as never,
@@ -120,7 +131,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 	it.each(['public', 'classroom'] as const)('reuses the existing open %s Checkout Session', async (purchaseType) => {
 		const context = createContext(purchaseType);
 		const result = purchaseType === 'public'
-			? await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({ publicListingId: context.publicListing.id, userId: context.user.id }))
+			? await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({ language: 'en', publicListingId: context.publicListing.id, userId: context.user.id }))
 			: await context.command.createClassroomGameListingCheckout(CreateClassroomGameListingCheckoutCommandData.create({ classroomGameListingId: context.classroomGameListing.id, userId: context.user.id }));
 
 		expect(result.checkoutSessionId).toBe('cs_test_existing');
@@ -133,6 +144,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		const context = createContext('public', { payment_status: 'paid' });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
+			language: 'en',
 			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
@@ -146,10 +158,27 @@ describe(CreateGameCheckoutCommand.name, () => {
 		expect(context.stripe.checkout.sessions.create).not.toHaveBeenCalled();
 	});
 
+	it('snapshots the public listing end date on a new payment attempt', async () => {
+		const context = createContext('public');
+		(context.paymentAttemptRepository.findPendingByUserAndPublicListing as jest.Mock).mockResolvedValue(undefined);
+
+		await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
+			language: 'en',
+			publicListingId: context.publicListing.id,
+			userId: context.user.id,
+		}));
+
+		expect(context.paymentAttemptRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+			publicListingEndAtSnapshot: context.publicListing.endAt,
+			publicListingEndAtSnapshotted: true,
+		}));
+	});
+
 	it('does not start another session while the existing payment is processing', async () => {
 		const context = createContext('public', { status: 'complete' });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
+			language: 'en',
 			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
@@ -163,6 +192,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		const context = createContext('public', { status: 'expired' });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
+			language: 'en',
 			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
@@ -182,6 +212,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		context.paymentAttemptRepository.findById.mockResolvedValue({ status: GamePaymentAttemptStatus.FULFILLED });
 
 		const result = await context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
+			language: 'en',
 			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}));
@@ -196,6 +227,7 @@ describe(CreateGameCheckoutCommand.name, () => {
 		context.redisClient.set.mockResolvedValue(null);
 
 		await expect(context.command.createGameCheckout(CreateGameCheckoutCommandData.create({
+			language: 'en',
 			publicListingId: context.publicListing.id,
 			userId: context.user.id,
 		}))).rejects.toMatchObject({ status: 429 });

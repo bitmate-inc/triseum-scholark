@@ -1,3 +1,5 @@
+import { LockMode } from '@mikro-orm/core';
+
 export interface FindOneQuery {
 	id?: string;
 
@@ -36,6 +38,7 @@ type FindOptionsRelations<Entity> = {
 };
 
 export interface FindOptions<Entity> {
+	lockMode?: LockMode;
 	relations?: FindOptionsRelations<Entity>;
 	skip?: number;
 	take?: number;

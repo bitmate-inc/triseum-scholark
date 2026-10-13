@@ -88,10 +88,7 @@ export class FulfillGamePaymentCommand {
 			if (attempt.classroomGameListing) {
 				result = await this.acquireClassroomGameListingCommand.execute(AcquireClassroomGameListingCommandData.create({
 					classroomGameListingId: attempt.classroomGameListing.id!,
-					customization: attempt.customization,
-					licenseDurationDays: attempt.licenseDurationDays,
 					paymentAttempt: attempt,
-					price: attempt.price,
 					userId: attempt.user.id!,
 				}));
 			} else {
@@ -100,9 +97,7 @@ export class FulfillGamePaymentCommand {
 				}
 				result = await this.acquirePublicGameListingCommand.execute(AcquirePublicListingCommandData.create({
 					publicListingId: attempt.publicListing.id!,
-					licenseDurationDays: attempt.licenseDurationDays,
 					paymentAttempt: attempt,
-					price: attempt.price,
 					userId: attempt.user.id!,
 				}));
 			}

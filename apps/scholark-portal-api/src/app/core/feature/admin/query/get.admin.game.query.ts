@@ -11,7 +11,6 @@ import {
 	normalizeCatalogSearchQuery,
 } from '../../catalog/query/catalog.search';
 import { Game } from '../../game/model/game.entity';
-import { GameVariant } from '../../game/model/game.variant.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
 import { PublicGameListing } from '../../game/model/public.game.listing.entity';
 
@@ -83,8 +82,6 @@ export class GetAdminGameQuery {
 		private readonly gameRepository: EntityRepository<Game>,
 		@InjectRepository(GameVersion)
 		private readonly gameVersionRepository: EntityRepository<GameVersion>,
-		@InjectRepository(GameVariant)
-		private readonly gameVariantRepository: EntityRepository<GameVariant>,
 		@InjectRepository(PublicGameListing)
 		private readonly publicGameListingRepository: EntityRepository<PublicGameListing>,
 	) {}
@@ -92,11 +89,10 @@ export class GetAdminGameQuery {
 	async execute(data: GetAdminGameQueryData): Promise<{
 		game?: Game;
 		gameVersionList: GameVersion[];
-		gameVariantList: GameVariant[];
 		publicGameListingList: PublicGameListing[];
 	}> {
 		if (!data.filterBy?.id) {
-			return { gameVersionList: [], gameVariantList: [], publicGameListingList: [] };
+			return { gameVersionList: [], publicGameListingList: [] };
 		}
 
 		const game = await this.gameRepository.findOne(
@@ -104,7 +100,7 @@ export class GetAdminGameQuery {
 			{ populate: ['publisher'] },
 		);
 		if (!game) {
-			return { gameVersionList: [], gameVariantList: [], publicGameListingList: [] };
+			return { gameVersionList: [], publicGameListingList: [] };
 		}
 
 		const gameVersionList = await this.gameVersionRepository.find(
@@ -112,18 +108,14 @@ export class GetAdminGameQuery {
 			{ orderBy: { publisherVersion: 'DESC' } },
 		);
 		const gameVersionIds = gameVersionList.map((version) => version.id!);
-		const gameVariantList = gameVersionIds.length === 0
+		const publicGameListingList = gameVersionIds.length === 0
 			? []
-			: await this.gameVariantRepository.find(
+			: await this.publicGameListingRepository.find(
 				{ gameVersion: { $in: gameVersionIds } },
-				{ orderBy: { language: 'ASC', mode: 'ASC' } },
+				{ populate: ['priceGroupList.languageList'] },
 			);
-		const gameVariantIds = gameVariantList.map((variant) => variant.id!);
-		const publicGameListingList = gameVariantIds.length === 0
-			? []
-			: await this.publicGameListingRepository.find({ gameVariant: { $in: gameVariantIds } });
 
-		return { game, gameVersionList, gameVariantList, publicGameListingList };
+		return { game, gameVersionList, publicGameListingList };
 	}
 
 }

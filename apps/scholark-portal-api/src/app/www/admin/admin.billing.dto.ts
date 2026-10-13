@@ -76,7 +76,7 @@ export class AdminAcquisitionListItemResponseDto extends BillingListItemResponse
 		const userName = [acquisition.user.firstName, acquisition.user.lastName].filter(Boolean).join(' ');
 		return {
 			createdAt: acquisition.createdAt,
-			gameTitle: acquisition.license.gameVariant.gameVersion.game.title,
+			gameTitle: acquisition.license.gameVersion.game.title,
 			id: acquisition.id!,
 			licenseEndAt: acquisition.license.endAt,
 			licenseStartAt: acquisition.license.startAt,
@@ -178,7 +178,7 @@ export class GetAdminAcquisitionDetailResponseDto {
 	language?: string;
 
 	@ApiPropertyOptional()
-	mode?: string;
+	courseType?: string;
 
 	@ApiPropertyOptional()
 	classroomName?: string;
@@ -212,7 +212,7 @@ export class GetAdminAcquisitionDetailResponseDto {
 		eventList: GameAcquisitionEvent[],
 	): GetAdminAcquisitionDetailResponseDto {
 		const userName = [acquisition.user.firstName, acquisition.user.lastName].filter(Boolean).join(' ');
-		const gameVariant = acquisition.license.gameVariant;
+		const gameVersion = acquisition.license.gameVersion;
 		const now = new Date();
 		const license = acquisition.license;
 		const codeRedemption = acquisition.codeRedemption;
@@ -227,10 +227,10 @@ export class GetAdminAcquisitionDetailResponseDto {
 			},
 			createdAt: acquisition.createdAt,
 			eventList: eventList.map(AdminAcquisitionEventResponseDto.fromEntity),
-			gameTitle: gameVariant.gameVersion.game.title,
+			gameTitle: gameVersion.game.title,
 			id: acquisition.id!,
 			institutionName: license.classroomGameListing?.classroom.institution.name,
-			language: gameVariant.language,
+			language: license.language,
 			license: {
 				endAt: license.endAt,
 				id: license.id!,
@@ -238,7 +238,7 @@ export class GetAdminAcquisitionDetailResponseDto {
 				status: license.startAt > now ? 'scheduled' : license.endAt <= now ? 'expired' : 'active',
 			},
 			mechanism: acquisition.mechanism,
-			mode: gameVariant.mode,
+			courseType: license.courseType,
 			paymentAttempt: acquisition.paymentAttempt && {
 				fulfilledAt: acquisition.paymentAttempt.fulfilledAt,
 				id: acquisition.paymentAttempt.id!,
@@ -247,7 +247,7 @@ export class GetAdminAcquisitionDetailResponseDto {
 				stripePaymentIntentId: acquisition.paymentAttempt.stripePaymentIntentId,
 			},
 			price: acquisition.price,
-			publisherVersion: gameVariant.gameVersion.publisherVersion,
+			publisherVersion: gameVersion.publisherVersion,
 			userEmail: acquisition.user.email,
 			userName: userName || acquisition.user.email,
 		};
@@ -274,8 +274,8 @@ export class AdminPaymentAttemptListItemResponseDto extends BillingListItemRespo
 
 	static fromEntity(attempt: GamePaymentAttempt): AdminPaymentAttemptListItemResponseDto {
 		const userName = [attempt.user.firstName, attempt.user.lastName].filter(Boolean).join(' ');
-		const gameTitle = attempt.publicListing?.gameVariant.gameVersion.game.title
-			?? attempt.classroomGameListing?.gameVariant.gameVersion.game.title
+		const gameTitle = attempt.publicListing?.gameVersion.game.title
+			?? attempt.classroomGameListing?.gameVersion.game.title
 			?? 'Unknown game';
 		return {
 			createdAt: attempt.createdAt,
@@ -327,7 +327,7 @@ export class AdminLicenseListItemResponseDto extends BillingListItemResponseDto 
 		return {
 			createdAt: license.createdAt,
 			endAt: license.endAt,
-			gameTitle: license.gameVariant.gameVersion.game.title,
+			gameTitle: license.gameVersion.game.title,
 			id: license.id!,
 			startAt: license.startAt,
 			status,

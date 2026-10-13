@@ -20,7 +20,7 @@ export class GetUserLibraryQuery {
 			{ user: userId },
 			{
 				populate: [
-					'gameVariant.gameVersion.game',
+					'gameVersion.game',
 					'customization',
 					'classroomGameListing.classroom',
 					'classroomGameListing.customization',

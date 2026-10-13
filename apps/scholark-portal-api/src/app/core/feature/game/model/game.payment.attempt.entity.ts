@@ -9,10 +9,12 @@ import {
 
 import { StaticFactory } from '../../../../../lib/factory/static.factory';
 import { Money } from '../../../shared/commerce/model/money.entity';
+import type { Classroom } from '../../education/model/classroom.entity';
 import { ClassroomGameListing } from '../../education/model/classroom.game.listing.entity';
 import { User } from '../../user/model/user.entity';
 import { GameCustomization } from './game.customization.entity';
 import { PublicGameListing } from './public.game.listing.entity';
+import { PublicGameListingPriceGroup } from './public.game.listing.price.group.entity';
 
 export enum GamePaymentAttemptStatus {
 	PENDING = 'pending',
@@ -32,6 +34,15 @@ export class GamePaymentAttempt extends StaticFactory {
 	@ManyToOne(() => PublicGameListing, { deleteRule: 'restrict', nullable: true })
 	publicListing?: PublicGameListing;
 
+	@ManyToOne(() => PublicGameListingPriceGroup, { deleteRule: 'restrict', nullable: true })
+	publicListingPriceGroup?: PublicGameListingPriceGroup;
+
+	@Property({ nullable: true })
+	publicListingEndAtSnapshot?: Date | null;
+
+	@Property({ default: false })
+	publicListingEndAtSnapshotted = false;
+
 	@ManyToOne(() => ClassroomGameListing, { deleteRule: 'restrict', nullable: true })
 	classroomGameListing?: ClassroomGameListing;
 
@@ -46,6 +57,12 @@ export class GamePaymentAttempt extends StaticFactory {
 
 	@Embedded(() => Money, { prefix: 'price_' })
 	price!: Money;
+
+	@Property()
+	language!: string;
+
+	@Property({ type: 'string' })
+	courseType!: Classroom['courseType'];
 
 	@Property()
 	licenseDurationDays!: number;

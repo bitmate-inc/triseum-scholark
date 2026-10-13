@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import {
+	IsNotEmpty,
+	IsString,
+	IsUUID
+} from 'class-validator';
 
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import { GetCatalogGameListQueryResult } from '../../core/feature/catalog/query/get.catalog.game.list.query';
@@ -20,6 +24,11 @@ export class GameAcquisitionRequestDto {
 	@ApiProperty({ format: 'uuid' })
 	@IsUUID()
 	publicListingId!: string;
+
+	@ApiProperty()
+	@IsString()
+	@IsNotEmpty()
+	language!: string;
 
 }
 
@@ -185,22 +194,29 @@ class GameVersionResponseDto implements Pick<GameVersion, 'id' | 'description' |
 
 }
 
+class PublicGameListingPriceGroupResponseDto {
+
+	@ApiProperty({ type: MoneyDto })
+	price!: MoneyDto;
+
+	@ApiProperty({ type: [String] })
+	languageList!: string[];
+
+}
+
 class PublicGameListingResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
 	id!: string;
 
-	@ApiProperty({ type: MoneyDto })
-	price!: MoneyDto;
+	@ApiProperty({ type: [PublicGameListingPriceGroupResponseDto] })
+	priceGroupList!: PublicGameListingPriceGroupResponseDto[];
 
-	@ApiProperty({ format: 'uuid' })
-	gameVariantId!: string;
+	@ApiProperty({ format: 'date-time', type: String })
+	startAt!: Date;
 
-	@ApiProperty()
-	language!: string;
-
-	@ApiProperty()
-	mode!: string;
+	@ApiPropertyOptional({ format: 'date-time', type: String })
+	endAt?: Date;
 
 }
 
@@ -215,17 +231,19 @@ export class GetGameResponseDto {
 	static fromEntity(game: Game, gameVersionList: GameVersion[] = [], publicListingList: PublicGameListing[] = []): GetGameResponseDto {
 		const publicListingsByVersionId = new Map<string, PublicGameListingResponseDto[]>();
 		for (const listing of publicListingList) {
-			const versionId = listing.gameVariant.gameVersion.id!;
+			const versionId = listing.gameVersion.id!;
 			const listingList = publicListingsByVersionId.get(versionId) ?? [];
 			listingList.push({
-				gameVariantId: listing.gameVariant.id!,
 				id: listing.id!,
-				language: listing.gameVariant.language,
-				mode: listing.gameVariant.mode,
-				price: {
-					currency: listing.price.currency,
-					minorUnitAmount: listing.price.minorUnitAmount,
-				},
+				priceGroupList: listing.priceGroupList.getItems().map((priceGroup) => ({
+					languageList: priceGroup.languageList.getItems().map((language) => language.language),
+					price: {
+						currency: priceGroup.price.currency,
+						minorUnitAmount: priceGroup.price.minorUnitAmount,
+					},
+				})),
+				endAt: listing.endAt,
+				startAt: listing.startAt!,
 			});
 			publicListingsByVersionId.set(versionId, listingList);
 		}
