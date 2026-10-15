@@ -29,6 +29,7 @@ describe(UserController.name, () => {
 			{} as never,
 			launchCommand as unknown as CreateGameLaunchTicketCommand,
 			{} as never,
+			{} as never,
 		);
 
 		await expect(controller.launchGame({ user: { id: 'user-id' } } as never, 'license-id')).resolves.toEqual({
@@ -50,6 +51,7 @@ describe(UserController.name, () => {
 			{} as never,
 			{} as never,
 			{} as never,
+			{} as never,
 		);
 
 		await expect(controller.getPaymentAttempts({ user: { id: 'user-id' } } as never))
@@ -66,6 +68,7 @@ describe(UserController.name, () => {
 			{} as never,
 			{} as never,
 			revalidateCommand as never,
+			{} as never,
 			{} as never,
 			{} as never,
 		);

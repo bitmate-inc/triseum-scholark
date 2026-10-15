@@ -10,9 +10,11 @@ import {
 	DIACRITIC_CHARACTER_LIST,
 	normalizeCatalogSearchQuery,
 } from '../../catalog/query/catalog.search';
+import { GameCustomization } from '../../game/model/game.customization.entity';
 import { Game } from '../../game/model/game.entity';
 import { GameVersion } from '../../game/model/game.version.entity';
 import { PublicGameListing } from '../../game/model/public.game.listing.entity';
+import { GameCustomizationRepository } from '../../game/repository/game.customization.repository';
 
 export type AdminGamePublicationFilter = 'published' | 'unpublished' | 'scheduled';
 
@@ -84,15 +86,17 @@ export class GetAdminGameQuery {
 		private readonly gameVersionRepository: EntityRepository<GameVersion>,
 		@InjectRepository(PublicGameListing)
 		private readonly publicGameListingRepository: EntityRepository<PublicGameListing>,
+		private readonly gameCustomizationRepository: GameCustomizationRepository,
 	) {}
 
 	async execute(data: GetAdminGameQueryData): Promise<{
 		game?: Game;
+		gameCustomizationList: GameCustomization[];
 		gameVersionList: GameVersion[];
 		publicGameListingList: PublicGameListing[];
 	}> {
 		if (!data.filterBy?.id) {
-			return { gameVersionList: [], publicGameListingList: [] };
+			return { gameCustomizationList: [], gameVersionList: [], publicGameListingList: [] };
 		}
 
 		const game = await this.gameRepository.findOne(
@@ -100,7 +104,7 @@ export class GetAdminGameQuery {
 			{ populate: ['publisher'] },
 		);
 		if (!game) {
-			return { gameVersionList: [], publicGameListingList: [] };
+			return { gameCustomizationList: [], gameVersionList: [], publicGameListingList: [] };
 		}
 
 		const gameVersionList = await this.gameVersionRepository.find(
@@ -114,8 +118,11 @@ export class GetAdminGameQuery {
 				{ gameVersion: { $in: gameVersionIds } },
 				{ populate: ['priceGroupList.languageList'] },
 			);
+		const gameCustomizationList = gameVersionIds.length === 0
+			? []
+			: await this.gameCustomizationRepository.findBy({ gameVersion: { $in: gameVersionIds } });
 
-		return { game, gameVersionList, publicGameListingList };
+		return { game, gameCustomizationList, gameVersionList, publicGameListingList };
 	}
 
 }

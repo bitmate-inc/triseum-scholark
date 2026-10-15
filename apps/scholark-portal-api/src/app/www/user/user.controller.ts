@@ -25,10 +25,12 @@ import {
 
 import { ChangePasswordCommand, ChangePasswordCommandData } from '../../core/feature/account/command/auth/change.password.command';
 import { GetUserLibraryQuery } from '../../core/feature/catalog/query/get.user.library.query';
+import { GetInstructorProfileQuery } from '../../core/feature/education/query/get.instructor.portal.query';
 import { CreateGameLaunchTicketCommand, CreateGameLaunchTicketCommandData } from '../../core/feature/game/command/create.game.launch.ticket.command';
 import { RevalidateGamePaymentAttemptCommand } from '../../core/feature/game/command/revalidate.game.payment.attempt.command';
 import { GamePaymentAttemptRepository } from '../../core/feature/game/repository/game.payment.attempt.repository';
 import { UpdateUserCommand, UpdateUserCommandData } from '../../core/feature/user/command/update.user.command';
+import { User } from '../../core/feature/user/model/user.entity';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
 import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
@@ -58,6 +60,7 @@ export class UserController {
 		private readonly revalidateGamePaymentAttemptCommand: RevalidateGamePaymentAttemptCommand,
 		private readonly createGameLaunchTicketCommand: CreateGameLaunchTicketCommand,
 		private readonly updateUserCommand: UpdateUserCommand,
+		private readonly getInstructorProfileQuery: GetInstructorProfileQuery,
 	) {
 	}
 
@@ -105,7 +108,7 @@ export class UserController {
 			throw new NotFoundException();
 		}
 
-		return UserResponseDto.fromEntity(queryResult.user);
+		return this.getUserResponse(queryResult.user);
 	}
 
 	@Get('checkout-status')
@@ -160,7 +163,7 @@ export class UserController {
 			throw new UnprocessableEntityException(commandResult.validationResult);
 		}
 
-		return UserResponseDto.fromEntity(commandResult.user!);
+		return this.getUserResponse(commandResult.user!);
 	}
 
 	@Put('password')
@@ -185,6 +188,14 @@ export class UserController {
 		}
 
 		return { message: 'Password updated' };
+	}
+
+	private async getUserResponse(user: User): Promise<UserResponseDto> {
+		const instructor = await this.getInstructorProfileQuery.execute(user.id!);
+		return UserResponseDto.fromEntity(
+			user,
+			instructor ? ['student', 'instructor'] : ['student'],
+		);
 	}
 
 }

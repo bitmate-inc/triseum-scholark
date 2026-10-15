@@ -104,7 +104,9 @@ export interface ClassroomGameListing {
 	classroomId: string;
 	classroomName: string;
 	classroomSlug: string;
+	customizationCreatedAt?: string;
 	customizationId?: string;
+	customizationPublishedAt?: string;
 	designatedPayor: 'student' | 'institution';
 	endAt: string;
 	gameId: string;
@@ -156,7 +158,17 @@ export interface Instructor {
 	slug: string;
 }
 
+export interface InstructorListItem extends Instructor {
+	hasAccount: boolean;
+}
+
 export interface InstructorProfile extends Instructor {
+	accountUser?: {
+		email: string;
+		firstName?: string;
+		id: string;
+		lastName?: string;
+	};
 	classroomList: {
 		code: string;
 		id: string;
@@ -167,8 +179,14 @@ export interface InstructorProfile extends Instructor {
 	institutionList: Pick<Institution, 'id' | 'name' | 'slug'>[];
 }
 
+export interface InstructorInvitationDeliveryResult {
+	expiresAt: string;
+	invitationUrl?: string;
+	message: string;
+}
+
 export interface InstructorListResponse {
-	instructorList: Instructor[];
+	instructorList: InstructorListItem[];
 	totalItemCount: number;
 }
 
@@ -231,6 +249,7 @@ export interface AdminGameProfile extends AdminGame {
 	description?: string;
 	summary?: string;
 	versionList: {
+		customizationList: AdminGameCustomizationProfile[];
 		description?: string;
 		id: string;
 		publishedAt?: string;
@@ -252,7 +271,14 @@ export interface AdminGameListResponse {
 	totalItemCount: number;
 }
 
+export interface AdminGameCustomizationProfile {
+	createdAt: string;
+	id: string;
+	publishedAt?: string;
+}
+
 export interface AdminGameVersionOption {
+	customizationList: AdminGameCustomizationProfile[];
 	gameId: string;
 	gameTitle: string;
 	id: string;
@@ -830,6 +856,28 @@ export async function getInstructor(id: string, signal?: AbortSignal): Promise<I
 	return result.instructor;
 }
 
+export async function linkInstructorAccount(id: string, email: string): Promise<InstructorProfile> {
+	return await saveAdminRecord<{ email: string }, InstructorProfile>(
+		`/admin/instructors/${encodeURIComponent(id)}/account`, 'POST', { email }, 'instructor', 'Instructor account could not be linked.',
+	);
+}
+
+export async function sendInstructorInvitation(id: string, email: string): Promise<InstructorInvitationDeliveryResult> {
+	const response = await adminFetch(`${apiBase}/admin/instructors/${encodeURIComponent(id)}/account/invitation`, {
+		body: JSON.stringify({ email }),
+		credentials: 'include',
+		headers: { 'Content-Type': 'application/json' },
+		method: 'POST',
+	});
+	if (!response.ok) {
+		const body = await response.json().catch(() => undefined) as { message?: string | string[] } | undefined;
+		const message = Array.isArray(body?.message) ? body.message.join(' ') : body?.message;
+		throw new Error(message || (response.status === 403 ? 'Administrator access is required.' : 'Instructor invitation could not be sent.'));
+	}
+
+	return await response.json() as InstructorInvitationDeliveryResult;
+}
+
 export async function createInstructor(input: CreateInstructorInput): Promise<InstructorProfile> {
 	return await saveAdminRecord<CreateInstructorInput, InstructorProfile>(
 		'/admin/instructors', 'POST', input, 'instructor', 'Instructor could not be saved.',
@@ -955,6 +1003,7 @@ export async function getAllAdminGameVersions(signal?: AbortSignal): Promise<Adm
 
 	const gameProfileList = await Promise.all(gameList.map((game) => getAdminGame(game.id, signal)));
 	return gameProfileList.flatMap((game) => game.versionList.map((version) => ({
+		customizationList: version.customizationList,
 		gameId: game.id,
 		gameTitle: game.title,
 		id: version.id,

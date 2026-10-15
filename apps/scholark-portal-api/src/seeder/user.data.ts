@@ -23,4 +23,11 @@ export const userSeedList: UserSeed[] = [
 		plainPassword: 'password',
 		status: UserStatus.ACTIVE,
 	},
+	{
+		email: 'user2@scholark.com',
+		firstName: 'Instructor',
+		lastName: 'User',
+		plainPassword: 'password',
+		status: UserStatus.ACTIVE,
+	},
 ];

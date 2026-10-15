@@ -417,6 +417,7 @@ export class AdminController {
 		return GetAdminInstructorResponseDto.fromQueryResult({
 			classroomList: result.classroomList,
 			instructor: result.instructor,
+			instructorUser: result.instructorUser,
 			institutionList: result.institutionList,
 		});
 	}
@@ -663,6 +664,7 @@ export class AdminController {
 
 		return GetAdminGameResponseDto.fromQueryResult({
 			game: result.game,
+			gameCustomizationList: result.gameCustomizationList,
 			gameVersionList: result.gameVersionList,
 			publicGameListingList: result.publicGameListingList,
 		});

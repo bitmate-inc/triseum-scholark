@@ -12,7 +12,9 @@
 		"classroomLibraryTitle": "Classroom games · ScholArk",
 		"classroomLibraryDescription": "Classroom games, access windows, and progress in your ScholArk library.",
 		"standaloneLibraryTitle": "Standalone games · ScholArk",
-		"standaloneLibraryDescription": "Standalone games and access windows in your ScholArk library."
+		"standaloneLibraryDescription": "Standalone games and access windows in your ScholArk library.",
+		"instructorTitle": "Instructor portal · ScholArk",
+		"instructorDescription": "Manage assigned classrooms and view student game licenses."
 	},
 	"navigation": {
 		"home": "ScholArk home",
@@ -30,9 +32,67 @@
 	"account": {
 		"signIn": "Sign in",
 		"library": "Library",
+		"studentPortal": "Student portal",
+		"instructorPortal": "Instructor portal",
 		"billing": "Billing",
 		"profile": "Profile",
 		"signOut": "Sign out"
+	},
+	"instructor": {
+		"portalLabel": "Teaching workspace",
+		"classrooms": "Your classrooms",
+		"classroomsDescription": "Assigned classrooms and their acquired game access.",
+		"classroomCount": "{count, plural, one {# classroom} other {# classrooms}}",
+		"classroom": "Classroom",
+		"institution": "Institution",
+		"courseType": "Course type",
+		"courseTypeStandard": "Standard",
+		"courseTypeGameBased": "Game-based",
+		"language": "Language",
+		"openClassroom": "Open classroom",
+		"loadingClassrooms": "Loading classrooms...",
+		"classroomsUnavailable": "Classrooms unavailable",
+		"classroomsLoadFailed": "We could not load your assigned classrooms.",
+		"tryAgain": "Try again",
+		"noClassrooms": "No assigned classrooms",
+		"noClassroomsDescription": "Classrooms assigned to your instructor profile will appear here.",
+		"backToClassrooms": "All classrooms",
+		"loadingClassroom": "Loading classroom...",
+		"classroomUnavailable": "Classroom unavailable",
+		"classroomLoadFailed": "We could not load this classroom. It may not be assigned to your instructor profile.",
+		"classroomDetails": "Classroom code: {code}",
+		"gameCount": "{count, plural, one {# game} other {# games}}",
+		"studentCount": "{count, plural, one {# student} other {# students}}",
+		"publisherVersion": "Publisher version {version}",
+		"student": "Student",
+		"email": "Email",
+		"progress": "Progress",
+		"sampleProgress": "Sample",
+		"progressUnavailable": "Not available",
+		"studentProgress": "Sample progress for {studentName}",
+		"license": "License",
+		"starts": "Starts",
+		"ends": "Ends",
+		"active": "Active",
+		"upcoming": "Upcoming",
+		"expired": "Expired",
+		"noStudents": "No students have acquired this classroom game yet.",
+		"noGames": "No games assigned",
+		"noGamesDescription": "Classroom game listings will appear here when they are assigned."
+	},
+	"instructorInvitation": {
+		"title": "Accept your instructor invitation",
+		"description": "Confirm your access to the assigned ScholArk instructor profile.",
+		"checking": "Checking your invitation...",
+		"invalidTitle": "Invitation unavailable",
+		"invalidDescription": "This invitation may have expired, been revoked, or already been used.",
+		"missingToken": "The invitation link is missing its token.",
+		"invitedAs": "You have been invited to teach as {instructorName}.",
+		"existingAccountPrompt": "Accept with the invited email address. You can sign in after access is activated.",
+		"acceptInvitation": "Accept invitation",
+		"createAccountAndAccept": "Create account and accept",
+		"accepted": "Instructor access is active. Sign in with the invited email to continue.",
+		"signIn": "Sign in"
 	},
 	"auth": {
 		"unableToContinue": "Unable to continue",
@@ -126,6 +186,11 @@
 			"kicker": "Account security",
 			"title": "Change your password",
 			"description": "Update the local credential used to access ScholArk."
+		},
+		"instructorInvitation": {
+			"kicker": "Instructor access",
+			"title": "Join ScholArk as an instructor",
+			"description": "Accept your invitation to view assigned classrooms and student access."
 		}
 	},
 	"acquisition": {

@@ -3,19 +3,27 @@
 import { Button, buttonVariants } from "@repo/ui/button";
 import {
 	CreditCard,
+	GraduationCap,
 	LogOut,
 	UserRound
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
-import { getPathname, Link } from "../../../../i18n/navigation";
+import {
+	getPathname,
+	Link,
+	usePathname
+} from "../../../../i18n/navigation";
 import { useAuthGetSessionQuery, useAuthLogoutMutation } from "../../../api/client/api/generated-api";
 
 export function AccountControl() {
 	const locale = useLocale();
+	const pathname = usePathname();
 	const t = useTranslations("account");
 	const user = useAuthGetSessionQuery();
 	const [logout, logoutResult] = useAuthLogoutMutation();
+	const hasInstructorAccess = user.data?.userTypeList?.includes("instructor") ?? false;
+	const isInstructorRoute = pathname.includes("/instructor");
 
 	async function signOut() {
 		const response = await logout();
@@ -34,8 +42,14 @@ export function AccountControl() {
 	return (
 		<>
 			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/library">
-				{t("library")}
+				{isInstructorRoute && hasInstructorAccess ? t("studentPortal") : t("library")}
 			</Link>
+			{hasInstructorAccess && !isInstructorRoute ? (
+				<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/instructor">
+					<GraduationCap data-icon="inline-start"/>
+					{t("instructorPortal")}
+				</Link>
+			) : null}
 			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/billing">
 				<CreditCard data-icon="inline-start"/>
 				{t("billing")}

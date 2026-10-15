@@ -70,6 +70,36 @@ function formatPrice(price?: { currency: string; minorUnitAmount: number }): str
 	}).format(price.minorUnitAmount / 100);
 }
 
+function customizationOptionLabel(customization: AdminGameVersionOption['customizationList'][number], index: number): string {
+	const publicationDate = customization.publishedAt ? new Date(customization.publishedAt) : undefined;
+	const publicationLabel = !publicationDate
+		? 'Draft'
+		: publicationDate.getTime() > Date.now()
+			? `Scheduled ${dateTimeFormat.format(publicationDate)}`
+			: `Published ${dateTimeFormat.format(publicationDate)}`;
+	const createdLabel = customization.createdAt ? ` · added ${dateTimeFormat.format(new Date(customization.createdAt))}` : '';
+	return `Customization ${index + 1} · ${publicationLabel}${createdLabel}`;
+}
+
+function classroomCustomizationLabel(classroomGameListing: ClassroomGameListing): string {
+	if (!classroomGameListing.customizationId) {
+		return 'Default game configuration';
+	}
+
+	const createdLabel = classroomGameListing.customizationCreatedAt
+		? ` · added ${dateTimeFormat.format(new Date(classroomGameListing.customizationCreatedAt))}`
+		: '';
+	if (!classroomGameListing.customizationPublishedAt) {
+		return `Draft game customization${createdLabel}`;
+	}
+
+	const publishedAt = new Date(classroomGameListing.customizationPublishedAt);
+	const statusLabel = publishedAt.getTime() > Date.now()
+		? `Scheduled ${dateTimeFormat.format(publishedAt)}`
+		: `Published ${dateTimeFormat.format(publishedAt)}`;
+	return `Game customization · ${statusLabel}${createdLabel}`;
+}
+
 export function ClassroomGameListingListPage() {
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
@@ -213,6 +243,7 @@ function ClassroomGameListingForm({
 	const [error, setError] = useState<string>();
 	const [isLoading, setLoading] = useState(true);
 	const [isSaving, setSaving] = useState(false);
+	const selectedGameVersion = gameVersionList.find((version) => version.id === gameVersionId);
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -274,29 +305,44 @@ function ClassroomGameListingForm({
 	return (
 		<form className="institution-form classroom-game-listing-form" onSubmit={handleSubmit}>
 			<div className="institution-form-fields">
+				<div className="game-listing-form-section-heading institution-form-description"><h3>Assignment</h3><p>Choose the classroom and game version this listing belongs to.</p></div>
 				<label>Classroom<select disabled={isLoading} onChange={(event) => setClassroomId(event.target.value)} required value={classroomId}>
 					<option disabled value="">Select a classroom</option>
 					{classroomList.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.institution.name} · {classroom.name}</option>)}
 				</select></label>
-				<label>Game version<select disabled={isLoading} onChange={(event) => setGameVersionId(event.target.value)} required value={gameVersionId}>
+				<label>Game version<select disabled={isLoading} onChange={(event) => {
+					setGameVersionId(event.target.value);
+					setCustomizationId('');
+				}} required value={gameVersionId}>
 					<option disabled value="">Select a game version</option>
 					{gameVersionList.map((version) => <option key={version.id} value={version.id}>{version.gameTitle} · Version {version.publisherVersion}</option>)}
 				</select></label>
+				<label>Game customization<select disabled={isLoading || !selectedGameVersion} onChange={(event) => setCustomizationId(event.target.value)} value={customizationId}>
+					<option value="">Use default game configuration</option>
+					{customizationId && selectedGameVersion && !selectedGameVersion.customizationList.some((customization) => customization.id === customizationId) && <option value={customizationId}>Current customization unavailable</option>}
+					{selectedGameVersion?.customizationList.map((customization, index) => <option key={customization.id} value={customization.id}>{customizationOptionLabel(customization, index)}</option>)}
+				</select><span>{selectedGameVersion?.customizationList.length ? 'Choose a saved configuration for this version, or use its default.' : 'No saved customizations are available for this version; the default will be used.'}</span></label>
+				{selectedGameVersion && <div className="game-listing-version-reference institution-form-description">
+					<span>Selected version</span>
+					<Link to={`/games/${selectedGameVersion.gameId}#game-version-${selectedGameVersion.id}`}>
+						{selectedGameVersion.gameTitle} · Version {selectedGameVersion.publisherVersion}<ExternalLink aria-hidden="true" size={14}/>
+					</Link>
+				</div>}
 				<label>Classroom language<input readOnly value={classroomList.find((classroom) => classroom.id === classroomId)?.language ?? ''}/></label>
 				<label>Course type<input readOnly value={classroomList.find((classroom) => classroom.id === classroomId)?.courseType ?? ''}/></label>
+				<div className="game-listing-form-section-heading institution-form-description"><h3>Access terms</h3><p>Set who pays and how long the license lasts.</p></div>
 				<label>Designated payor<select onChange={(event) => setDesignatedPayor(event.target.value as ClassroomGameListing['designatedPayor'])} value={designatedPayor}>
 					<option value="student">Student</option>
 					<option value="institution">Institution</option>
 				</select></label>
-				<label>Student price (USD)<input disabled={designatedPayor === 'institution'} min="0" onChange={(event) => setPriceAmount(event.target.value)} required={designatedPayor === 'student'} step="0.01" type="number" value={priceAmount}/></label>
+				<label>Student price (USD)<input disabled={designatedPayor === 'institution'} min="0" onChange={(event) => setPriceAmount(event.target.value)} required={designatedPayor === 'student'} step="0.01" type="number" value={priceAmount}/><span>{designatedPayor === 'student' ? 'Charged to the learner through checkout.' : 'Institution-funded listings do not charge the learner.'}</span></label>
 				<label>Included license quantity<input min="0" onChange={(event) => setIncludedLicenseQuantity(event.target.value)} step="1" type="number" value={includedLicenseQuantity}/><span>Informational only; this does not limit acquisitions.</span></label>
 				<label>License duration (days)<input min="1" onChange={(event) => setLicenseDurationDays(event.target.value)} required step="1" type="number" value={licenseDurationDays}/></label>
-				<label>Customization ID<input onChange={(event) => setCustomizationId(event.target.value)} type="text" value={customizationId}/></label>
+				<div className="game-listing-form-section-heading institution-form-description"><h3>Availability</h3><p>Choose when this assignment opens and whether it is published.</p></div>
 				<label>Starts<input onChange={(event) => setStartAt(event.target.value)} required type="datetime-local" value={startAt}/></label>
-				<label>Ends<input min={startAt} onChange={(event) => setEndAt(event.target.value)} required type="datetime-local" value={endAt}/></label>
-				<label>Publish at<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/></label>
+				<label>Ends<input min={startAt} onChange={(event) => setEndAt(event.target.value)} required type="datetime-local" value={endAt}/><span>Must be after the start date.</span></label>
+				<label>Publish at<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/><span>Leave blank to keep this listing in draft.</span></label>
 			</div>
-			{designatedPayor === 'institution' && <p className="game-empty-note">Institution-funded listings have no student price.</p>}
 			{!isLoading && (classroomList.length === 0 || gameVersionList.length === 0) && <p className="game-empty-note">An active classroom and a game version are required.</p>}
 			{error && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{error}</div>}
 			<div className="institution-form-actions">
@@ -410,8 +456,7 @@ function ClassroomGameListingDetails({ classroomGameListing: initialClassroomGam
 					<div><dt>Game publication</dt><dd>{formatDate(classroomGameListing.gamePublishedAt)}</dd></div>
 					<div><dt>Starts</dt><dd>{formatDate(classroomGameListing.startAt)}</dd></div>
 					<div><dt>Ends</dt><dd>{formatDate(classroomGameListing.endAt)}</dd></div>
-					<div><dt>Game slug</dt><dd>{classroomGameListing.gameSlug}</dd></div>
-					<div><dt>Publisher</dt><dd>{classroomGameListing.publisher.name}</dd></div>
+					<div><dt>Publisher</dt><dd><Link to={`/publishers/${classroomGameListing.publisher.id}`}>{classroomGameListing.publisher.name}<ExternalLink aria-hidden="true" size={13}/></Link></dd></div>
 				</dl>
 			</div>
 			<div className="detail-section">
@@ -420,10 +465,10 @@ function ClassroomGameListingDetails({ classroomGameListing: initialClassroomGam
 					<div><dt>Designated payor</dt><dd>{classroomGameListing.designatedPayor}</dd></div>
 					<div><dt>Student price</dt><dd>{formatPrice(classroomGameListing.price)}</dd></div>
 					<div><dt>License duration</dt><dd>{classroomGameListing.licenseDurationDays} days</dd></div>
-					<div><dt>Game version</dt><dd>{classroomGameListing.gameVersionId}</dd></div>
+					<div><dt>Game version</dt><dd><Link to={`/games/${classroomGameListing.gameId}#game-version-${classroomGameListing.gameVersionId}`}>{classroomGameListing.gameTitle} · Version {classroomGameListing.publisherVersion}<ExternalLink aria-hidden="true" size={13}/></Link></dd></div>
+					<div><dt>Customization</dt><dd>{classroomCustomizationLabel(classroomGameListing)}{classroomGameListing.customizationId && <> · <Link to={`/games/${classroomGameListing.gameId}#game-version-${classroomGameListing.gameVersionId}`}>View game version</Link></>}</dd></div>
 					<div><dt>Language</dt><dd>{classroomGameListing.language}</dd></div>
 					<div><dt>Course type</dt><dd>{classroomGameListing.courseType.replaceAll('-', ' ')}</dd></div>
-					<div><dt>Listing ID</dt><dd>{classroomGameListing.id}</dd></div>
 				</dl>
 			</div>
 		</>

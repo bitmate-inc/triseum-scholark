@@ -21,6 +21,7 @@ import {
 } from 'react';
 import {
 	Link,
+	useLocation,
 	useNavigate,
 	useParams,
 	useSearchParams
@@ -245,11 +246,18 @@ export function GameDetailPage() {
 }
 
 function GameDetails({ game }: { game: AdminGameProfile }) {
+	const location = useLocation();
 	const [currentGame, setCurrentGame] = useState(game);
 	const [isEditing, setEditing] = useState(false);
 	const [isVersionFormOpen, setVersionFormOpen] = useState(false);
 	const [editingVersionId, setEditingVersionId] = useState<string>();
 	const listingCount = currentGame.versionList.reduce((count, version) => count + version.publicListingList.length, 0);
+	useEffect(() => {
+		const anchorId = location.hash.slice(1);
+		if (anchorId) {
+			document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
+	}, [currentGame, location.hash]);
 
 	return (
 		<>
@@ -301,7 +309,7 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 						setVersionFormOpen(false);
 					}}
 				/>}
-				{currentGame.versionList.length > 0 ? <div className="game-version-list">{currentGame.versionList.map((version) => <section className="game-version" key={version.id}>
+				{currentGame.versionList.length > 0 ? <div className="game-version-list">{currentGame.versionList.map((version) => <section className="game-version" id={`game-version-${version.id}`} key={version.id}>
 					<div className="game-version-heading">
 						<div><strong>Version {version.publisherVersion}</strong><span>{version.publicListingList.length} public {version.publicListingList.length === 1 ? 'listing' : 'listings'}</span></div>
 						<span className={`publication-state state-${publicationState(version.publishedAt)}`}>{publicationLabel(version.publishedAt)}</span>
@@ -316,7 +324,7 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 						version={version}
 					/>}
 					{version.description && <p className="game-version-description">{version.description}</p>}
-					<GameVersionListingList gameId={currentGame.id} onSaved={setCurrentGame} version={version}/>
+					<GameVersionListingList gameId={currentGame.id} gameTitle={currentGame.title} onSaved={setCurrentGame} version={version}/>
 				</section>)}</div> : <p>No versions have been added to this game.</p>}
 			</div>
 		</>
@@ -361,11 +369,19 @@ function GameVersionForm({
 
 	return (
 		<form className="institution-form game-version-form" onSubmit={handleSubmit}>
-			<div className="institution-form-fields">
+			<div className="game-version-form-intro">
+				<strong>{version ? 'Runtime version details' : 'Set up a runtime version'}</strong>
+				<p>Connect this publisher version to the hosted game runtime. Published versions are immutable.</p>
+			</div>
+			<div className="institution-form-fields game-version-form-fields">
 				<label>Publisher version<input autoComplete="off" maxLength={120} onChange={(event) => setPublisherVersion(event.target.value)} required value={publisherVersion}/></label>
-				<label>Runtime URL<input onChange={(event) => setRunUrl(event.target.value)} required type="url" value={runUrl}/></label>
+				<label>Runtime URL<input autoComplete="url" onChange={(event) => setRunUrl(event.target.value)} placeholder="https://games.example.edu/runtime" required type="url" value={runUrl}/><span>Use the HTTPS URL that serves this game version.</span></label>
 				<label className="institution-form-description">Description<textarea maxLength={10000} onChange={(event) => setDescription(event.target.value)} rows={2} value={description}/></label>
-				<label>Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/></label>
+				<label>Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/><span>Leave blank to save as a draft.</span></label>
+				<div className="game-version-date-shortcuts institution-form-description">
+					<Button onClick={() => setPublishedAt(toDateTimeInput(new Date().toISOString()))} size="sm" type="button" variant="outline">Publish now</Button>
+					<Button disabled={!publishedAt} onClick={() => setPublishedAt('')} size="sm" type="button" variant="outline">Clear date</Button>
+				</div>
 			</div>
 			{error && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{error}</div>}
 			<div className="institution-form-actions">
@@ -381,10 +397,12 @@ type AdminGamePublicListingProfile = AdminGameVersionProfile['publicListingList'
 
 function GameVersionListingList({
 	gameId,
+	gameTitle,
 	onSaved,
 	version,
 }: {
 	gameId: string;
+	gameTitle: string;
 	onSaved: (game: AdminGameProfile) => void;
 	version: AdminGameVersionProfile;
 }) {
@@ -406,13 +424,14 @@ function GameVersionListingList({
 			</div>
 			{activeForm && <GameListingForm
 				gameId={gameId}
+				gameTitle={gameTitle}
 				onCancel={() => setActiveForm(undefined)}
 				onSaved={(game) => {
 					onSaved(game);
 					setActiveForm(undefined);
 				}}
 				publicListing={publicListing}
-				versionId={version.id}
+				version={version}
 			/>}
 		</div>
 	);
@@ -445,16 +464,18 @@ function GameListingSlot({
 
 function GameListingForm({
 	gameId,
+	gameTitle,
 	onCancel,
 	onSaved,
 	publicListing,
-	versionId,
+	version,
 }: {
 	gameId: string;
+	gameTitle: string;
 	onCancel: () => void;
 	onSaved: (game: AdminGameProfile) => void;
 	publicListing?: AdminGamePublicListingProfile;
-	versionId: string;
+	version: AdminGameVersionProfile;
 }) {
 	const existingListing = publicListing;
 	const dialogRef = useRef<HTMLDialogElement>(null);
@@ -494,6 +515,13 @@ function GameListingForm({
 				setError('Choose an end date to close this listing.');
 				return;
 			}
+			const closingDate = new Date(endAt);
+			const listingStartDate = new Date(existingListing.startAt);
+			const currentEndDate = existingListing.endAt ? new Date(existingListing.endAt) : undefined;
+			if (closingDate <= listingStartDate || (currentEndDate && closingDate >= currentEndDate)) {
+				setError('The closing date must fall after the listing start and before its current end date.');
+				return;
+			}
 			setSaving(true);
 			try {
 				onSaved(await updateAdminPublicGameListing(gameId, existingListing.id, { endAt: new Date(endAt).toISOString() }));
@@ -504,6 +532,10 @@ function GameListingForm({
 			}
 			return;
 		}
+		if (endAt && new Date(endAt) <= new Date(startAt)) {
+			setError('Listing end date must be after its start date.');
+			return;
+		}
 
 		const priceGroupList = priceGroupFormList.map((priceGroup) => ({
 			languageList: priceGroup.languages.split(',').map((language) => language.trim()).filter(Boolean),
@@ -511,6 +543,11 @@ function GameListingForm({
 		}));
 		if (priceGroupList.some((priceGroup) => priceGroup.languageList.length === 0)) {
 			setError('Each price group needs at least one language.');
+			return;
+		}
+		const normalizedLanguageList = priceGroupList.flatMap((priceGroup) => priceGroup.languageList.map((language) => language.toLowerCase()));
+		if (new Set(normalizedLanguageList).size !== normalizedLanguageList.length) {
+			setError('A language can only appear in one price group.');
 			return;
 		}
 		setSaving(true);
@@ -528,7 +565,7 @@ function GameListingForm({
 				const input: CreateAdminPublicGameListingInput = {
 					available,
 					endAt: endAt ? new Date(endAt).toISOString() : undefined,
-					gameVersionId: versionId,
+					gameVersionId: version.id,
 					priceGroupList,
 					publishedAt: publishedAt ? new Date(publishedAt).toISOString() : undefined,
 					startAt: new Date(startAt).toISOString(),
@@ -552,16 +589,27 @@ function GameListingForm({
 					<div><p className="eyebrow">{isClosingPublishedListing ? 'Close listing' : existingListing ? 'Edit listing' : 'New listing'}</p><h2 id="game-listing-dialog-title">Public listing</h2></div>
 					<Button aria-label="Close listing form" onClick={onCancel} size="icon" type="button" variant="outline"><X/></Button>
 				</div>
+				<div className="game-listing-version-reference">
+					<span>Game version</span>
+					<Link to={`/games/${gameId}#game-version-${version.id}`}>{gameTitle} · Version {version.publisherVersion}<ExternalLink aria-hidden="true" size={14}/></Link>
+				</div>
 				<form className="institution-form game-listing-form" onSubmit={handleSubmit}>
 					{isClosingPublishedListing ? <>
 						<p className="game-empty-note">Published terms are fixed. Choose an end date earlier than the listing’s current end date.</p>
-						<label className="game-listing-publication-field">End date<input max={existingListing?.endAt ? toDateTimeInput(existingListing.endAt) : undefined} onChange={(event) => setEndAt(event.target.value)} required type="datetime-local" value={endAt}/></label>
+						<label className="game-listing-publication-field">End date<input max={existingListing?.endAt ? toDateTimeInput(existingListing.endAt) : undefined} min={existingListing?.startAt ? toDateTimeInput(existingListing.startAt) : undefined} onChange={(event) => setEndAt(event.target.value)} required type="datetime-local" value={endAt}/></label>
 					</> : <>
+						<div className="game-listing-form-intro">
+							<strong>Language pricing</strong>
+							<p>Group languages that share a price. Each language can belong to one group only.</p>
+						</div>
 						<div className="game-listing-price-group-list">
 							{priceGroupFormList.map((priceGroup, index) => <div className="game-listing-price-group" key={priceGroup.key}>
-								<label>Languages<input autoComplete="off" onChange={(event) => setPriceGroupFormList((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, languages: event.target.value } : item))} placeholder="en, es" required value={priceGroup.languages}/><span>Comma-separated language tags</span></label>
-								<label>Price (USD)<input min="0" onChange={(event) => setPriceGroupFormList((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, price: event.target.value } : item))} required step="0.01" type="number" value={priceGroup.price}/></label>
-								{priceGroupFormList.length > 1 && <Button aria-label={`Remove price group ${index + 1}`} onClick={() => setPriceGroupFormList((current) => current.filter((_, itemIndex) => itemIndex !== index))} size="icon" type="button" variant="outline"><X/></Button>}
+								<div className="game-listing-price-group-heading">
+									<strong>Price group {index + 1}</strong>
+									{priceGroupFormList.length > 1 && <Button aria-label={`Remove price group ${index + 1}`} onClick={() => setPriceGroupFormList((current) => current.filter((_, itemIndex) => itemIndex !== index))} size="icon" type="button" variant="outline"><X aria-hidden="true"/></Button>}
+								</div>
+								<label>Languages<input autoComplete="off" onChange={(event) => setPriceGroupFormList((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, languages: event.target.value } : item))} placeholder="en, en-CA, fr" required value={priceGroup.languages}/><span>Comma-separated language tags, for example en or fr-CA.</span></label>
+								<label>Price per learner (USD)<input min="0" onChange={(event) => setPriceGroupFormList((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, price: event.target.value } : item))} required step="0.01" type="number" value={priceGroup.price}/></label>
 							</div>)}
 							<Button onClick={() => setPriceGroupFormList((current) => [...current, { key: crypto.randomUUID(), languages: '', price: '' }])} size="sm" type="button" variant="outline"><Plus size={14}/> Add price group</Button>
 						</div>

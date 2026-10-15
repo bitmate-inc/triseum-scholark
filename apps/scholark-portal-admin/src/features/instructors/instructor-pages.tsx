@@ -7,6 +7,7 @@ import {
 	ChevronRight,
 	ExternalLink,
 	GraduationCap,
+	Mail,
 	Pencil,
 	Plus,
 	RefreshCw,
@@ -36,9 +37,11 @@ import {
 	getInstructor,
 	getInstructorList,
 	type Institution,
-	type Instructor,
+	type InstructorListItem,
 	type InstructorListResponse,
 	type InstructorProfile,
+	linkInstructorAccount,
+	sendInstructorInvitation,
 	updateInstructor,
 } from '../../lib/admin-api';
 
@@ -117,8 +120,8 @@ export function InstructorListPage() {
 				</label>
 			</div>
 			<div className="table-frame">
-				<div className="institution-table-header classroom-table-header">
-					<span>Instructor</span><span>Slug</span><span>Profile</span><span/>
+				<div className="institution-table-header classroom-table-header instructor-table-header">
+					<span>Instructor</span><span>Slug</span><span>Account</span><span/>
 				</div>
 				{error && <div className="inline-error" role="alert"><AlertCircle size={17}/><span>{error}</span><Button onClick={() => setReloadKey(reloadKey + 1)} size="sm" variant="outline">Try again</Button></div>}
 				{isLoading && <div aria-label="Loading instructors" className="table-loading"><span/><span/><span/><span/></div>}
@@ -136,15 +139,22 @@ export function InstructorListPage() {
 	);
 }
 
-function InstructorRow({ instructor }: { instructor: Instructor }) {
+function InstructorRow({ instructor }: { instructor: InstructorListItem }) {
 	return (
-		<div className="institution-row classroom-row">
+		<div className="institution-row classroom-row instructor-row">
 			<div className="institution-name-cell">
 				<div className="institution-row-mark"><Users size={17}/></div>
 				<div><Link to={`/instructors/${instructor.id}`}>{instructor.name}</Link><span>{instructor.slug}</span></div>
 			</div>
 			<span className="institution-slug">{instructor.slug}</span>
-			<span className="instructor-profile-label">Instructor profile</span>
+			<span
+				aria-label={instructor.hasAccount ? 'Portal account linked' : 'No portal account'}
+				className={`instructor-account-status ${instructor.hasAccount ? 'is-linked' : ''}`}
+				title={instructor.hasAccount ? 'Portal account linked' : 'No portal account'}
+			>
+				{instructor.hasAccount ? <Check aria-hidden="true" size={13}/> : <Mail aria-hidden="true" size={13}/>}
+				{instructor.hasAccount ? 'Linked' : 'No account'}
+			</span>
 			<Link aria-label={`Open ${instructor.name}`} className="row-open" to={`/instructors/${instructor.id}`}><ExternalLink size={15}/></Link>
 		</div>
 	);
@@ -184,6 +194,45 @@ export function InstructorDetailPage() {
 function InstructorDetails({ instructor }: { instructor: InstructorProfile }) {
 	const [isEditing, setEditing] = useState(false);
 	const [currentInstructor, setCurrentInstructor] = useState(instructor);
+	const [accountEmail, setAccountEmail] = useState('');
+	const [accountError, setAccountError] = useState<string>();
+	const [accountMessage, setAccountMessage] = useState<string>();
+	const [invitationUrl, setInvitationUrl] = useState<string>();
+	const [isLinkingAccount, setLinkingAccount] = useState(false);
+	const [isSendingInvitation, setSendingInvitation] = useState(false);
+
+	async function handleLinkAccount(): Promise<void> {
+		setAccountError(undefined);
+		setAccountMessage(undefined);
+		setInvitationUrl(undefined);
+		setLinkingAccount(true);
+		try {
+			setCurrentInstructor(await linkInstructorAccount(currentInstructor.id, accountEmail.trim()));
+			setAccountEmail('');
+		} catch (requestError) {
+			setAccountError(requestError instanceof Error ? requestError.message : 'Instructor account could not be linked.');
+		} finally {
+			setLinkingAccount(false);
+		}
+	}
+
+	async function handleSendInvitation(event: FormEvent<HTMLFormElement>): Promise<void> {
+		event.preventDefault();
+		setAccountError(undefined);
+		setAccountMessage(undefined);
+		setInvitationUrl(undefined);
+		setSendingInvitation(true);
+		try {
+			const result = await sendInstructorInvitation(currentInstructor.id, accountEmail.trim());
+			setAccountMessage(result.message);
+			setInvitationUrl(result.invitationUrl);
+			setAccountEmail('');
+		} catch (requestError) {
+			setAccountError(requestError instanceof Error ? requestError.message : 'Instructor invitation could not be sent.');
+		} finally {
+			setSendingInvitation(false);
+		}
+	}
 
 	return (
 		<>
@@ -213,6 +262,32 @@ function InstructorDetails({ instructor }: { instructor: InstructorProfile }) {
 					<div><dt>Name</dt><dd>{currentInstructor.name}</dd></div>
 					<div><dt>Slug</dt><dd>{currentInstructor.slug}</dd></div>
 				</dl>
+			</div>
+			<div className="detail-section">
+				<h2>
+					<Mail size={15}/> Portal account
+					{currentInstructor.accountUser && <span className="instructor-account-linked"><Check aria-hidden="true" size={13}/>Linked</span>}
+				</h2>
+				{currentInstructor.accountUser ? (
+					<dl className="detail-grid">
+						<div><dt>Email</dt><dd>{currentInstructor.accountUser.email}</dd></div>
+						<div><dt>Account name</dt><dd>{[currentInstructor.accountUser.firstName, currentInstructor.accountUser.lastName].filter(Boolean).join(' ') || 'Not provided'}</dd></div>
+					</dl>
+				) : (
+					<form className="institution-form" onSubmit={handleSendInvitation}>
+						<div className="institution-form-fields">
+							<label>Instructor email<input autoComplete="email" onChange={(event) => setAccountEmail(event.target.value)} required type="email" value={accountEmail}/></label>
+							<p className="institution-form-description">Send an invitation, or link an existing confirmed account directly.</p>
+						</div>
+						{accountError && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{accountError}</div>}
+						{accountMessage && <p className="institution-form-description" role="status">{accountMessage}</p>}
+						{invitationUrl && <p className="institution-form-description"><a href={invitationUrl} rel="noreferrer" target="_blank">Open local invitation <ExternalLink size={13}/></a></p>}
+						<div className="institution-form-actions">
+							<Button disabled={isSendingInvitation || isLinkingAccount} size="sm" type="submit"><Mail size={14}/>{isSendingInvitation ? 'Sending...' : 'Send invitation'}</Button>
+							<Button disabled={isSendingInvitation || isLinkingAccount} onClick={() => void handleLinkAccount()} size="sm" type="button" variant="outline"><Users size={14}/>{isLinkingAccount ? 'Linking...' : 'Link existing account'}</Button>
+						</div>
+					</form>
+				)}
 			</div>
 			<div className="detail-section">
 				<h2><GraduationCap size={15}/> Institutions</h2>

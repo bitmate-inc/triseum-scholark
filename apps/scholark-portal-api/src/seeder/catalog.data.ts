@@ -183,6 +183,11 @@ export const instructorSeedList: InstructorSeed[] = [
 		name: 'Dr. Priya Shah',
 		slug: 'priya-shah',
 	},
+	{
+		id: '00000000-0000-4000-8000-000000000244',
+		name: 'Instructor User',
+		slug: 'user2-instructor',
+	},
 ];
 
 export const gameSeedList: GameSeed[] = [

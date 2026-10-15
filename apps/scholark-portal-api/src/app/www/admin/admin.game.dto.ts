@@ -7,6 +7,7 @@ import {
 
 import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dto';
 import type { GetAdminGameListQueryData } from '../../core/feature/admin/query/get.admin.game.query';
+import { GameCustomization } from '../../core/feature/game/model/game.customization.entity';
 import { Game } from '../../core/feature/game/model/game.entity';
 import { GameVersion } from '../../core/feature/game/model/game.version.entity';
 import { PublicGameListing } from '../../core/feature/game/model/public.game.listing.entity';
@@ -132,6 +133,27 @@ export class AdminGamePublicListingResponseDto {
 
 }
 
+export class AdminGameCustomizationResponseDto {
+
+	@ApiProperty({ format: 'uuid' })
+	id!: string;
+
+	@ApiProperty({ format: 'date-time', type: String })
+	createdAt!: Date;
+
+	@ApiPropertyOptional({ format: 'date-time', type: String })
+	publishedAt?: Date;
+
+	static fromEntity(customization: GameCustomization): AdminGameCustomizationResponseDto {
+		return {
+			createdAt: customization.createdAt!,
+			id: customization.id!,
+			publishedAt: customization.publishedAt,
+		};
+	}
+
+}
+
 export class AdminGameVersionResponseDto {
 
 	@ApiProperty({ format: 'uuid' })
@@ -151,6 +173,9 @@ export class AdminGameVersionResponseDto {
 
 	@ApiProperty({ type: [AdminGamePublicListingResponseDto] })
 	publicListingList!: AdminGamePublicListingResponseDto[];
+
+	@ApiProperty({ type: [AdminGameCustomizationResponseDto] })
+	customizationList!: AdminGameCustomizationResponseDto[];
 
 }
 
@@ -185,15 +210,23 @@ export class AdminGameResponseDto {
 
 	static fromQueryResult(result: {
 		game: Game;
+		gameCustomizationList: GameCustomization[];
 		gameVersionList: GameVersion[];
 		publicGameListingList: PublicGameListing[];
 	}): AdminGameResponseDto {
 		const publicListingsByVersionId = new Map<string, PublicGameListing[]>();
+		const customizationsByVersionId = new Map<string, GameCustomization[]>();
 		for (const listing of result.publicGameListingList) {
 			const versionId = listing.gameVersion.id!;
 			const listings = publicListingsByVersionId.get(versionId) ?? [];
 			listings.push(listing);
 			publicListingsByVersionId.set(versionId, listings);
+		}
+		for (const customization of result.gameCustomizationList) {
+			const versionId = customization.gameVersion.id!;
+			const customizations = customizationsByVersionId.get(versionId) ?? [];
+			customizations.push(customization);
+			customizationsByVersionId.set(versionId, customizations);
 		}
 		return {
 			description: result.game.description,
@@ -209,6 +242,9 @@ export class AdminGameResponseDto {
 			summary: result.game.summary,
 			title: result.game.title,
 			versionList: result.gameVersionList.map((version) => ({
+				customizationList: (customizationsByVersionId.get(version.id!) ?? [])
+					.sort((first, second) => second.createdAt!.getTime() - first.createdAt!.getTime())
+					.map(AdminGameCustomizationResponseDto.fromEntity),
 				description: version.description,
 				id: version.id!,
 				publishedAt: version.publishedAt,

@@ -8,6 +8,7 @@ import { ClassroomGameListing , ClassroomGameListingDesignatedPayor } from '../a
 import { Course } from '../app/core/feature/education/model/course.entity';
 import { Institution } from '../app/core/feature/education/model/institution.entity';
 import { Instructor } from '../app/core/feature/education/model/instructor.entity';
+import { InstructorUser } from '../app/core/feature/education/model/instructor.user.entity';
 import { GameAcquisition, GameAcquisitionMechanism } from '../app/core/feature/game/model/game.acquisition.entity';
 import {
 	GameAcquisitionEvent,
@@ -41,10 +42,36 @@ import {
 } from './catalog.data';
 import { UserSeeder } from './user.seeder';
 
+const USER1_SEED_EMAIL = 'user1@scholark.com';
+const USER2_SEED_EMAIL = 'user2@scholark.com';
+const USER2_INSTRUCTOR_SEED_SLUG = 'user2-instructor';
+
 export class DatabaseSeeder extends Seeder {
 
 	async run(em: EntityManager): Promise<void> {
 		await this.call(em, [UserSeeder]);
+
+		const classroomSlugByListingSeedId = new Map<string, string>(
+			classroomGameListingSeedList.map(({ classroomSlug, id }): [string, string] => [id, classroomSlug]),
+		);
+		const user1AcquiredClassroomSlugSet = new Set<string>();
+		for (const licenseSeed of userGameLicenseSeedList) {
+			if (licenseSeed.email !== USER1_SEED_EMAIL || !licenseSeed.classroomGameListingSeedId) {
+				continue;
+			}
+
+			const classroomSlug = classroomSlugByListingSeedId.get(licenseSeed.classroomGameListingSeedId);
+			if (!classroomSlug) {
+				throw new Error(`Missing seeded classroom game listing: ${licenseSeed.classroomGameListingSeedId}`);
+			}
+
+			user1AcquiredClassroomSlugSet.add(classroomSlug);
+		}
+		const user1AcquiredInstitutionSlugSet = new Set(
+			classroomSeedList
+				.filter(({ slug }) => user1AcquiredClassroomSlugSet.has(slug))
+				.map(({ institutionSlug }) => institutionSlug),
+		);
 
 		await em.transactional(async (transactionalEm) => {
 			const classroomMap = new Map<string, Classroom>();
@@ -168,8 +195,12 @@ export class DatabaseSeeder extends Seeder {
 					institution = transactionalEm.create(Institution, institutionData);
 				}
 
+				const assignedInstructorSlugSet = new Set(instructorSlugList);
+				if (user1AcquiredInstitutionSlugSet.has(institutionSeed.slug)) {
+					assignedInstructorSlugSet.add(USER2_INSTRUCTOR_SEED_SLUG);
+				}
 				institution.instructorList.set(
-					instructorSlugList.map((slug) => instructorMap.get(slug)!),
+					[...assignedInstructorSlugSet].map((slug) => instructorMap.get(slug)!),
 				);
 
 				institutionMap.set(institution.slug, institution);
@@ -207,13 +238,49 @@ export class DatabaseSeeder extends Seeder {
 				}
 
 				classroom.courseList.set(courseSlugList.map((slug) => courseMap.get(slug)!));
+				const assignedInstructorSlugSet = new Set(instructorSlugList);
+				if (user1AcquiredClassroomSlugSet.has(classroomSeed.slug)) {
+					assignedInstructorSlugSet.add(USER2_INSTRUCTOR_SEED_SLUG);
+				}
 				classroom.instructorList.set(
-					instructorSlugList.map((slug) => instructorMap.get(slug)!),
+					[...assignedInstructorSlugSet].map((slug) => instructorMap.get(slug)!),
 				);
 				classroom.taxonomyTermList.set(
 					taxonomyTermKeyList.map((key) => taxonomyTermMap.get(key)!),
 				);
 				classroomMap.set(classroom.slug, classroom);
+			}
+
+			await transactionalEm.flush();
+
+			const instructorUser = await transactionalEm.findOne(User, { email: USER2_SEED_EMAIL });
+			const instructor = instructorMap.get(USER2_INSTRUCTOR_SEED_SLUG);
+			if (!instructorUser || !instructor) {
+				throw new Error(`Missing seeded instructor account or profile: ${USER2_SEED_EMAIL}`);
+			}
+
+			const existingUserLink = await transactionalEm.findOne(
+				InstructorUser,
+				{ user: instructorUser.id! },
+				{ populate: ['instructor'] },
+			);
+			if (existingUserLink && existingUserLink.instructor.id !== instructor.id) {
+				throw new Error(`${USER2_SEED_EMAIL} is already linked to a different instructor profile.`);
+			}
+
+			if (!existingUserLink) {
+				const existingInstructorLink = await transactionalEm.findOne(
+					InstructorUser,
+					{ instructor: instructor.id! },
+					{ populate: ['user'] },
+				);
+				if (existingInstructorLink && existingInstructorLink.user.id !== instructorUser.id) {
+					throw new Error(`${USER2_INSTRUCTOR_SEED_SLUG} is already linked to a different user.`);
+				}
+
+				if (!existingInstructorLink) {
+					transactionalEm.persist(transactionalEm.create(InstructorUser, { instructor, user: instructorUser }));
+				}
 			}
 
 			await transactionalEm.flush();

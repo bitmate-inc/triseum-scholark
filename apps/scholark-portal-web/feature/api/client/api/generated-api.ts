@@ -507,6 +507,26 @@ const injectedRtkApi = api.injectEndpoints({
 				body: queryArg.updateAdminCourseRequestDto,
 			}),
 		}),
+		adminInstructorAccountCreateInvitation: build.mutation<
+			AdminInstructorAccountCreateInvitationApiResponse,
+			AdminInstructorAccountCreateInvitationApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/admin/instructors/${queryArg.instructorId}/account/invitation`,
+				method: "POST",
+				body: queryArg.linkAdminInstructorAccountRequestDto,
+			}),
+		}),
+		adminInstructorAccountLinkAccount: build.mutation<
+			AdminInstructorAccountLinkAccountApiResponse,
+			AdminInstructorAccountLinkAccountApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/admin/instructors/${queryArg.instructorId}/account`,
+				method: "POST",
+				body: queryArg.linkAdminInstructorAccountRequestDto,
+			}),
+		}),
 		authGetSession: build.query<
 			AuthGetSessionApiResponse,
 			AuthGetSessionApiArg
@@ -760,6 +780,47 @@ const injectedRtkApi = api.injectEndpoints({
 		}),
 		healthCheck: build.query<HealthCheckApiResponse, HealthCheckApiArg>({
 			query: () => ({ url: `/api/v1/health/status` }),
+		}),
+		instructorGetProfile: build.query<
+			InstructorGetProfileApiResponse,
+			InstructorGetProfileApiArg
+		>({
+			query: () => ({ url: `/api/v1/instructor/me` }),
+		}),
+		instructorGetClassroomList: build.query<
+			InstructorGetClassroomListApiResponse,
+			InstructorGetClassroomListApiArg
+		>({
+			query: () => ({ url: `/api/v1/instructor/me/classrooms` }),
+		}),
+		instructorGetClassroom: build.query<
+			InstructorGetClassroomApiResponse,
+			InstructorGetClassroomApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/instructor/me/classrooms/${queryArg.classroomId}`,
+			}),
+		}),
+		instructorInvitationGetDetails: build.query<
+			InstructorInvitationGetDetailsApiResponse,
+			InstructorInvitationGetDetailsApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/instructor-invitation`,
+				params: {
+					token: queryArg.token,
+				},
+			}),
+		}),
+		instructorInvitationAccept: build.mutation<
+			InstructorInvitationAcceptApiResponse,
+			InstructorInvitationAcceptApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/instructor-invitation/accept`,
+				method: "POST",
+				body: queryArg.acceptInstructorInvitationRequestDto,
+			}),
 		}),
 		userGetLibrary: build.query<
 			UserGetLibraryApiResponse,
@@ -1135,6 +1196,18 @@ export type AdminUpdateCourseApiArg = {
 	id: string;
 	updateAdminCourseRequestDto: UpdateAdminCourseRequestDto;
 };
+export type AdminInstructorAccountCreateInvitationApiResponse =
+/** status 201  */ CreateAdminInstructorInvitationResponseDto;
+export type AdminInstructorAccountCreateInvitationApiArg = {
+	instructorId: string;
+	linkAdminInstructorAccountRequestDto: LinkAdminInstructorAccountRequestDto;
+};
+export type AdminInstructorAccountLinkAccountApiResponse =
+/** status 201  */ GetAdminInstructorResponseDto;
+export type AdminInstructorAccountLinkAccountApiArg = {
+	instructorId: string;
+	linkAdminInstructorAccountRequestDto: LinkAdminInstructorAccountRequestDto;
+};
 export type AuthGetSessionApiResponse = /** status 200  */ UserResponseDto;
 export type AuthGetSessionApiArg = void;
 export type AuthRegisterApiResponse = /** status 201  */ MessageResponseDto;
@@ -1310,6 +1383,27 @@ export type HealthCheckApiResponse =
 		};
 	};
 export type HealthCheckApiArg = void;
+export type InstructorGetProfileApiResponse =
+/** status 200  */ InstructorProfileResponseDto;
+export type InstructorGetProfileApiArg = void;
+export type InstructorGetClassroomListApiResponse =
+/** status 200  */ InstructorClassroomListResponseDto;
+export type InstructorGetClassroomListApiArg = void;
+export type InstructorGetClassroomApiResponse =
+/** status 200  */ InstructorClassroomResponseDto;
+export type InstructorGetClassroomApiArg = {
+	classroomId: string;
+};
+export type InstructorInvitationGetDetailsApiResponse =
+/** status 200  */ InstructorInvitationResponseDto;
+export type InstructorInvitationGetDetailsApiArg = {
+	token: string;
+};
+export type InstructorInvitationAcceptApiResponse =
+/** status 201  */ AcceptInstructorInvitationResponseDto;
+export type InstructorInvitationAcceptApiArg = {
+	acceptInstructorInvitationRequestDto: AcceptInstructorInvitationRequestDto;
+};
 export type UserGetLibraryApiResponse =
 /** status 200  */ UserLibraryResponseDto;
 export type UserGetLibraryApiArg = void;
@@ -1347,6 +1441,7 @@ export type UserResponseDto = {
 	email: string;
 	firstName?: string | null;
 	lastName?: string | null;
+	userTypeList?: ("student" | "instructor")[];
 };
 export type MediaResponseDto = {
 	type: "image" | "video";
@@ -1495,6 +1590,8 @@ export type AdminClassroomGameListingResponseDto = {
 	price?: MoneyDto;
 	includedLicenseQuantity?: number;
 	customizationId?: string;
+	customizationCreatedAt?: string;
+	customizationPublishedAt?: string;
 	licenseDurationDays: number;
 	language: string;
 	courseType: string;
@@ -1559,12 +1656,19 @@ export type AdminInstructorClassroomResponseDto = {
 	slug: string;
 	institution: AdminInstructorInstitutionResponseDto;
 };
+export type AdminInstructorAccountUserResponseDto = {
+	id: string;
+	email: string;
+	firstName?: string;
+	lastName?: string;
+};
 export type AdminInstructorResponseDto = {
 	id: string;
 	name: string;
 	slug: string;
 	institutionList: AdminInstructorInstitutionResponseDto[];
 	classroomList: AdminInstructorClassroomResponseDto[];
+	accountUser?: AdminInstructorAccountUserResponseDto;
 };
 export type GetAdminInstructorResponseDto = {
 	instructor: AdminInstructorResponseDto;
@@ -1656,6 +1760,11 @@ export type AdminGamePublicListingResponseDto = {
 	startAt: string;
 	endAt?: string;
 };
+export type AdminGameCustomizationResponseDto = {
+	id: string;
+	createdAt: string;
+	publishedAt?: string;
+};
 export type AdminGameVersionResponseDto = {
 	id: string;
 	publisherVersion: string;
@@ -1663,6 +1772,7 @@ export type AdminGameVersionResponseDto = {
 	runUrl: string;
 	publishedAt?: string;
 	publicListingList: AdminGamePublicListingResponseDto[];
+	customizationList: AdminGameCustomizationResponseDto[];
 };
 export type AdminGameResponseDto = {
 	id: string;
@@ -1960,6 +2070,14 @@ export type UpdateAdminCourseRequestDto = {
 	status?: EducationCatalogStatus;
 	summary?: string;
 };
+export type CreateAdminInstructorInvitationResponseDto = {
+	message: string;
+	expiresAt: string;
+	invitationUrl?: string;
+};
+export type LinkAdminInstructorAccountRequestDto = {
+	email: string;
+};
 export type MessageResponseDto = {
 	message: string;
 };
@@ -2090,6 +2208,65 @@ export type GetClassroomGameListingListResponseDto = {
 export type GetClassroomGameListingResponseDto = {
 	classroomGameListing: ClassroomGameListingResponseDto;
 };
+export type InstructorProfileResponseDto = {
+	id: string;
+	name: string;
+	slug: string;
+};
+export type InstructorInstitutionResponseDto = {
+	id: string;
+	name: string;
+	slug: string;
+};
+export type InstructorClassroomListItemResponseDto = {
+	id: string;
+	institution: InstructorInstitutionResponseDto;
+	name: string;
+	code: string;
+	slug: string;
+	language: string;
+	courseType: "standard" | "game-based";
+};
+export type InstructorClassroomListResponseDto = {
+	classroomList: InstructorClassroomListItemResponseDto[];
+};
+export type InstructorStudentResponseDto = {
+	id: string;
+	email: string;
+	firstName?: string;
+	lastName?: string;
+	licenseStatus: "active" | "upcoming" | "expired";
+	startAt: string;
+	endAt: string;
+};
+export type InstructorClassroomGameListingResponseDto = {
+	id: string;
+	gameTitle: string;
+	publisherVersion: string;
+	studentList: InstructorStudentResponseDto[];
+};
+export type InstructorClassroomResponseDto = {
+	classroom: InstructorClassroomListItemResponseDto;
+	classroomGameListingList: InstructorClassroomGameListingResponseDto[];
+};
+export type InstructorInvitationResponseDto = {
+	accountExists: boolean;
+	email: string;
+	expiresAt: string;
+	instructorName: string;
+};
+export type AcceptInstructorInvitationResponseDto = {
+	accountCreated: boolean;
+	email: string;
+	instructorName: string;
+	message: string;
+};
+export type AcceptInstructorInvitationRequestDto = {
+	firstName?: string;
+	lastName?: string;
+	password?: string;
+	token: string;
+};
 export type UserLibraryGameResponseDto = {
 	id: string;
 	title: string;
@@ -2202,6 +2379,8 @@ export const {
 	useAdminCreateCourseMutation,
 	useAdminGetCourseByIdQuery,
 	useAdminUpdateCourseMutation,
+	useAdminInstructorAccountCreateInvitationMutation,
+	useAdminInstructorAccountLinkAccountMutation,
 	useAuthGetSessionQuery,
 	useAuthRegisterMutation,
 	useAuthLoginMutation,
@@ -2230,6 +2409,11 @@ export const {
 	useStripeWebhookProcessWebhookMutation,
 	useHealthAliveQuery,
 	useHealthCheckQuery,
+	useInstructorGetProfileQuery,
+	useInstructorGetClassroomListQuery,
+	useInstructorGetClassroomQuery,
+	useInstructorInvitationGetDetailsQuery,
+	useInstructorInvitationAcceptMutation,
 	useUserGetLibraryQuery,
 	useUserLaunchGameMutation,
 	useUserGetOwnUserQuery,

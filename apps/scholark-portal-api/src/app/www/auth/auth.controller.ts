@@ -35,6 +35,7 @@ import {
 	SendResetPasswordEmailCommand,
 	SendResetPasswordEmailCommandData
 } from '../../core/feature/account/command/send-email/send.reset-password.email.command';
+import { GetInstructorProfileQuery } from '../../core/feature/education/query/get.instructor.portal.query';
 import { UserStatus } from '../../core/feature/user/model/user.entity';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
@@ -64,6 +65,7 @@ export class AuthController {
 		private readonly updatePasswordCommand: UpdatePasswordCommand,
 		private readonly verifyEmailAddressCommand: VerifyEmailAddressCommand,
 		private readonly getUserQuery: GetUserQuery,
+		private readonly getInstructorProfileQuery: GetInstructorProfileQuery,
 	) {
 	}
 
@@ -136,15 +138,19 @@ export class AuthController {
 	}
 
 	private async getUserResponse(userId: string): Promise<UserResponseDto> {
-		const queryResult = await this.getUserQuery.execute(
-			GetUserQueryData.create({ filterBy: { id: userId } }),
-		);
+		const [queryResult, instructor] = await Promise.all([
+			this.getUserQuery.execute(GetUserQueryData.create({ filterBy: { id: userId } })),
+			this.getInstructorProfileQuery.execute(userId),
+		]);
 
 		if (!queryResult.user) {
 			throw new NotFoundException();
 		}
 
-		return UserResponseDto.fromEntity(queryResult.user);
+		return UserResponseDto.fromEntity(
+			queryResult.user,
+			instructor ? ['student', 'instructor'] : ['student'],
+		);
 	}
 
 	@Post('email/verification')

@@ -21,6 +21,7 @@
     "test:debug": "node --inspect-brk node_modules/jest/bin/jest.js --runInBand",
     "cli": "node --require @swc-node/register src/app/cli.ts",
     "env:export:stage": "NODE_ENV=stage pnpm --silent cli env:export",
+    "migration:up": "mikro-orm migration:up",
     "mikro-orm": "mikro-orm",
     "seed": "mikro-orm seeder:run",
     "test:e2e": "jest --config ./test/jest-e2e.json"

@@ -6,9 +6,10 @@ import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { GameApiModule } from './game/game-api.module';
 import { HealthModule } from './health/health.module';
+import { InstructorModule } from './instructor/instructor.module';
 import { UserModule } from './user/user.module';
 
 @Module({
-	imports: [CoreModule.forRoot(), AdminModule, AuthModule, CatalogModule, GameApiModule, HealthModule, UserModule],
+	imports: [CoreModule.forRoot(), AdminModule, AuthModule, CatalogModule, GameApiModule, HealthModule, InstructorModule, UserModule],
 })
 export class WwwModule {}

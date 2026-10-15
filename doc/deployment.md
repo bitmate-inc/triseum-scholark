@@ -47,6 +47,8 @@ Use these URL values after the Vercel project exists, replacing `<web-origin>` w
 | `AUTH_CONFIRM_EMAIL_URL` | `<web-origin>/auth/confirm-email` |
 | `AUTH_UPDATE_PASSWORD_URL` | `<web-origin>/auth/reset-password` |
 
+`AUTH_INSTRUCTOR_INVITATION_URL` is optional. When set, use `<web-origin>/auth/instructor-invitation`; the API adds or replaces its `token` query parameter. When unset, the API derives the invitation route from `AUTH_CONFIRM_EMAIL_URL`.
+
 Configure the game proxy separately when onboarding a game build:
 
 | Variable | Value |

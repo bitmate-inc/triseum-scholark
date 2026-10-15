@@ -1,8 +1,10 @@
 import { MikroORM } from '@mikro-orm/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
+import type { Transporter } from 'nodemailer';
 import request from 'supertest';
 
+import { AccountIdentity } from '../src/app/core/feature/account/model/account.identity.entity';
 import { AcquisitionCode } from '../src/app/core/feature/education/model/acquisition.code.entity';
 import { AcquisitionCodeRedemption } from '../src/app/core/feature/education/model/acquisition.code.redemption.entity';
 import { digestAcquisitionCode, getAcquisitionCodeSuffix } from '../src/app/core/feature/education/model/acquisition.code.util';
@@ -10,10 +12,14 @@ import { Classroom } from '../src/app/core/feature/education/model/classroom.ent
 import { ClassroomGameListing , ClassroomGameListingDesignatedPayor } from '../src/app/core/feature/education/model/classroom.game.listing.entity';
 import { EducationCatalogStatus } from '../src/app/core/feature/education/model/education.catalog.status';
 import { Institution } from '../src/app/core/feature/education/model/institution.entity';
+import { Instructor } from '../src/app/core/feature/education/model/instructor.entity';
+import { InstructorInvitation } from '../src/app/core/feature/education/model/instructor.invitation.entity';
+import { InstructorUser } from '../src/app/core/feature/education/model/instructor.user.entity';
 import { GameAcquisition } from '../src/app/core/feature/game/model/game.acquisition.entity';
 import { GameAcquisitionEvent } from '../src/app/core/feature/game/model/game.acquisition.event.entity';
-import { User } from '../src/app/core/feature/user/model/user.entity';
+import { User, UserStatus } from '../src/app/core/feature/user/model/user.entity';
 import { RedisExpressSessionRevoker } from '../src/app/core/infrastructure/auth/transport/express-session/redis.express-session.revoker';
+import { MailerClient } from '../src/app/core/infrastructure/nodemailer/nodemailer.module';
 import { configureApp } from '../src/app/server';
 import { WwwModule } from './../src/app/www/www.module';
 
@@ -712,6 +718,13 @@ describe('AppController (e2e)', () => {
 			expect(createResponse.body.instructor.classroomList).toEqual(
 				expect.arrayContaining([expect.objectContaining({ id: classroomId })]),
 			);
+			const unlinkedInstructorListResponse = await agent
+				.get('/api/v1/admin/instructors')
+				.query({ q: instructorSlug })
+				.expect(200);
+			expect(unlinkedInstructorListResponse.body.instructorList).toEqual([
+				expect.objectContaining({ hasAccount: false, id: instructorId }),
+			]);
 
 			await agent
 				.post('/api/v1/admin/instructors')
@@ -734,6 +747,131 @@ describe('AppController (e2e)', () => {
 			}
 			if (instructorId) {
 				await app.get(MikroORM).em.getConnection().execute('DELETE FROM instructor WHERE id = ?', [instructorId]);
+			}
+		}
+	});
+
+	it('assigns user2 to classrooms where user1 has acquired classroom games', async () => {
+		const adminAgent = request.agent(app.getHttpServer());
+		await adminAgent
+			.post('/api/v1/auth/login')
+			.send({ email: 'user1@scholark.com', password: 'password' })
+			.expect(200);
+
+		const instructorListResponse = await adminAgent
+			.get('/api/v1/admin/instructors')
+			.query({ q: 'user2-instructor' })
+			.expect(200);
+		expect(instructorListResponse.body.instructorList).toEqual([
+			expect.objectContaining({ hasAccount: true, slug: 'user2-instructor' }),
+		]);
+		const instructorId = instructorListResponse.body.instructorList[0].id;
+		const instructorDetailResponse = await adminAgent
+			.get(`/api/v1/admin/instructors/${instructorId}`)
+			.expect(200);
+		expect(instructorDetailResponse.body.instructor.accountUser.email).toBe('user2@scholark.com');
+
+		const instructorAgent = request.agent(app.getHttpServer());
+		const loginResponse = await instructorAgent
+			.post('/api/v1/auth/login')
+			.send({ email: 'user2@scholark.com', password: 'password' })
+			.expect(200);
+		expect(loginResponse.body.userTypeList).toEqual(expect.arrayContaining(['instructor']));
+
+		const classroomResponse = await instructorAgent
+			.get('/api/v1/instructor/me/classrooms')
+			.expect(200);
+		const classroomSlugList = classroomResponse.body.classroomList.map(({ slug }: { slug: string }) => slug);
+		expect(classroomSlugList).toEqual(['florence-seminar-fall-2026']);
+	});
+
+	it('invites a new instructor, activates the account, and reports instructor access', async () => {
+		const adminAgent = request.agent(app.getHttpServer());
+		await adminAgent
+			.post('/api/v1/auth/login')
+			.send({ email: 'user1@scholark.com', password: 'password' })
+			.expect(200);
+
+		const suffix = Date.now();
+		const email = `e2e-instructor-${suffix}@example.com`;
+		const slug = `e2e-instructor-invitation-${suffix}`;
+		const mailer = app.get<Transporter>(MailerClient());
+		let invitationEmailText = '';
+		const sendMailSpy = jest.spyOn(mailer, 'sendMail').mockImplementation(async (message) => {
+			invitationEmailText = String(message.text ?? '');
+			return {} as never;
+		});
+		let instructorId: string | undefined;
+		let instructorUserId: string | undefined;
+
+		try {
+			const instructorResponse = await adminAgent
+				.post('/api/v1/admin/instructors')
+				.send({ classroomIdList: [], institutionIdList: [], name: 'E2E Invited Instructor', slug })
+				.expect(201);
+			instructorId = instructorResponse.body.instructor.id;
+
+			const invitationResponse = await adminAgent
+				.post(`/api/v1/admin/instructors/${instructorId}/account/invitation`)
+				.send({ email })
+				.expect(201);
+			expect(invitationResponse.body.message).toContain(email);
+			expect(invitationResponse.body.invitationUrl).toEqual(expect.any(String));
+			expect(sendMailSpy).toHaveBeenCalledTimes(1);
+
+			const invitationUrl = invitationEmailText.match(/https?:\/\/\S+/)?.[0];
+			expect(invitationUrl).toBeDefined();
+			const token = new URL(invitationUrl!).searchParams.get('token');
+			expect(token).toBeTruthy();
+
+			const detailsResponse = await request(app.getHttpServer())
+				.get('/api/v1/instructor-invitation')
+				.query({ token })
+				.expect(200);
+			expect(detailsResponse.body).toMatchObject({
+				accountExists: false,
+				email,
+				instructorName: 'E2E Invited Instructor',
+			});
+
+			const acceptResponse = await request(app.getHttpServer())
+				.post('/api/v1/instructor-invitation/accept')
+				.send({ firstName: 'E2E', lastName: 'Instructor', password: 'e2e-secure-password', token })
+				.expect(201);
+			expect(acceptResponse.body).toMatchObject({ accountCreated: true, email });
+
+			const entityManager = app.get(MikroORM).em.fork();
+			const user = await entityManager.findOne(User, { email });
+			expect(user?.status).toBe(UserStatus.ACTIVE);
+			instructorUserId = user?.id;
+			expect(await entityManager.findOne(InstructorInvitation, { tokenHash: InstructorInvitation.hashTokenValue(token!) })).toMatchObject({ acceptedAt: expect.any(Date) });
+			expect(await entityManager.findOne(InstructorUser, { user: user!.id, instructor: instructorId })).toBeDefined();
+
+			const instructorAgent = request.agent(app.getHttpServer());
+			const loginResponse = await instructorAgent
+				.post('/api/v1/auth/login')
+				.send({ email, password: 'e2e-secure-password' })
+				.expect(200);
+			expect(loginResponse.body.userTypeList).toEqual(expect.arrayContaining(['instructor']));
+			instructorUserId = loginResponse.body.id;
+			await instructorAgent.get('/api/v1/instructor/me/classrooms').expect(200).expect({ classroomList: [] });
+			await instructorAgent.post('/api/v1/auth/logout').expect(200);
+
+			await request(app.getHttpServer())
+				.post('/api/v1/instructor-invitation/accept')
+				.send({ token })
+				.expect(404);
+		} finally {
+			sendMailSpy.mockRestore();
+			if (instructorId) {
+				const entityManager = app.get(MikroORM).em.fork();
+				await entityManager.nativeDelete(InstructorUser, { instructor: instructorId });
+				await entityManager.nativeDelete(InstructorInvitation, { instructor: instructorId });
+				if (instructorUserId) {
+					await entityManager.nativeDelete(AccountIdentity, { user: instructorUserId });
+					await entityManager.nativeDelete(User, { id: instructorUserId });
+				}
+				await entityManager.nativeDelete(Instructor, { id: instructorId });
 			}
 		}
 	});

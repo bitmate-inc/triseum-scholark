@@ -13,6 +13,8 @@ import {
 import { Classroom } from '../../education/model/classroom.entity';
 import { Institution } from '../../education/model/institution.entity';
 import { Instructor } from '../../education/model/instructor.entity';
+import { InstructorUser } from '../../education/model/instructor.user.entity';
+import { InstructorUserRepository } from '../../education/repository/instructor.user.repository';
 
 export interface GetAdminInstructorListQueryData {
 	filterBy?: {
@@ -34,9 +36,14 @@ export class GetAdminInstructorListQuery {
 		private readonly instructorRepository: EntityRepository<Instructor>,
 		@InjectRepository(Institution)
 		private readonly institutionRepository: EntityRepository<Institution>,
+		private readonly instructorUserRepository: InstructorUserRepository,
 	) {}
 
-	async execute(data: GetAdminInstructorListQueryData): Promise<{ instructorList: Instructor[]; totalItemCount: number }> {
+	async execute(data: GetAdminInstructorListQueryData): Promise<{
+		instructorIdWithAccountSet: Set<string>;
+		instructorList: Instructor[];
+		totalItemCount: number;
+	}> {
 		const queryBuilder = this.instructorRepository.createQueryBuilder('instructor');
 
 		if (data.filterBy?.institutionId) {
@@ -46,7 +53,7 @@ export class GetAdminInstructorListQuery {
 			);
 			const instructorIds = institution?.instructorList.getIdentifiers() ?? [];
 			if (instructorIds.length === 0) {
-				return { instructorList: [], totalItemCount: 0 };
+				return { instructorIdWithAccountSet: new Set(), instructorList: [], totalItemCount: 0 };
 			}
 			queryBuilder.andWhere({ id: { $in: instructorIds } });
 		}
@@ -67,7 +74,15 @@ export class GetAdminInstructorListQuery {
 		addOrderBy(queryBuilder, undefined, 'instructor.name', 'ASC');
 
 		const [instructorList, totalItemCount] = await queryBuilder.getResultAndCount();
-		return { instructorList, totalItemCount };
+		const instructorUserList = await this.instructorUserRepository.findByInstructorIdList(
+			instructorList.map(({ id }) => id!),
+		);
+
+		return {
+			instructorIdWithAccountSet: new Set(instructorUserList.map(({ instructor }) => instructor.id!)),
+			instructorList,
+			totalItemCount,
+		};
 	}
 
 }
@@ -82,11 +97,13 @@ export class GetAdminInstructorQuery {
 		private readonly institutionRepository: EntityRepository<Institution>,
 		@InjectRepository(Classroom)
 		private readonly classroomRepository: EntityRepository<Classroom>,
+		private readonly instructorUserRepository: InstructorUserRepository,
 	) {}
 
 	async execute(data: GetAdminInstructorQueryData): Promise<{
 		classroomList: Classroom[];
 		instructor?: Instructor;
+		instructorUser?: InstructorUser;
 		institutionList: Institution[];
 	}> {
 		if (!data.filterBy?.id) {
@@ -98,15 +115,16 @@ export class GetAdminInstructorQuery {
 			return { classroomList: [], institutionList: [] };
 		}
 
-		const [institutionList, classroomList] = await Promise.all([
+		const [institutionList, classroomList, instructorUser] = await Promise.all([
 			this.institutionRepository.find({ instructorList: instructor.id! }),
 			this.classroomRepository.find(
 				{ instructorList: instructor.id! },
 				{ populate: ['institution'], orderBy: { name: 'ASC' } },
 			),
+			this.instructorUserRepository.findByInstructorId(instructor.id!),
 		]);
 
-		return { classroomList, instructor, institutionList };
+		return { classroomList, instructor, instructorUser: instructorUser ?? undefined, institutionList };
 	}
 
 }

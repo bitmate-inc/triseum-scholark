@@ -107,6 +107,12 @@ export class AdminClassroomGameListingResponseDto {
 	@ApiPropertyOptional({ format: 'uuid' })
 	customizationId?: string;
 
+	@ApiPropertyOptional({ format: 'date-time', type: String })
+	customizationCreatedAt?: Date;
+
+	@ApiPropertyOptional({ format: 'date-time', type: String })
+	customizationPublishedAt?: Date;
+
 	@ApiProperty()
 	licenseDurationDays!: number;
 
@@ -153,6 +159,8 @@ export class AdminClassroomGameListingResponseDto {
 			courseType: classroomGameListing.courseType,
 			price: classroomGameListing.price,
 			customizationId: classroomGameListing.customization?.id,
+			customizationCreatedAt: classroomGameListing.customization?.createdAt,
+			customizationPublishedAt: classroomGameListing.customization?.publishedAt,
 			publisher: {
 				id: game.publisher.id!,
 				name: game.publisher.name,

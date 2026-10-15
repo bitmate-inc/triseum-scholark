@@ -32,6 +32,7 @@ function addClassroomGameListingRelations(
 		.leftJoinAndSelect('classroomGameListing.classroom', 'classroom')
 		.leftJoinAndSelect('classroom.institution', 'institution')
 		.leftJoinAndSelect('classroomGameListing.gameVersion', 'gameVersion')
+		.leftJoinAndSelect('classroomGameListing.customization', 'customization')
 		.leftJoinAndSelect('gameVersion.game', 'game')
 		.leftJoinAndSelect('game.publisher', 'publisher');
 }

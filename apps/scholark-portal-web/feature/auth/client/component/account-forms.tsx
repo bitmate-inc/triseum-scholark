@@ -44,11 +44,15 @@ import {
 } from "../../../../i18n/navigation";
 import {
 	useAuthConfirmEmailMutation,
+	useAuthGetSessionQuery,
 	useAuthLoginMutation,
+	useAuthLogoutMutation,
 	useAuthRegisterMutation,
 	useAuthRequestPasswordResetMutation,
 	useAuthResendVerificationMutation,
 	useAuthResetPasswordMutation,
+	useInstructorInvitationAcceptMutation,
+	useInstructorInvitationGetDetailsQuery,
 	useUserChangePasswordMutation,
 	useUserGetOwnUserQuery,
 	useUserUpdateProfileMutation,
@@ -242,6 +246,116 @@ export function ConfirmEmail({ token }: { token?: string }) {
 			{!token ? <Feedback error={{ status: 400, data: { message: t("missingConfirmationToken") } }}/> : null}
 			{result.isLoading || (!result.isSuccess && !result.error && token) ? <p>{t("confirmingEmail")}</p> : null}
 			<Feedback error={result.error} success={result.data?.message}/>
+		</FormCard>
+	);
+}
+
+export function InstructorInvitationAcceptance({ token }: { token?: string }) {
+	const t = useTranslations("instructorInvitation");
+	const authT = useTranslations("auth");
+	const router = useRouter();
+	const session = useAuthGetSessionQuery();
+	const invitation = useInstructorInvitationGetDetailsQuery({ token: token ?? "" }, { skip: !token });
+	const [accept, acceptResult] = useInstructorInvitationAcceptMutation();
+	const [login] = useAuthLoginMutation();
+	const [logout] = useAuthLogoutMutation();
+	const [formError, setFormError] = useState<string>();
+	const [successMessage, setSuccessMessage] = useState<string>();
+	const signInHref = `/auth/login?backTo=${encodeURIComponent("/instructor")}`;
+
+	async function acceptInvitation(input: { firstName?: string; lastName?: string; password?: string } = {}) {
+		if (!token) return;
+		setFormError(undefined);
+		setSuccessMessage(undefined);
+
+		try {
+			const result = await accept({
+				acceptInstructorInvitationRequestDto: { ...input, token },
+			}).unwrap();
+
+			if (result.accountCreated && input.password) {
+				const loginResult = await login({
+					loginRequestDto: { email: result.email, password: input.password },
+				});
+				if ("data" in loginResult) {
+					router.replace("/instructor");
+					return;
+				}
+			}
+
+			if (session.data?.email.trim().toLowerCase() === result.email.toLowerCase()) {
+				router.replace("/instructor");
+				return;
+			}
+
+			if (session.data) {
+				await logout();
+			}
+
+			setSuccessMessage(t("accepted"));
+		} catch (error) {
+			setFormError(getApiErrorMessage(error, { generic: authT("genericApiError"), request: authT("requestApiError") }));
+		}
+	}
+
+	function submit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const data = new FormData(event.currentTarget);
+		const password = String(data.get("password"));
+		if (password !== String(data.get("confirmPassword"))) {
+			setFormError(authT("passwordMismatch"));
+			return;
+		}
+
+		void acceptInvitation({
+			firstName: String(data.get("firstName")),
+			lastName: String(data.get("lastName")),
+			password,
+		});
+	}
+
+	if (!token) {
+		return <FormCard title={t("title")} description={t("description")}><Feedback error={{ status: 400, data: { message: t("missingToken") } }}/></FormCard>;
+	}
+
+	if (invitation.isLoading) {
+		return <FormCard title={t("title")} description={t("description")}><p>{t("checking")}</p></FormCard>;
+	}
+
+	if (invitation.error || !invitation.data) {
+		return <FormCard title={t("invalidTitle")} description={t("invalidDescription")}><Feedback error={invitation.error}/></FormCard>;
+	}
+
+	if (successMessage) {
+		return <FormCard title={t("title")} description={t("description")} footer={<Link href={signInHref}>{t("signIn")}</Link>}><Feedback success={successMessage}/></FormCard>;
+	}
+
+	return (
+		<FormCard title={t("title")} description={t("description")} footer={<Link href={signInHref}>{t("signIn")}</Link>}>
+			<FieldGroup>
+				<p>{t("invitedAs", { instructorName: invitation.data.instructorName })}</p>
+				<p className={styles.profileMeta}>{invitation.data.email}</p>
+				{formError ? <FieldError>{formError}</FieldError> : null}
+				{invitation.data.accountExists ? (
+					<>
+						<p>{t("existingAccountPrompt")}</p>
+						<Button disabled={acceptResult.isLoading || session.isLoading} onClick={() => void acceptInvitation()} type="button">
+							{acceptResult.isLoading ? <LoaderCircle className="animate-spin" data-icon="inline-start"/> : null}
+							{t("acceptInvitation")}
+						</Button>
+					</>
+				) : (
+					<form onSubmit={submit}>
+						<FieldGroup>
+							<Field><FieldLabel htmlFor="firstName">{authT("firstName")}</FieldLabel><Input autoComplete="given-name" id="firstName" name="firstName" required/></Field>
+							<Field><FieldLabel htmlFor="lastName">{authT("lastName")}</FieldLabel><Input autoComplete="family-name" id="lastName" name="lastName" required/></Field>
+							<Field><FieldLabel htmlFor="password">{authT("password")}</FieldLabel><Input autoComplete="new-password" id="password" minLength={8} name="password" required type="password"/><FieldDescription>{authT("passwordHint")}</FieldDescription></Field>
+							<Field><FieldLabel htmlFor="confirmPassword">{authT("confirmPassword")}</FieldLabel><Input autoComplete="new-password" id="confirmPassword" minLength={8} name="confirmPassword" required type="password"/></Field>
+							<SubmitButton pending={acceptResult.isLoading}>{t("createAccountAndAccept")}</SubmitButton>
+						</FieldGroup>
+					</form>
+				)}
+			</FieldGroup>
 		</FormCard>
 	);
 }

@@ -12,7 +12,9 @@
 		"classroomLibraryTitle": "Juegos de aula · ScholArk",
 		"classroomLibraryDescription": "Juegos de aula, periodos de acceso y progreso en tu biblioteca de ScholArk.",
 		"standaloneLibraryTitle": "Juegos independientes · ScholArk",
-		"standaloneLibraryDescription": "Juegos independientes y periodos de acceso en tu biblioteca de ScholArk."
+		"standaloneLibraryDescription": "Juegos independientes y periodos de acceso en tu biblioteca de ScholArk.",
+		"instructorTitle": "Portal de instructor · ScholArk",
+		"instructorDescription": "Administra las aulas asignadas y consulta las licencias de juegos de tus estudiantes."
 	},
 	"navigation": {
 		"home": "Inicio de ScholArk",
@@ -30,9 +32,67 @@
 	"account": {
 		"signIn": "Iniciar sesión",
 		"library": "Biblioteca",
+		"studentPortal": "Portal de estudiante",
+		"instructorPortal": "Portal de instructor",
 		"billing": "Facturación",
 		"profile": "Perfil",
 		"signOut": "Cerrar sesión"
+	},
+	"instructor": {
+		"portalLabel": "Espacio docente",
+		"classrooms": "Tus aulas",
+		"classroomsDescription": "Aulas asignadas y acceso adquirido a sus juegos.",
+		"classroomCount": "{count, plural, one {# aula} other {# aulas}}",
+		"classroom": "Aula",
+		"institution": "Institución",
+		"courseType": "Tipo de curso",
+		"courseTypeStandard": "Estándar",
+		"courseTypeGameBased": "Basado en juegos",
+		"language": "Idioma",
+		"openClassroom": "Abrir aula",
+		"loadingClassrooms": "Cargando aulas...",
+		"classroomsUnavailable": "Aulas no disponibles",
+		"classroomsLoadFailed": "No se pudieron cargar tus aulas asignadas.",
+		"tryAgain": "Intentar de nuevo",
+		"noClassrooms": "No hay aulas asignadas",
+		"noClassroomsDescription": "Las aulas asignadas a tu perfil de instructor aparecerán aquí.",
+		"backToClassrooms": "Todas las aulas",
+		"loadingClassroom": "Cargando aula...",
+		"classroomUnavailable": "Aula no disponible",
+		"classroomLoadFailed": "No se pudo cargar esta aula. Es posible que no esté asignada a tu perfil de instructor.",
+		"classroomDetails": "Código del aula: {code}",
+		"gameCount": "{count, plural, one {# juego} other {# juegos}}",
+		"studentCount": "{count, plural, one {# estudiante} other {# estudiantes}}",
+		"publisherVersion": "Versión del editor {version}",
+		"student": "Estudiante",
+		"email": "Correo electrónico",
+		"progress": "Progreso",
+		"sampleProgress": "Muestra",
+		"progressUnavailable": "No disponible",
+		"studentProgress": "Progreso de muestra para {studentName}",
+		"license": "Licencia",
+		"starts": "Inicio",
+		"ends": "Fin",
+		"active": "Activa",
+		"upcoming": "Programada",
+		"expired": "Vencida",
+		"noStudents": "Ningún estudiante ha adquirido este juego de aula todavía.",
+		"noGames": "No hay juegos asignados",
+		"noGamesDescription": "Los juegos del aula aparecerán aquí cuando se asignen."
+	},
+	"instructorInvitation": {
+		"title": "Acepta tu invitación de instructor",
+		"description": "Confirma el acceso al perfil de instructor asignado en ScholArk.",
+		"checking": "Comprobando tu invitación...",
+		"invalidTitle": "Invitación no disponible",
+		"invalidDescription": "Es posible que haya vencido, se haya revocado o ya se haya usado.",
+		"missingToken": "Falta el token en el enlace de invitación.",
+		"invitedAs": "Te han invitado a enseñar como {instructorName}.",
+		"existingAccountPrompt": "Acepta con el correo invitado. Podrás iniciar sesión cuando se active el acceso.",
+		"acceptInvitation": "Aceptar invitación",
+		"createAccountAndAccept": "Crear cuenta y aceptar",
+		"accepted": "El acceso de instructor está activo. Inicia sesión con el correo invitado para continuar.",
+		"signIn": "Iniciar sesión"
 	},
 	"auth": {
 		"unableToContinue": "No se puede continuar",
@@ -126,6 +186,11 @@
 			"kicker": "Seguridad de la cuenta",
 			"title": "Cambia tu contraseña",
 			"description": "Actualiza la contraseña local que usas para acceder a ScholArk."
+		},
+		"instructorInvitation": {
+			"kicker": "Acceso de instructor",
+			"title": "Únete a ScholArk como instructor",
+			"description": "Acepta tu invitación para consultar tus aulas y el acceso de tus estudiantes."
 		}
 	},
 	"acquisition": {
