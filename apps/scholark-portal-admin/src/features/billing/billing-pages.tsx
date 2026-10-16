@@ -1,24 +1,32 @@
 import { Button } from '@repo/ui/button';
 import {
 	AlertCircle,
+	BarChart3,
 	ChevronLeft,
 	ChevronRight,
 	CreditCard,
+	Download,
 	KeyRound,
 	RefreshCw,
 	Search,
 	ShoppingBag,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+	type FormEvent,
+	useEffect,
+	useState
+} from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import {
+	type AdminAcquisitionReport,
 	type AdminBillingAcquisition,
 	type AdminBillingAcquisitionDetail,
 	type AdminBillingLicense,
 	type AdminBillingPaymentAttempt,
 	getAdminAcquisition,
 	getAdminAcquisitionList,
+	getAdminAcquisitionReport,
 	getAdminLicenseList,
 	getAdminPaymentAttemptList,
 } from '../../lib/admin-api';
@@ -52,6 +60,20 @@ function formatPrice(price: { currency: string; minorUnitAmount: number }): stri
 
 function formatDate(value?: string): string {
 	return value ? dateFormat.format(new Date(value)) : 'Unknown';
+}
+
+function csvCell(value: string | number | undefined): string {
+	return `"${String(value ?? '').replaceAll('"', '""')}"`;
+}
+
+function downloadCsv(fileName: string, headerList: string[], rowList: Array<Array<string | number | undefined>>): void {
+	const content = [headerList, ...rowList].map((row) => row.map(csvCell).join(',')).join('\r\n');
+	const objectUrl = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+	const anchor = document.createElement('a');
+	anchor.href = objectUrl;
+	anchor.download = fileName;
+	anchor.click();
+	window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
 }
 
 function acquisitionRows(acquisitionList: AdminBillingAcquisition[]): BillingRecord[] {
@@ -150,9 +172,12 @@ export function BillingListPage() {
 					<h1 id="page-title">Billing & acquisitions</h1>
 					<p className="page-description">Review purchases, payment outcomes, and issued game licenses.</p>
 				</div>
-				<Button className="refresh-button" onClick={() => setReloadKey(reloadKey + 1)} size="sm" type="button" variant="outline">
-					<RefreshCw size={15}/> Refresh
-				</Button>
+				<div className="billing-heading-actions">
+					<Link className="button button-subtle billing-report-link" to="/billing/reports"><BarChart3 size={15}/> Acquisition reports</Link>
+					<Button className="refresh-button" onClick={() => setReloadKey(reloadKey + 1)} size="sm" type="button" variant="outline">
+						<RefreshCw size={15}/> Refresh
+					</Button>
+				</div>
 			</div>
 			<div aria-label="Billing record type" className="billing-tabs" role="group">
 				{recordTypeList.map(({ icon: Icon, label, value }) => (
@@ -194,6 +219,149 @@ export function BillingListPage() {
 					<Button aria-label="Previous page" disabled={offset === 0 || isLoading} onClick={() => setOffset(Math.max(0, offset - pageSize))} size="icon" variant="outline"><ChevronLeft size={16}/></Button>
 					<Button aria-label="Next page" disabled={offset + pageSize >= totalItemCount || isLoading} onClick={() => setOffset(offset + pageSize)} size="icon" variant="outline"><ChevronRight size={16}/></Button>
 				</div>
+			</div>
+		</section>
+	);
+}
+
+type AcquisitionReportView = 'publisher' | 'institution';
+
+export function AcquisitionReportPage() {
+	const [reportView, setReportView] = useState<AcquisitionReportView>('publisher');
+	const [draftFrom, setDraftFrom] = useState('');
+	const [draftTo, setDraftTo] = useState('');
+	const [dateRange, setDateRange] = useState({ from: '', to: '' });
+	const [reloadKey, setReloadKey] = useState(0);
+	const [report, setReport] = useState<AdminAcquisitionReport>();
+	const [error, setError] = useState<string>();
+	const [isLoading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const controller = new AbortController();
+		setLoading(true);
+		setError(undefined);
+		getAdminAcquisitionReport(dateRange.from, dateRange.to, controller.signal)
+			.then(setReport)
+			.catch((requestError: unknown) => {
+				if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+					return;
+				}
+				setError(requestError instanceof Error ? requestError.message : 'Acquisition reports could not be loaded.');
+			})
+			.finally(() => setLoading(false));
+		return () => controller.abort();
+	}, [dateRange, reloadKey]);
+
+	const applyDateRange = (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setDateRange({ from: draftFrom, to: draftTo });
+	};
+
+	const exportReport = () => {
+		if (!report) {
+			return;
+		}
+
+		if (reportView === 'publisher') {
+			downloadCsv('publisher-sales.csv', [
+				'Publisher', 'Game', 'Currency', 'Paid acquisitions', 'Paid amount', 'Institution-funded license activations',
+			], report.publisherReportList.map((item) => [
+				item.publisherName,
+				item.gameTitle,
+				item.currency,
+				item.paidAcquisitionCount,
+				(item.paidSalesMinorUnitAmount / 100).toFixed(2),
+				item.institutionFundedLicenseCount,
+			]));
+			return;
+		}
+
+		downloadCsv('institution-license-consumption.csv', [
+			'Institution', 'Classroom', 'Game', 'Publisher', 'Publisher version', 'Codes issued', 'Code redemptions',
+			'Unique code redeemers', 'Licenses granted', 'Unique licensees', 'Active licenses', 'Scheduled licenses',
+			'Expired licenses', 'Informational listing quantity',
+		], report.institutionReportList.map((item) => [
+			item.institutionName,
+			item.classroomName,
+			item.gameTitle,
+			item.publisherName,
+			item.publisherVersion,
+			item.codeIssuedCount,
+			item.codeRedemptionCount,
+			item.uniqueCodeRedeemerCount,
+			item.institutionFundedLicenseCount,
+			item.uniqueLicenseeCount,
+			item.activeLicenseCount,
+			item.scheduledLicenseCount,
+			item.expiredLicenseCount,
+			item.includedLicenseQuantity,
+		]));
+	};
+
+	const reportItemCount = reportView === 'publisher'
+		? report?.publisherReportList.length ?? 0
+		: report?.institutionReportList.length ?? 0;
+
+	return (
+		<section className="page-content" aria-labelledby="page-title">
+			<Link className="back-link" to="/billing"><ChevronLeft size={15}/> Billing & acquisitions</Link>
+			<div className="page-heading">
+				<div>
+					<p className="eyebrow">Platform / Billing</p>
+					<h1 id="page-title">Acquisition reports</h1>
+					<p className="page-description">Recorded paid sales and institution-funded license activations.</p>
+				</div>
+				<div className="billing-heading-actions">
+					<Button className="refresh-button" disabled={isLoading || !report || reportItemCount === 0} onClick={exportReport} size="sm" type="button" variant="outline">
+						<Download size={15}/> Export CSV
+					</Button>
+					<Button className="refresh-button" disabled={isLoading} onClick={() => setReloadKey(reloadKey + 1)} size="sm" type="button" variant="outline">
+						<RefreshCw size={15}/> Refresh
+					</Button>
+				</div>
+			</div>
+			<div aria-label="Acquisition report type" className="billing-tabs" role="group">
+				<button aria-pressed={reportView === 'publisher'} onClick={() => setReportView('publisher')} type="button"><ShoppingBag aria-hidden="true" size={15}/><span>Publisher sales</span></button>
+				<button aria-pressed={reportView === 'institution'} onClick={() => setReportView('institution')} type="button"><KeyRound aria-hidden="true" size={15}/><span>Institution licenses</span></button>
+			</div>
+			<div className="acquisition-report-toolbar">
+				<form className="acquisition-report-date-filter" onSubmit={applyDateRange}>
+					<label><span>From</span><input aria-label="Report start date" onChange={(event) => setDraftFrom(event.target.value)} type="date" value={draftFrom}/></label>
+					<label><span>To</span><input aria-label="Report end date" onChange={(event) => setDraftTo(event.target.value)} type="date" value={draftTo}/></label>
+					<Button disabled={isLoading} size="sm" type="submit" variant="outline">Apply dates</Button>
+				</form>
+				<p className="acquisition-report-definition">
+					{reportView === 'publisher'
+						? 'Paid amounts use completed acquisition dates. Institution-funded activations are shown separately and are not revenue.'
+						: 'Codes and redemptions use their recorded dates; license counts use acquisition dates and status is current. Listing quantity is informational, not a cap.'}
+				</p>
+			</div>
+			<div className="table-frame acquisition-report-frame">
+				{reportView === 'publisher' ? <>
+					<div className="institution-table-header acquisition-report-header publisher-report-grid"><span>Publisher / game</span><span>Paid acquisitions</span><span>Recorded paid amount</span><span>Institution activations</span></div>
+					{error && <div className="inline-error" role="alert"><AlertCircle size={17}/><span>{error}</span><Button onClick={() => setReloadKey(reloadKey + 1)} size="sm" variant="outline">Try again</Button></div>}
+					{isLoading && <div aria-label="Loading publisher sales report" className="table-loading"><span/><span/><span/><span/></div>}
+					{!isLoading && !error && report?.publisherReportList.length === 0 && <div className="empty-state"><div className="empty-mark"><BarChart3 size={20}/></div><strong>No paid acquisitions found</strong><p>Try widening the date range.</p></div>}
+					{!isLoading && !error && report && report.publisherReportList.length > 0 && <div className="institution-rows">{report.publisherReportList.map((item) => <div className="institution-row acquisition-report-row publisher-report-grid" key={`${item.publisherId}:${item.gameId}:${item.currency}`}>
+						<div className="acquisition-report-title"><strong>{item.publisherName}</strong><small>{item.gameTitle}</small></div>
+						<div className="acquisition-report-value"><span>Paid acquisitions</span><strong>{item.paidAcquisitionCount}</strong></div>
+						<div className="acquisition-report-value"><span>Recorded paid amount</span><strong>{formatPrice({ currency: item.currency, minorUnitAmount: item.paidSalesMinorUnitAmount })}</strong></div>
+						<div className="acquisition-report-value"><span>Institution activations</span><strong>{item.institutionFundedLicenseCount}</strong></div>
+					</div>)}</div>}
+				</> : <>
+					<div className="institution-table-header acquisition-report-header institution-report-grid"><span>Institution / listing</span><span>Codes</span><span>People</span><span>Licenses granted</span><span>Current status</span><span>Listed quantity</span></div>
+					{error && <div className="inline-error" role="alert"><AlertCircle size={17}/><span>{error}</span><Button onClick={() => setReloadKey(reloadKey + 1)} size="sm" variant="outline">Try again</Button></div>}
+					{isLoading && <div aria-label="Loading institution license report" className="table-loading"><span/><span/><span/><span/></div>}
+					{!isLoading && !error && report?.institutionReportList.length === 0 && <div className="empty-state"><div className="empty-mark"><KeyRound size={20}/></div><strong>No institution-funded listings found</strong><p>Published institution listings will appear here.</p></div>}
+					{!isLoading && !error && report && report.institutionReportList.length > 0 && <div className="institution-rows">{report.institutionReportList.map((item) => <div className="institution-row acquisition-report-row institution-report-grid" key={item.listingId}>
+						<div className="acquisition-report-title"><strong>{item.institutionName}</strong><small>{item.classroomName} · {item.gameTitle} · v{item.publisherVersion}</small></div>
+						<div className="acquisition-report-value"><span>Issued / redeemed</span><strong>{item.codeIssuedCount} / {item.codeRedemptionCount}</strong></div>
+						<div className="acquisition-report-value"><span>Redeemers / licensees</span><strong>{item.uniqueCodeRedeemerCount} / {item.uniqueLicenseeCount}</strong></div>
+						<div className="acquisition-report-value"><span>Licenses granted</span><strong>{item.institutionFundedLicenseCount}</strong></div>
+						<div className="acquisition-report-value acquisition-report-status"><span>Active · scheduled · expired</span><strong>{item.activeLicenseCount} · {item.scheduledLicenseCount} · {item.expiredLicenseCount}</strong></div>
+						<div className="acquisition-report-value"><span>Informational quantity</span><strong>{item.includedLicenseQuantity ?? '—'}</strong></div>
+					</div>)}</div>}
+				</>}
 			</div>
 		</section>
 	);

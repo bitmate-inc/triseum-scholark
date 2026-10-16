@@ -51,6 +51,7 @@ This matrix classifies the documented use cases against the target MVP roadmap. 
 | UC-41 | MVP | An authorized user creates a ClassroomGameListing directly for a Classroom and GameVersion, snapshotting classroom language and course type and including payer, optional student price, duration, and availability terms; included quantity is informational and institutional billing is out of scope. |
 | UC-42 | MVP | An authorized user publishes an immutable ClassroomGameListing; changes require a replacement listing. |
 | UC-43 | Future | Game Forge can create a data-only GameCustomization for a selected Game Version; unpublished customizations are drafts and published customizations are immutable. |
+| UC-44 | MVP | Authorized ScholArk administrators can review date-filtered publisher sales and institution-funded license-consumption reports; reports do not represent institution invoices, enforced seat quotas, or gameplay. |
 
 The classifications identify target-roadmap scope, not requirement deletion or initial-engagement sequencing. Future and unselected TBD cases remain part of the longer-term product requirements.
 
@@ -350,6 +351,16 @@ The classifications identify target-roadmap scope, not requirement deletion or i
 4. When the customization is approved, Game Forge sets `publishedAt`.
 5. A published GameCustomization cannot be edited; changes require a new customization.
 6. The customization must be selected by a ClassroomGameListing before students can acquire licenses that include it.
+
+### UC-44 — Authorized ScholArk administrator reviews acquisition reports
+**Actor:** ScholArk Administrator
+
+1. Administrator selects a publisher-sales report or institution-license report and may filter both by an inclusive start and end date.
+2. Publisher sales are grouped by publisher, game, and currency and include completed paid-acquisition count and recorded paid amount. Institution-funded license activations are reported separately and are not included in paid amounts.
+3. Institution reporting is grouped by institution, classroom, and listing and includes codes issued, code redemptions, distinct code redeemers, licenses granted, distinct licensees, and active, scheduled, and expired license counts.
+4. Paid acquisitions and granted licenses use acquisition dates; code issuance and redemption counts use their respective recorded dates. License status is evaluated when the report is generated.
+5. An informational included-license quantity may be displayed but is not treated as an enforced limit or remaining balance. Institutional billing, invoicing, and revenue are not inferred from code issuance or redemption.
+6. The administrator can export the currently selected report and date range as CSV.
 
 ---
 

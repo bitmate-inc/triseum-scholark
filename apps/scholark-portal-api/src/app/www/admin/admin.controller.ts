@@ -45,6 +45,7 @@ import { UpdateAdminPublicGameListingCommand } from '../../core/feature/admin/co
 import { UpdateAdminPublisherCommand } from '../../core/feature/admin/command/update.admin.publisher.command';
 import { UpdateAdminTaxonomyTermCommand } from '../../core/feature/admin/command/update.admin.taxonomy.term.command';
 import { GetAdminAcquisitionCodeListQuery } from '../../core/feature/admin/query/get.admin.acquisition.code.list.query';
+import { GetAdminAcquisitionReportQuery } from '../../core/feature/admin/query/get.admin.acquisition.report.query';
 import {
 	GetAdminAcquisitionListQuery,
 	GetAdminLicenseListQuery,
@@ -87,6 +88,7 @@ import {
 	GetAdminAcquisitionCodeListResponseDto
 } from './admin.acquisition-code.dto';
 import { CreateAdminAcquisitionCodesRequestDto , RevokeAdminAcquisitionCodeRequestDto } from './admin.acquisition-code.mutation.dto';
+import { GetAdminAcquisitionReportQueryDto, GetAdminAcquisitionReportResponseDto } from './admin.acquisition-report.dto';
 import { AdminAuthGuard } from './admin.auth.guard';
 import {
 	GetAdminAcquisitionDetailResponseDto,
@@ -157,6 +159,7 @@ export class AdminController {
 		private readonly createAdminPublisherCommand: CreateAdminPublisherCommand,
 		private readonly createAdminTaxonomyTermCommand: CreateAdminTaxonomyTermCommand,
 		private readonly getAdminAcquisitionListQuery: GetAdminAcquisitionListQuery,
+		private readonly getAdminAcquisitionReportQuery: GetAdminAcquisitionReportQuery,
 		private readonly getAdminAcquisitionCodeListQuery: GetAdminAcquisitionCodeListQuery,
 		private readonly getAdminClassroomGameListingListQuery: GetAdminClassroomGameListingListQuery,
 		private readonly getAdminClassroomGameListingQuery: GetAdminClassroomGameListingQuery,
@@ -744,6 +747,17 @@ export class AdminController {
 			pagination: query.pagination,
 		});
 		return GetAdminAcquisitionListResponseDto.fromQueryResult(result);
+	}
+
+	@Get('billing/acquisition-report')
+	@ApiOperation({ summary: 'Report publisher sales and institution-funded license consumption' })
+	@ApiOkResponse({ type: GetAdminAcquisitionReportResponseDto })
+	@ApiBadRequestResponse({ description: 'The start date must be on or before the end date.' })
+	async getAcquisitionReport(
+		@Query() query: GetAdminAcquisitionReportQueryDto,
+	): Promise<GetAdminAcquisitionReportResponseDto> {
+		const result = await this.getAdminAcquisitionReportQuery.execute({ from: query.from, to: query.to });
+		return GetAdminAcquisitionReportResponseDto.fromQueryResult(result);
 	}
 
 	@Get('billing/acquisitions/:id')

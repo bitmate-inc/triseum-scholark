@@ -33,7 +33,11 @@ import {
 import { LoginPage } from './auth/login-page';
 import { getLoginReturnPath } from './auth/login-redirect';
 import { AcquisitionCodeDetailPage, AcquisitionCodeListPage } from './features/acquisition-codes/acquisition-code-pages';
-import { AcquisitionDetailPage, BillingListPage } from './features/billing/billing-pages';
+import {
+	AcquisitionDetailPage,
+	AcquisitionReportPage,
+	BillingListPage
+} from './features/billing/billing-pages';
 import { ClassroomGameListingDetailPage, ClassroomGameListingListPage } from './features/classroom-game-listings/classroom-game-listing-pages';
 import { ClassroomDetailPage, ClassroomListPage } from './features/classrooms/classroom-pages';
 import { CourseDetailPage, CourseListPage } from './features/courses/course-pages';
@@ -93,6 +97,7 @@ const pageDescriptions: Record<string, { eyebrow: string; title: string; detail:
 	'/taxonomy': { eyebrow: 'Catalog', title: 'Taxonomy', detail: 'Organize portal discovery categories and terms.' },
 	'/users': { eyebrow: 'Platform', title: 'Users', detail: 'Search portal accounts and review account status.' },
 	'/billing': { eyebrow: 'Platform', title: 'Billing & acquisitions', detail: 'Review purchases, payment outcomes, and issued game licenses.' },
+	'/billing/reports': { eyebrow: 'Platform', title: 'Acquisition reports', detail: 'Review paid sales and institution-funded license activations.' },
 };
 
 function AdminPage({ path }: { path: string }) {
@@ -171,7 +176,8 @@ function AdminShell({ user }: { user: AdminUser }) {
 						: location.pathname.startsWith('/instructors/') ? pageDescriptions['/instructors']
 							: location.pathname.startsWith('/acquisition-codes/') ? pageDescriptions['/acquisition-codes']
 								: location.pathname.startsWith('/publishers/') ? pageDescriptions['/publishers']
-									: location.pathname.startsWith('/games/') ? pageDescriptions['/games'] : pageDescriptions['/']);
+									: location.pathname.startsWith('/games/') ? pageDescriptions['/games']
+										: location.pathname.startsWith('/billing/') ? pageDescriptions['/billing'] : pageDescriptions['/']);
 	const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
 	const initials = displayName.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('');
 
@@ -243,8 +249,9 @@ function AdminShell({ user }: { user: AdminUser }) {
 					<Route element={<TaxonomyListPage/>} path="/taxonomy"/>
 					<Route element={<UserListPage/>} path="/users"/>
 					<Route element={<BillingListPage/>} path="/billing"/>
+					<Route element={<AcquisitionReportPage/>} path="/billing/reports"/>
 					<Route element={<AcquisitionDetailPage/>} path="/billing/acquisitions/:id"/>
-					{Object.keys(pageDescriptions).filter((path) => !['/institutions', '/classrooms', '/classroom-game-listings', '/courses', '/instructors', '/acquisition-codes', '/publishers', '/games', '/game-listings', '/taxonomy', '/users', '/billing'].includes(path)).map((path) => <Route element={<AdminPage path={path}/>} key={path} path={path}/>) }
+					{Object.keys(pageDescriptions).filter((path) => !['/institutions', '/classrooms', '/classroom-game-listings', '/courses', '/instructors', '/acquisition-codes', '/publishers', '/games', '/game-listings', '/taxonomy', '/users', '/billing', '/billing/reports'].includes(path)).map((path) => <Route element={<AdminPage path={path}/>} key={path} path={path}/>) }
 					<Route element={<Navigate replace to="/institutions"/>} path="*"/>
 				</Routes>
 				<footer className="app-footer"><span>ScholArk Portal Administration</span><span>v0.1</span></footer>

@@ -411,6 +411,42 @@ export interface AdminBillingAcquisition {
 	userName: string;
 }
 
+export interface AdminPublisherAcquisitionReport {
+	currency: string;
+	gameId: string;
+	gameTitle: string;
+	institutionFundedLicenseCount: number;
+	paidAcquisitionCount: number;
+	paidSalesMinorUnitAmount: number;
+	publisherId: string;
+	publisherName: string;
+}
+
+export interface AdminInstitutionLicenseReport {
+	activeLicenseCount: number;
+	classroomId: string;
+	classroomName: string;
+	codeIssuedCount: number;
+	codeRedemptionCount: number;
+	expiredLicenseCount: number;
+	gameTitle: string;
+	includedLicenseQuantity?: number;
+	institutionFundedLicenseCount: number;
+	institutionId: string;
+	institutionName: string;
+	listingId: string;
+	publisherName: string;
+	publisherVersion: string;
+	scheduledLicenseCount: number;
+	uniqueCodeRedeemerCount: number;
+	uniqueLicenseeCount: number;
+}
+
+export interface AdminAcquisitionReport {
+	institutionReportList: AdminInstitutionLicenseReport[];
+	publisherReportList: AdminPublisherAcquisitionReport[];
+}
+
 export interface AdminAcquisitionEvent {
 	actorName?: string;
 	actorType: string;
@@ -1192,6 +1228,32 @@ export function getAdminAcquisitionList(
 	return getAdminBillingList<{ acquisitionList: AdminBillingAcquisition[]; totalItemCount: number }>(
 		'acquisitions', query, offset, 'mechanism', mechanism, signal,
 	);
+}
+
+export async function getAdminAcquisitionReport(
+	from: string,
+	to: string,
+	signal?: AbortSignal,
+): Promise<AdminAcquisitionReport> {
+	const searchParams = new URLSearchParams();
+	if (from) {
+		searchParams.set('from', from);
+	}
+	if (to) {
+		searchParams.set('to', to);
+	}
+
+	const response = await adminFetch(`${apiBase}/admin/billing/acquisition-report?${searchParams}`, {
+		credentials: 'include',
+		signal,
+	});
+	if (!response.ok) {
+		const body = await response.json().catch(() => undefined) as { message?: string | string[] } | undefined;
+		const message = Array.isArray(body?.message) ? body.message.join(' ') : body?.message;
+		throw new Error(message || (response.status === 403 ? 'Administrator access is required.' : 'Acquisition reports could not be loaded.'));
+	}
+
+	return await response.json() as AdminAcquisitionReport;
 }
 
 export function getAdminPaymentAttemptList(

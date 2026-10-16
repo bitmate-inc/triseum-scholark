@@ -169,6 +169,8 @@ h1 { margin: 0; font-size: 25px; font-weight: 650; line-height: 1.2; }
 .billing-tabs { display: inline-flex; gap: 2px; margin: -8px 0 16px; padding: 3px; border: 1px solid var(--line); border-radius: 6px; background: #f4f6f3; }
 .billing-tabs button { display: inline-flex; min-height: 30px; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 4px; color: #6d7970; background: transparent; font-size: 10px; font-weight: 600; }
 .billing-tabs button[aria-pressed="true"] { color: #294b38; background: #fff; box-shadow: 0 1px 3px rgb(30 48 36 / 12%); }
+.billing-heading-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.billing-report-link { min-height: 34px; font-size: 10px; text-decoration: none; }
 .billing-table-header, .billing-row { grid-template-columns: minmax(165px, 1fr) minmax(150px, 1.1fr) minmax(150px, .9fr) minmax(105px, .65fr); }
 .billing-row .institution-name-cell strong, .billing-game { overflow: hidden; color: #29352d; font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .billing-detail { display: grid; min-width: 0; justify-items: start; gap: 4px; }
@@ -178,6 +180,22 @@ h1 { margin: 0; font-size: 25px; font-weight: 650; line-height: 1.2; }
 .billing-state-failed, .billing-state-expired { color: #895a49; background: #f7ece8; }
 .billing-detail small, .billing-created { color: #78827b; font-size: 9px; }
 .billing-created { white-space: nowrap; }
+.acquisition-report-toolbar { display: grid; gap: 9px; margin: -5px 0 12px; }
+.acquisition-report-date-filter { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.acquisition-report-date-filter label { display: grid; gap: 4px; color: #79837c; font-size: 9px; }
+.acquisition-report-date-filter input { height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; color: #49554d; background: #fff; font: inherit; font-size: 10px; }
+.acquisition-report-definition { margin: 0; color: #78827b; font-size: 10px; line-height: 1.5; }
+.acquisition-report-frame { container-type: inline-size; }
+.acquisition-report-header, .acquisition-report-row { gap: 9px; }
+.publisher-report-grid { grid-template-columns: minmax(190px, 1.4fr) minmax(105px, .65fr) minmax(150px, 1fr) minmax(145px, .9fr); }
+.institution-report-grid { grid-template-columns: minmax(190px, 1.5fr) minmax(105px, .65fr) minmax(120px, .85fr) minmax(105px, .65fr) minmax(150px, 1fr) minmax(100px, .6fr); }
+.acquisition-report-title { display: grid; min-width: 0; gap: 4px; }
+.acquisition-report-title strong { overflow: hidden; color: #29352d; font-size: 10px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.acquisition-report-title small { overflow: hidden; color: #78827b; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.acquisition-report-value { display: grid; min-width: 0; gap: 3px; color: #46534a; font-size: 10px; font-variant-numeric: tabular-nums; }
+.acquisition-report-value > span { display: none; color: #78827b; font-size: 9px; }
+.acquisition-report-value strong { overflow-wrap: anywhere; font-size: 10px; font-weight: 600; }
+.acquisition-report-status strong { white-space: nowrap; }
 .billing-code-row .billing-game { display: grid; gap: 4px; white-space: normal; }
 .billing-code-row .billing-game small { color: #78827b; font-size: 9px; font-weight: 450; }
 .billing-code-row .billing-created { display: grid; gap: 7px; white-space: normal; }
@@ -219,6 +237,12 @@ h1 { margin: 0; font-size: 25px; font-weight: 650; line-height: 1.2; }
 .filter-context button:hover { text-decoration: underline; }
 
 @container (max-width: 780px) {
+	.acquisition-report-header { display: none; }
+	.acquisition-report-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 10px; }
+	.acquisition-report-row > * { grid-column: 1; min-width: 0; }
+	.acquisition-report-title { padding-bottom: 3px; }
+	.acquisition-report-value { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+	.acquisition-report-value > span { display: inline; }
 	.acquisition-code-table-header { grid-template-columns: minmax(0, 1fr); }
 	.acquisition-code-table-header span:not(:first-child) { display: none; }
 	.acquisition-code-row { grid-template-columns: minmax(0, 1fr); gap: 7px; padding: 11px 10px; }

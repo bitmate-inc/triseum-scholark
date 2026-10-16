@@ -57,6 +57,7 @@ The target MVP includes:
 - Two purchase types within the for-credit path: Student purchase through Stripe, or institution-funded listing redeemed by acquisition code. Not-for-credit acquisition is always Student-purchased through Stripe.
 - Student-paid license acquisition through Stripe, including payment confirmation, license activation, and a fixed access period.
 - Institution-paid acquisition-code redemption that activates a fixed-term license. Institution invoicing is outside the MVP; the new ScholArk platform must define code issuance, revocation, audit, and institution-funded license authority.
+- Read-only Admin reports for completed paid acquisitions and recorded amounts by publisher/game, plus institution-funded codes, redemptions, and license counts/statuses by listing. These reports do not imply institutional billing or quota enforcement.
 - Fresh license acquisition after expiry while preserving prior acquisitions, license terms, game-play records, and game-state records. Licenses are not renewed.
 - Student submission of unlisted institution, course, game, and general support requests to an existing support channel. Support administration and resolution workflows are excluded.
 - Launching licensed **web games** from their stored URLs only while the Student has an active license, using agreed authentication and configuration handoff.

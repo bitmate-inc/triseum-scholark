@@ -15,11 +15,14 @@ import { Institution } from '../src/app/core/feature/education/model/institution
 import { Instructor } from '../src/app/core/feature/education/model/instructor.entity';
 import { InstructorInvitation } from '../src/app/core/feature/education/model/instructor.invitation.entity';
 import { InstructorUser } from '../src/app/core/feature/education/model/instructor.user.entity';
-import { GameAcquisition } from '../src/app/core/feature/game/model/game.acquisition.entity';
+import { GameAcquisition, GameAcquisitionMechanism } from '../src/app/core/feature/game/model/game.acquisition.entity';
 import { GameAcquisitionEvent } from '../src/app/core/feature/game/model/game.acquisition.event.entity';
+import { GameLicense } from '../src/app/core/feature/game/model/game.license.entity';
 import { User, UserStatus } from '../src/app/core/feature/user/model/user.entity';
 import { RedisExpressSessionRevoker } from '../src/app/core/infrastructure/auth/transport/express-session/redis.express-session.revoker';
 import { MailerClient } from '../src/app/core/infrastructure/nodemailer/nodemailer.module';
+import { Currency } from '../src/app/core/shared/commerce/model/currency';
+import { Money } from '../src/app/core/shared/commerce/model/money.entity';
 import { configureApp } from '../src/app/server';
 import { WwwModule } from './../src/app/www/www.module';
 
@@ -76,6 +79,126 @@ describe('AppController (e2e)', () => {
 		expect(licenseResponse.body.licenseList).toEqual(
 			expect.arrayContaining([expect.objectContaining({ gameTitle: 'Econland' })]),
 		);
+	});
+
+	it('reports paid acquisitions and institution license consumption', async () => {
+		const agent = request.agent(app.getHttpServer());
+		await agent
+			.post('/api/v1/auth/login')
+			.send({ email: 'user1@scholark.com', password: 'password' })
+			.expect(200);
+		const entityManager = app.get(MikroORM).em.fork();
+		const user = await entityManager.findOne(User, { email: 'user1@scholark.com' });
+		const baseLicense = await entityManager.findOne(GameLicense, { user: user! }, { populate: ['gameVersion.game'] });
+		const classroomGameListing = await entityManager.findOne(ClassroomGameListing, {
+			designatedPayor: ClassroomGameListingDesignatedPayor.INSTITUTION,
+		});
+		expect(user).toBeDefined();
+		expect(baseLicense).toBeDefined();
+		expect(classroomGameListing).toBeDefined();
+
+		const now = new Date();
+		const rawCode = `REPORT-E2E-${Date.now()}`;
+		const acquisitionCode = entityManager.create(AcquisitionCode, {
+			codeDigest: digestAcquisitionCode(rawCode),
+			codeSuffix: getAcquisitionCodeSuffix(rawCode),
+			classroomGameListing: classroomGameListing!,
+			expiresAt: new Date(now.getTime() + 86_400_000),
+		});
+		const codeRedemption = entityManager.create(AcquisitionCodeRedemption, {
+			acquisitionCode,
+			redeemedAt: now,
+			redeemedBy: user!,
+		});
+		const paidLicense = entityManager.create(GameLicense, {
+			courseType: baseLicense!.courseType,
+			endAt: new Date(now.getTime() + 86_400_000),
+			gameVersion: baseLicense!.gameVersion,
+			language: baseLicense!.language,
+			startAt: new Date(now.getTime() - 86_400_000),
+			user: user!,
+		});
+		const institutionLicense = entityManager.create(GameLicense, {
+			classroomGameListing: classroomGameListing!,
+			courseType: classroomGameListing!.courseType,
+			customization: classroomGameListing!.customization,
+			endAt: new Date(now.getTime() + 86_400_000),
+			gameVersion: classroomGameListing!.gameVersion,
+			language: classroomGameListing!.language,
+			startAt: new Date(now.getTime() - 86_400_000),
+			user: user!,
+		});
+		const paidAcquisition = entityManager.create(GameAcquisition, {
+			license: paidLicense,
+			mechanism: GameAcquisitionMechanism.USER_PAID,
+			price: Money.create({ currency: Currency.USD, minorUnitAmount: 4_900 }),
+			user: user!,
+		});
+		const institutionAcquisition = entityManager.create(GameAcquisition, {
+			classroomGameListing: classroomGameListing!,
+			codeRedemption,
+			license: institutionLicense,
+			mechanism: GameAcquisitionMechanism.INSTITUTION_FUNDED,
+			price: Money.create({ currency: Currency.USD, minorUnitAmount: 0 }),
+			user: user!,
+		});
+
+		try {
+			entityManager.persist([acquisitionCode, codeRedemption, paidLicense, institutionLicense, paidAcquisition, institutionAcquisition]);
+			await entityManager.flush();
+
+			const from = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
+			const to = new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10);
+
+			const response = await agent
+				.get('/api/v1/admin/billing/acquisition-report')
+				.query({ from, to })
+				.expect(200);
+			const publisherRow = response.body.publisherReportList.find((item: { gameId: string }) => item.gameId === baseLicense!.gameVersion.game.id);
+			const institutionRow = response.body.institutionReportList.find((item: { listingId: string }) => item.listingId === classroomGameListing!.id);
+
+			expect(publisherRow).toMatchObject({
+				currency: 'USD',
+				gameTitle: baseLicense!.gameVersion.game.title,
+				paidAcquisitionCount: expect.any(Number),
+				paidSalesMinorUnitAmount: expect.any(Number),
+			});
+			expect(publisherRow.paidAcquisitionCount).toBeGreaterThanOrEqual(1);
+			expect(publisherRow.paidSalesMinorUnitAmount).toBeGreaterThanOrEqual(4_900);
+			expect(institutionRow).toMatchObject({
+				activeLicenseCount: expect.any(Number),
+				codeIssuedCount: expect.any(Number),
+				codeRedemptionCount: expect.any(Number),
+				institutionFundedLicenseCount: expect.any(Number),
+				uniqueCodeRedeemerCount: expect.any(Number),
+				uniqueLicenseeCount: expect.any(Number),
+			});
+			expect(institutionRow.codeIssuedCount).toBeGreaterThanOrEqual(1);
+			expect(institutionRow.codeRedemptionCount).toBeGreaterThanOrEqual(1);
+			expect(institutionRow.institutionFundedLicenseCount).toBeGreaterThanOrEqual(1);
+			expect(institutionRow.activeLicenseCount).toBeGreaterThanOrEqual(1);
+			expect(institutionRow.uniqueCodeRedeemerCount).toBeGreaterThanOrEqual(1);
+			expect(institutionRow.uniqueLicenseeCount).toBeGreaterThanOrEqual(1);
+		} finally {
+			const acquisitionIdList = [paidAcquisition.id, institutionAcquisition.id].filter(
+				(id): id is string => id !== undefined,
+			);
+			if (acquisitionIdList.length > 0) {
+				await entityManager.nativeDelete(GameAcquisition, { id: { $in: acquisitionIdList } });
+			}
+			if (codeRedemption.id) {
+				await entityManager.nativeDelete(AcquisitionCodeRedemption, { id: codeRedemption.id });
+			}
+			if (acquisitionCode.id) {
+				await entityManager.nativeDelete(AcquisitionCode, { id: acquisitionCode.id });
+			}
+			const licenseIdList = [paidLicense.id, institutionLicense.id].filter(
+				(id): id is string => id !== undefined,
+			);
+			if (licenseIdList.length > 0) {
+				await entityManager.nativeDelete(GameLicense, { id: { $in: licenseIdList } });
+			}
+		}
 	});
 
 	it('lists acquisition codes with their redeemer details', async () => {
