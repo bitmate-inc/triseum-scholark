@@ -247,17 +247,43 @@ export function GameDetailPage() {
 
 function GameDetails({ game }: { game: AdminGameProfile }) {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const [currentGame, setCurrentGame] = useState(game);
 	const [isEditing, setEditing] = useState(false);
 	const [isVersionFormOpen, setVersionFormOpen] = useState(false);
 	const [editingVersionId, setEditingVersionId] = useState<string>();
+	const skipVersionHashScrollRef = useRef(false);
+	const versionIdFromHash = location.hash.startsWith('#game-version-')
+		? location.hash.slice('#game-version-'.length)
+		: undefined;
+	const selectedVersion = currentGame.versionList.find((version) => version.id === versionIdFromHash)
+		?? currentGame.versionList[0];
+	const isEditingSelectedVersion = Boolean(selectedVersion && editingVersionId === selectedVersion.id);
 	const listingCount = currentGame.versionList.reduce((count, version) => count + version.publicListingList.length, 0);
+
+	function selectVersion(versionId: string): void {
+		const hash = `#game-version-${versionId}`;
+		if (location.hash === hash) {
+			return;
+		}
+		skipVersionHashScrollRef.current = true;
+		navigate({
+			hash,
+			pathname: location.pathname,
+			search: location.search,
+		});
+	}
+
 	useEffect(() => {
+		if (skipVersionHashScrollRef.current) {
+			skipVersionHashScrollRef.current = false;
+			return;
+		}
 		const anchorId = location.hash.slice(1);
 		if (anchorId) {
 			document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}
-	}, [currentGame, location.hash]);
+	}, [location.hash]);
 
 	return (
 		<>
@@ -297,35 +323,73 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 					{currentGame.description && <div className="game-description-field"><dt>Description</dt><dd>{currentGame.description}</dd></div>}
 				</dl>
 			</div>
-			<div className="detail-section">
-				<div className="game-catalog-section-heading"><h2>Versions and public listings</h2><Button onClick={() => setVersionFormOpen(!isVersionFormOpen)} size="sm" type="button" variant={isVersionFormOpen ? 'outline' : 'default'}>{isVersionFormOpen ? <X size={14}/> : <Plus size={14}/>} {isVersionFormOpen ? 'Cancel' : 'Add version'}</Button></div>
-				{isVersionFormOpen && <GameVersionForm
-					onCancel={() => setVersionFormOpen(false)}
-					onSubmit={async (input) => {
-						setCurrentGame(await createAdminGameVersion(currentGame.id, {
-							...input,
-							publishedAt: input.publishedAt ?? undefined,
-						}));
-						setVersionFormOpen(false);
-					}}
-				/>}
-				{currentGame.versionList.length > 0 ? <div className="game-version-list">{currentGame.versionList.map((version) => <section className="game-version" id={`game-version-${version.id}`} key={version.id}>
-					<div className="game-version-heading">
-						<div><strong>Version {version.publisherVersion}</strong><span>{version.publicListingList.length} public {version.publicListingList.length === 1 ? 'listing' : 'listings'}</span></div>
-						<span className={`publication-state state-${publicationState(version.publishedAt)}`}>{publicationLabel(version.publishedAt)}</span>
-						{!isPublished(version.publishedAt) && <Button onClick={() => setEditingVersionId(editingVersionId === version.id ? undefined : version.id)} size="sm" type="button" variant="outline">{editingVersionId === version.id ? <X size={13}/> : <Pencil size={13}/>} {editingVersionId === version.id ? 'Cancel' : 'Edit'}</Button>}
+			<div className="game-version-workspace">
+				<section aria-labelledby="game-versions-heading" className="game-version-master">
+					<div className="game-version-section-heading">
+						<div><p className="eyebrow">Game configuration</p><h2 id="game-versions-heading">Versions</h2></div>
+						<Button disabled={Boolean(editingVersionId)} onClick={() => setVersionFormOpen(!isVersionFormOpen)} size="sm" type="button" variant={isVersionFormOpen ? 'outline' : 'default'}>{isVersionFormOpen ? <X size={14}/> : <Plus size={14}/>} {isVersionFormOpen ? 'Cancel' : 'Add version'}</Button>
 					</div>
-					{editingVersionId === version.id && <GameVersionForm
+					{isVersionFormOpen && <GameVersionForm
+						onCancel={() => setVersionFormOpen(false)}
+						onSubmit={async (input) => {
+							const updatedGame = await createAdminGameVersion(currentGame.id, {
+								...input,
+								publishedAt: input.publishedAt ?? undefined,
+							});
+							setCurrentGame(updatedGame);
+							setVersionFormOpen(false);
+							const addedVersion = updatedGame.versionList.find((version) =>
+								!currentGame.versionList.some((currentVersion) => currentVersion.id === version.id),
+							);
+							if (addedVersion) {
+								selectVersion(addedVersion.id);
+							}
+						}}
+					/>}
+					{currentGame.versionList.length > 0 && <div aria-label="Game versions" className="game-version-master-table" role="group">
+						<div className="game-version-table-header"><span>Version</span><span>Publication</span><span>Listings</span></div>
+						<div className="game-version-row-list">
+							{currentGame.versionList.map((version) => <button aria-pressed={selectedVersion?.id === version.id} className={`game-version-row${selectedVersion?.id === version.id ? ' is-selected' : ''}`} disabled={Boolean(isVersionFormOpen || (editingVersionId && editingVersionId !== version.id))} key={version.id} onClick={() => selectVersion(version.id)} type="button">
+								<span className="game-version-version-cell"><strong>Version {version.publisherVersion}</strong><small>{version.description || 'No version description'}</small></span>
+								<span className={`publication-state state-${publicationState(version.publishedAt)}`}>{publicationLabel(version.publishedAt)}</span>
+								<span className="game-version-listing-count"><strong>{version.publicListingList.length}</strong><small>{version.publicListingList.length === 1 ? 'listing' : 'listings'}</small></span>
+							</button>)}
+						</div>
+					</div>}
+					{currentGame.versionList.length === 0 && <p className="game-version-empty">No versions have been added to this game.</p>}
+				</section>
+				{editingVersionId && <p className="game-version-selection-note" role="status">Save or cancel the version edit to switch versions.</p>}
+				{selectedVersion && <section aria-labelledby={`game-version-${selectedVersion.id}-heading`} className="game-version-detail" id={`game-version-${selectedVersion.id}`}>
+					<div className="game-version-detail-heading">
+						<div><p className="eyebrow">Selected version</p><h2 id={`game-version-${selectedVersion.id}-heading`}>Version {selectedVersion.publisherVersion}</h2></div>
+						<div className="game-version-detail-actions">
+							<span className={`publication-state state-${publicationState(selectedVersion.publishedAt)}`}>{publicationLabel(selectedVersion.publishedAt)}</span>
+							{!isPublished(selectedVersion.publishedAt) && <Button disabled={isVersionFormOpen || Boolean(editingVersionId && !isEditingSelectedVersion)} onClick={() => {
+								if (isEditingSelectedVersion) {
+									setEditingVersionId(undefined);
+								} else {
+									selectVersion(selectedVersion.id);
+									setEditingVersionId(selectedVersion.id);
+								}
+							}} size="sm" type="button" variant="outline">{isEditingSelectedVersion ? <X size={13}/> : <Pencil size={13}/>} {isEditingSelectedVersion ? 'Cancel edit' : 'Edit version'}</Button>}
+						</div>
+					</div>
+					<div className="game-version-metadata">
+						<div><span>Public listings</span><strong>{selectedVersion.publicListingList.length} {selectedVersion.publicListingList.length === 1 ? 'listing' : 'listings'}</strong></div>
+						<div><span>Runtime</span><a href={selectedVersion.runUrl} rel="noreferrer" target="_blank">Open runtime <ExternalLink size={13}/></a></div>
+					</div>
+					{selectedVersion.description && <p className="game-version-description">{selectedVersion.description}</p>}
+					{isPublished(selectedVersion.publishedAt) && <p className="game-version-readonly-note" role="note">Published versions are immutable. Add a new version to make changes.</p>}
+					{isEditingSelectedVersion && <GameVersionForm
 						onCancel={() => setEditingVersionId(undefined)}
 						onSubmit={async (input) => {
-							setCurrentGame(await updateAdminGameVersion(currentGame.id, version.id, input as UpdateAdminGameVersionInput));
+							setCurrentGame(await updateAdminGameVersion(currentGame.id, selectedVersion.id, input as UpdateAdminGameVersionInput));
 							setEditingVersionId(undefined);
 						}}
-						version={version}
+						version={selectedVersion}
 					/>}
-					{version.description && <p className="game-version-description">{version.description}</p>}
-					<GameVersionListingList gameId={currentGame.id} gameTitle={currentGame.title} onSaved={setCurrentGame} version={version}/>
-				</section>)}</div> : <p>No versions have been added to this game.</p>}
+					<GameVersionListingList gameId={currentGame.id} gameTitle={currentGame.title} onSaved={setCurrentGame} version={selectedVersion}/>
+				</section>}
 			</div>
 		</>
 	);
@@ -413,15 +477,22 @@ function GameVersionListingList({
 
 	return (
 		<div className="game-version-listing-panel">
-			<div className="game-listing-title-row"><h3>Public listings</h3><Button onClick={() => setActiveForm({})} size="sm" type="button" variant="outline"><Plus size={13}/> Add listing</Button></div>
-			<div className="game-listing-slot-list" aria-label="Public listings for this version">
-				{version.publicListingList.map((listing) => <GameListingSlot
-					key={listing.id}
-					listing={listing}
-					onEdit={() => setActiveForm({ listingId: listing.id })}
-				/>)}
-				{version.publicListingList.length === 0 && <p className="game-empty-note">No public listings for this version.</p>}
+			<div className="game-listing-title-row">
+				<div><h3>Public listings</h3><p>{version.publicListingList.length === 0 ? 'No public listings yet.' : `${version.publicListingList.length} ${version.publicListingList.length === 1 ? 'listing' : 'listings'} available to manage.`}</p></div>
+				<Button onClick={() => setActiveForm({})} size="sm" type="button" variant="outline"><Plus size={13}/> Add listing</Button>
 			</div>
+			{version.publicListingList.length > 0 ? <div aria-label={`Public listings for version ${version.publisherVersion}`} className="game-listing-table" role="table">
+				<div className="game-listing-table-header" role="row">
+					<span role="columnheader">Language pricing</span><span role="columnheader">Availability and dates</span><span role="columnheader">Publication</span><span role="columnheader">Actions</span>
+				</div>
+				<div className="game-listing-slot-list" role="rowgroup">
+					{version.publicListingList.map((listing) => <GameListingSlot
+						key={listing.id}
+						listing={listing}
+						onEdit={() => setActiveForm({ listingId: listing.id })}
+					/>)}
+				</div>
+			</div> : <p className="game-listing-empty" role="status">Add a listing to configure public availability, language pricing, and access dates.</p>}
 			{activeForm && <GameListingForm
 				gameId={gameId}
 				gameTitle={gameTitle}
@@ -450,14 +521,24 @@ function GameListingSlot({
 	const isPublishedListing = isPublished(listing.publishedAt);
 
 	return (
-		<div className="game-listing-slot">
-			<div className="game-listing-slot-label"><strong>Public listing</strong><small>{priceGroupDescription}</small></div>
-			<div className="game-listing-slot-value">
+		<div className="game-listing-slot" role="row">
+			<div className="game-listing-slot-label" role="cell">
+				<span className="game-listing-cell-label">Language pricing</span>
+				<strong>{priceGroupDescription || 'No language pricing'}</strong>
+			</div>
+			<div className="game-listing-slot-value" role="cell">
+				<span className="game-listing-cell-label">Availability and dates</span>
 				<strong>{listing.available ? 'Available to acquire' : 'Unavailable'}</strong>
 				<small>{formatDateTime(listing.startAt)} – {formatDateTime(listing.endAt)}</small>
 			</div>
-			<span className={`publication-state state-${publicationState(listing.publishedAt)}`}>{publicationLabel(listing.publishedAt)}</span>
-			<Button onClick={onEdit} size="sm" type="button" variant="outline">{isPublishedListing ? 'Close' : <><Pencil/> Edit</>}</Button>
+			<div className="game-listing-slot-publication" role="cell">
+				<span className="game-listing-cell-label">Publication</span>
+				<span className={`publication-state state-${publicationState(listing.publishedAt)}`}>{publicationLabel(listing.publishedAt)}</span>
+			</div>
+			<div className="game-listing-slot-actions" role="cell">
+				<span className="game-listing-cell-label">Actions</span>
+				<Button onClick={onEdit} size="sm" type="button" variant="outline">{isPublishedListing ? 'Close' : <><Pencil/> Edit</>}</Button>
+			</div>
 		</div>
 	);
 }
