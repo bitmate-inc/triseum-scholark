@@ -5,7 +5,7 @@
 .description { max-width: 680px; margin: 0; color: var(--muted-foreground); line-height: 1.55; }
 .count { flex: 0 0 auto; margin: 0; padding-left: 14px; border-left: 3px solid #c65039; color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
 .tableWrap { width: 100%; overflow-x: auto; }
-.table { width: 100%; min-width: 740px; border-collapse: collapse; text-align: left; }
+.table { width: 100%; min-width: 880px; border-collapse: collapse; text-align: left; }
 .table th, .table td { padding: 15px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .table thead th { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; }
 .table tbody th { min-width: 190px; font-weight: 650; }
@@ -31,6 +31,32 @@
 .progressTrack { height: 5px; overflow: hidden; background: #e1ddd2; }
 .progressFill { display: block; height: 100%; background: #147a74; transition: width 220ms ease; }
 .progressUnavailable { color: var(--muted-foreground); font-size: 12px; }
+.sectionDetails { margin-top: 5px; color: var(--muted-foreground); font-size: 11px; }
+.sectionDetails summary { cursor: pointer; }
+.sectionDetails ul { display: grid; gap: 4px; margin: 6px 0 0; padding: 0; list-style: none; }
+.sectionDetails li { display: flex; justify-content: space-between; gap: 12px; color: var(--foreground); font-variant-numeric: tabular-nums; }
+.gradeCell { display: grid; gap: 4px; min-width: 110px; font-variant-numeric: tabular-nums; }
+.gradeCell strong { font-size: 13px; }
+.gradeCell span { color: var(--muted-foreground); font-size: 11px; }
+.gradingEditor { display: grid; gap: 14px; margin: 20px 0 12px; padding: 18px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.gradingEditorHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.gradingEditorHeading h3 { display: inline; margin: 0 10px 0 0; font-size: 14px; font-weight: 700; }
+.gradingEditorHeading span, .gradingEditorHeading p { margin: 0; color: var(--muted-foreground); font-size: 11px; }
+.gradingFields { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.gradingFields label { display: grid; gap: 5px; color: var(--muted-foreground); font-size: 11px; }
+.gradingFields input, .gradingFields select { min-height: 36px; padding: 6px 9px; border: 1px solid var(--border); color: var(--foreground); background: var(--card); font: inherit; font-size: 13px; }
+.gradingFields select { min-width: 190px; }
+.gradingFields input[type="number"] { width: 135px; }
+.sectionChoices { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 0; padding: 0; border: 0; }
+.sectionChoices legend { margin-bottom: 8px; color: var(--muted-foreground); font-size: 11px; }
+.sectionChoices label, .partialGradeOption { display: inline-flex; align-items: center; gap: 7px; color: var(--foreground); font-size: 12px; }
+.sectionChoices input, .partialGradeOption input { accent-color: #147a74; }
+.sectionChoices p { width: 100%; margin: 0; color: var(--muted-foreground); font-size: 12px; }
+.gradingEditorActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.gradingEditorActions button { display: inline-flex; min-height: 38px; align-items: center; gap: 7px; padding: 0 12px; border: 1px solid #147a74; color: white; background: #147a74; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.gradingEditorActions button:disabled { opacity: .55; cursor: not-allowed; }
+.gradingEditorActions button svg { width: 15px; height: 15px; }
+.gradingEditorActions [role="alert"] { color: #824331; font-size: 12px; }
 .emptyState { margin-top: 30px; padding: 30px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .emptyState h2 { margin: 0 0 8px; font-family: var(--font-display); font-size: 25px; font-weight: 400; }
 .emptyState p, .emptyInline { margin: 0; color: var(--muted-foreground); line-height: 1.55; }
@@ -53,6 +79,7 @@
 	.count { align-self: flex-start; }
 	.gameHeader { align-items: flex-start; flex-direction: column; gap: 12px; }
 	.gameHeader h2 { font-size: 27px; }
+	.gradingEditorHeading { align-items: flex-start; flex-direction: column; gap: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

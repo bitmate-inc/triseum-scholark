@@ -2,15 +2,22 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 
 import { GameLicense } from '../../game/model/game.license.entity';
+import { GameProgressSnapshot } from '../../game/model/game.progress.snapshot.entity';
 import { Classroom } from '../model/classroom.entity';
+import { ClassroomGameGradingRule } from '../model/classroom.game.grading.rule.entity';
 import { ClassroomGameListing } from '../model/classroom.game.listing.entity';
+import { GameGradeResult } from '../model/game.grade.result.entity';
 import { Instructor } from '../model/instructor.entity';
 import { InstructorUser } from '../model/instructor.user.entity';
+import { getGameProgressSnapshotHash } from '../service/game.progress.snapshot.hash';
 
 export interface GetInstructorClassroomResult {
 	classroom: Classroom;
 	classroomGameListingList: ClassroomGameListing[];
 	gameLicenseList: GameLicense[];
+	progressSnapshotList: GameProgressSnapshot[];
+	gradingRuleList: ClassroomGameGradingRule[];
+	gradeResultList: GameGradeResult[];
 }
 
 @Injectable()
@@ -92,8 +99,56 @@ export class GetInstructorClassroomQuery {
 				{ classroomGameListing: { id: { $in: classroomGameListingIdList } } },
 				{ populate: ['user', 'classroomGameListing'], orderBy: { createdAt: 'DESC' } },
 			);
+		const gradingRuleList = classroomGameListingIdList.length === 0
+			? []
+			: await this.entityManager.find(
+				ClassroomGameGradingRule,
+				{ classroomGameListing: { id: { $in: classroomGameListingIdList } } },
+				{ orderBy: { revision: 'DESC' } },
+			);
+		const latestGradingRuleByListingId = new Map<string, ClassroomGameGradingRule>();
+		for (const gradingRule of gradingRuleList) {
+			if (!latestGradingRuleByListingId.has(gradingRule.classroomGameListing.id!)) {
+				latestGradingRuleByListingId.set(gradingRule.classroomGameListing.id!, gradingRule);
+			}
+		}
 
-		return { classroom, classroomGameListingList, gameLicenseList };
+		const latestGradingRuleList = [...latestGradingRuleByListingId.values()];
+		const [progressSnapshotList, gradeResultList] = gameLicenseList.length === 0
+			? [[], []]
+			: await Promise.all([
+				this.entityManager.find(GameProgressSnapshot, {
+					gameLicense: { $in: gameLicenseList },
+				}),
+				latestGradingRuleList.length === 0
+					? Promise.resolve([])
+					: this.entityManager.find(
+						GameGradeResult,
+						{
+							gameLicense: { $in: gameLicenseList },
+							gradingRule: { $in: latestGradingRuleList },
+						},
+						{ orderBy: { createdAt: 'DESC' }, populate: ['gradingRule'] },
+					),
+			]);
+		const progressHashByLicenseId = new Map(
+			progressSnapshotList.map((progressSnapshot) => [
+				progressSnapshot.gameLicense.id!,
+				getGameProgressSnapshotHash(progressSnapshot.schemaVersion, progressSnapshot.content),
+			]),
+		);
+		const currentGradeResultList = gradeResultList.filter((gradeResult) =>
+			progressHashByLicenseId.get(gradeResult.gameLicense.id!) === gradeResult.sourceProgressHash,
+		);
+
+		return {
+			classroom,
+			classroomGameListingList,
+			gameLicenseList,
+			progressSnapshotList,
+			gradingRuleList: latestGradingRuleList,
+			gradeResultList: currentGradeResultList,
+		};
 	}
 
 }

@@ -14,6 +14,7 @@ import { AdminFeatureModule } from './feature/admin/admin.module';
 import { CatalogModule } from './feature/catalog/catalog.module';
 import { EducationModule } from './feature/education/education.module';
 import { GameModule } from './feature/game/game.module';
+import { PublisherFeatureModule } from './feature/publisher/publisher.module';
 import { TaxonomyModule } from './feature/taxonomy/taxonomy.module';
 import { UserModule } from './feature/user/user.module';
 import { AuthModule } from './infrastructure/auth/auth.module';
@@ -49,6 +50,7 @@ export class CoreModule {
 			NodemailerModule,
 			TaxonomyModule,
 			GameModule,
+			PublisherFeatureModule,
 			EducationModule,
 			CatalogModule,
 		];

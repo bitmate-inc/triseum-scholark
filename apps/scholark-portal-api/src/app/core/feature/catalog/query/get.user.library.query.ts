@@ -3,10 +3,12 @@ import { Injectable } from '@nestjs/common';
 
 import { GameAcquisition } from '../../game/model/game.acquisition.entity';
 import { GameLicense } from '../../game/model/game.license.entity';
+import { GameProgressSnapshot } from '../../game/model/game.progress.snapshot.entity';
 
 export type UserLibraryItem = {
 	license: GameLicense;
 	acquisition?: GameAcquisition;
+	progressSnapshot?: GameProgressSnapshot;
 };
 
 @Injectable()
@@ -28,10 +30,22 @@ export class GetUserLibraryQuery {
 				orderBy: { endAt: 'desc' },
 			},
 		);
-		const acquisitionList = await this.entityManager.find(GameAcquisition, {
-			license: { $in: licenseList },
-		});
+		if (licenseList.length === 0) {
+			return [];
+		}
+
+		const [acquisitionList, progressSnapshotList] = await Promise.all([
+			this.entityManager.find(GameAcquisition, {
+				license: { $in: licenseList },
+			}),
+			this.entityManager.find(GameProgressSnapshot, {
+				gameLicense: { $in: licenseList },
+			}),
+		]);
 		const acquisitionByLicenseId = new Map(acquisitionList.map((acquisition) => [acquisition.license.id, acquisition]));
+		const progressSnapshotByLicenseId = new Map(
+			progressSnapshotList.map((progressSnapshot) => [progressSnapshot.gameLicense.id, progressSnapshot]),
+		);
 
 		return licenseList
 			.sort((firstLicense, secondLicense) => {
@@ -49,7 +63,11 @@ export class GetUserLibraryQuery {
 					|| secondLicense.endAt.getTime() - firstLicense.endAt.getTime()
 					|| secondLicense.createdAt!.getTime() - firstLicense.createdAt!.getTime();
 			})
-			.map((license) => ({ license, acquisition: acquisitionByLicenseId.get(license.id!) }));
+			.map((license) => ({
+				license,
+				acquisition: acquisitionByLicenseId.get(license.id!),
+				progressSnapshot: progressSnapshotByLicenseId.get(license.id!),
+			}));
 	}
 
 }

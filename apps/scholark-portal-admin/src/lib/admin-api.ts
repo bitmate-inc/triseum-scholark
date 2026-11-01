@@ -253,6 +253,7 @@ export interface AdminGameProfile extends AdminGame {
 		description?: string;
 		id: string;
 		publishedAt?: string;
+		progressStructure?: AdminGameProgressStructure;
 		publisherVersion: string;
 		runUrl: string;
 		publicListingList: {
@@ -264,6 +265,23 @@ export interface AdminGameProfile extends AdminGame {
 			startAt: string;
 		}[];
 	}[];
+}
+
+export interface AdminGameProgressMetricDefinition {
+	key: string;
+	label: string;
+	pointsPossible?: number;
+}
+
+export interface AdminGameProgressSectionDefinition {
+	sectionIndex: string;
+	label: string;
+	metricList: AdminGameProgressMetricDefinition[];
+}
+
+export interface AdminGameProgressStructure {
+	schemaVersion: number;
+	sectionList: AdminGameProgressSectionDefinition[];
 }
 
 export interface AdminGameListResponse {
@@ -331,6 +349,7 @@ export interface UpdateAdminPublicGameListingInput {
 export interface CreateAdminGameVersionInput {
 	description?: string;
 	publishedAt?: string;
+	progressStructure?: AdminGameProgressStructure;
 	publisherVersion: string;
 	runUrl: string;
 }
@@ -969,6 +988,23 @@ export async function getPublisher(id: string, signal?: AbortSignal): Promise<Pu
 
 	const result = await response.json() as { publisher: PublisherProfile };
 	return result.publisher;
+}
+
+export async function linkPublisherMember(id: string, email: string): Promise<string> {
+	const response = await adminFetch(`${apiBase}/admin/publishers/${encodeURIComponent(id)}/members`, {
+		body: JSON.stringify({ email }),
+		credentials: 'include',
+		headers: { 'Content-Type': 'application/json' },
+		method: 'POST',
+	});
+	if (!response.ok) {
+		const body = await response.json().catch(() => undefined) as { message?: string | string[] } | undefined;
+		const message = Array.isArray(body?.message) ? body.message.join(' ') : body?.message;
+		throw new Error(message || (response.status === 403 ? 'Administrator access is required.' : 'Publisher account could not be linked.'));
+	}
+
+	const result = await response.json() as { message: string };
+	return result.message;
 }
 
 export async function createPublisher(input: CreatePublisherInput): Promise<PublisherProfile> {

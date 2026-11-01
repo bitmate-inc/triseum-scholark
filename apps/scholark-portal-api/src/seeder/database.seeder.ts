@@ -4,11 +4,15 @@ import { Seeder } from '@mikro-orm/seeder';
 import { AcquisitionCode } from '../app/core/feature/education/model/acquisition.code.entity';
 import { digestAcquisitionCode, getAcquisitionCodeSuffix } from '../app/core/feature/education/model/acquisition.code.util';
 import { Classroom } from '../app/core/feature/education/model/classroom.entity';
+import { ClassroomGameGradingRule } from '../app/core/feature/education/model/classroom.game.grading.rule.entity';
 import { ClassroomGameListing , ClassroomGameListingDesignatedPayor } from '../app/core/feature/education/model/classroom.game.listing.entity';
 import { Course } from '../app/core/feature/education/model/course.entity';
+import { GameGradeResult } from '../app/core/feature/education/model/game.grade.result.entity';
 import { Institution } from '../app/core/feature/education/model/institution.entity';
 import { Instructor } from '../app/core/feature/education/model/instructor.entity';
 import { InstructorUser } from '../app/core/feature/education/model/instructor.user.entity';
+import { calculateClassroomGameGrade } from '../app/core/feature/education/service/classroom.game.grading.calculator';
+import { getGameProgressSnapshotHash } from '../app/core/feature/education/service/game.progress.snapshot.hash';
 import { GameAcquisition, GameAcquisitionMechanism } from '../app/core/feature/game/model/game.acquisition.entity';
 import {
 	GameAcquisitionEvent,
@@ -18,28 +22,34 @@ import {
 import { GameCustomization } from '../app/core/feature/game/model/game.customization.entity';
 import { Game } from '../app/core/feature/game/model/game.entity';
 import { GameLicense } from '../app/core/feature/game/model/game.license.entity';
+import { GameProgressSnapshot } from '../app/core/feature/game/model/game.progress.snapshot.entity';
 import { GameTaxonomyTerm } from '../app/core/feature/game/model/game.taxonomy.term.entity';
 import { GameVersion } from '../app/core/feature/game/model/game.version.entity';
 import { PublicGameListing } from '../app/core/feature/game/model/public.game.listing.entity';
 import { PublicGameListingPriceGroup } from '../app/core/feature/game/model/public.game.listing.price.group.entity';
 import { PublicGameListingPriceGroupLanguage } from '../app/core/feature/game/model/public.game.listing.price.group.language.entity';
 import { Publisher } from '../app/core/feature/publisher/model/publisher.entity';
+import { PublisherMember } from '../app/core/feature/publisher/model/publisher.member.entity';
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 import { User } from '../app/core/feature/user/model/user.entity';
 import {
 	acquisitionCodeSeedList,
+	classroomGameGradingRuleSeedList,
 	classroomGameListingSeedList,
 	classroomSeedList,
 	courseSeedList,
 	gameCustomizationSeedList,
+	gameProgressSnapshotSeedList,
 	gameSeedList,
 	gameVersionSeedList,
 	institutionSeedList,
 	instructorSeedList,
 	publicListingSeedList,
+	publisherMemberSeedList,
 	publisherSeedList,
 	userGameLicenseSeedList,
 } from './catalog.data';
+import type { CatalogSeedData } from './triseum.data';
 import { UserSeeder } from './user.seeder';
 
 const USER1_SEED_EMAIL = 'user1@scholark.com';
@@ -48,8 +58,53 @@ const USER2_INSTRUCTOR_SEED_SLUG = 'user2-instructor';
 
 export class DatabaseSeeder extends Seeder {
 
+	protected get catalogSeedData(): CatalogSeedData {
+		return {
+			acquisitionCodeSeedList,
+			classroomGameGradingRuleSeedList,
+			classroomGameListingSeedList,
+			classroomSeedList,
+			courseSeedList,
+			gameCustomizationSeedList,
+			gameProgressSnapshotSeedList,
+			gameSeedList,
+			gameVersionSeedList,
+			institutionSeedList,
+			instructorSeedList,
+			publicListingSeedList,
+			publisherMemberSeedList,
+			publisherSeedList,
+			userGameLicenseSeedList,
+		};
+	}
+
+	protected get userSeederClass(): typeof UserSeeder {
+		return UserSeeder;
+	}
+
+	protected get shouldLinkInstructorUser(): boolean {
+		return true;
+	}
+
 	async run(em: EntityManager): Promise<void> {
-		await this.call(em, [UserSeeder]);
+		const {
+			acquisitionCodeSeedList,
+			classroomGameGradingRuleSeedList,
+			classroomGameListingSeedList,
+			classroomSeedList,
+			courseSeedList,
+			gameCustomizationSeedList,
+			gameProgressSnapshotSeedList,
+			gameSeedList,
+			gameVersionSeedList,
+			institutionSeedList,
+			instructorSeedList,
+			publicListingSeedList,
+			publisherSeedList,
+			userGameLicenseSeedList,
+		} = this.catalogSeedData;
+
+		await this.call(em, [this.userSeederClass]);
 
 		const classroomSlugByListingSeedId = new Map<string, string>(
 			classroomGameListingSeedList.map(({ classroomSlug, id }): [string, string] => [id, classroomSlug]),
@@ -97,6 +152,29 @@ export class DatabaseSeeder extends Seeder {
 
 				publisherMap.set(publisher.slug, publisher);
 			}
+
+			for (const publisherMemberSeed of publisherMemberSeedList) {
+				const publisher = publisherMap.get(publisherMemberSeed.publisherSlug);
+				const user = await transactionalEm.findOne(User, {
+					email: publisherMemberSeed.email.trim().toLowerCase(),
+				});
+				if (!publisher) {
+					throw new Error(`Missing seeded publisher: ${publisherMemberSeed.publisherSlug}`);
+				}
+				if (!user) {
+					throw new Error(`Missing seeded publisher account: ${publisherMemberSeed.email}`);
+				}
+
+				const existingPublisherMember = await transactionalEm.findOne(
+					PublisherMember,
+					{ publisher: publisher.id!, user: user.id! },
+				);
+				if (!existingPublisherMember) {
+					transactionalEm.persist(transactionalEm.create(PublisherMember, { publisher, user }));
+				}
+			}
+
+			await transactionalEm.flush();
 
 			for (const gameSeed of gameSeedList) {
 				for (const taxonomySeed of gameSeed.taxonomyList) {
@@ -253,33 +331,35 @@ export class DatabaseSeeder extends Seeder {
 
 			await transactionalEm.flush();
 
-			const instructorUser = await transactionalEm.findOne(User, { email: USER2_SEED_EMAIL });
-			const instructor = instructorMap.get(USER2_INSTRUCTOR_SEED_SLUG);
-			if (!instructorUser || !instructor) {
-				throw new Error(`Missing seeded instructor account or profile: ${USER2_SEED_EMAIL}`);
-			}
-
-			const existingUserLink = await transactionalEm.findOne(
-				InstructorUser,
-				{ user: instructorUser.id! },
-				{ populate: ['instructor'] },
-			);
-			if (existingUserLink && existingUserLink.instructor.id !== instructor.id) {
-				throw new Error(`${USER2_SEED_EMAIL} is already linked to a different instructor profile.`);
-			}
-
-			if (!existingUserLink) {
-				const existingInstructorLink = await transactionalEm.findOne(
-					InstructorUser,
-					{ instructor: instructor.id! },
-					{ populate: ['user'] },
-				);
-				if (existingInstructorLink && existingInstructorLink.user.id !== instructorUser.id) {
-					throw new Error(`${USER2_INSTRUCTOR_SEED_SLUG} is already linked to a different user.`);
+			if (this.shouldLinkInstructorUser) {
+				const instructorUser = await transactionalEm.findOne(User, { email: USER2_SEED_EMAIL });
+				const instructor = instructorMap.get(USER2_INSTRUCTOR_SEED_SLUG);
+				if (!instructorUser || !instructor) {
+					throw new Error(`Missing seeded instructor account or profile: ${USER2_SEED_EMAIL}`);
 				}
 
-				if (!existingInstructorLink) {
-					transactionalEm.persist(transactionalEm.create(InstructorUser, { instructor, user: instructorUser }));
+				const existingUserLink = await transactionalEm.findOne(
+					InstructorUser,
+					{ user: instructorUser.id! },
+					{ populate: ['instructor'] },
+				);
+				if (existingUserLink && existingUserLink.instructor.id !== instructor.id) {
+					throw new Error(`${USER2_SEED_EMAIL} is already linked to a different instructor profile.`);
+				}
+
+				if (!existingUserLink) {
+					const existingInstructorLink = await transactionalEm.findOne(
+						InstructorUser,
+						{ instructor: instructor.id! },
+						{ populate: ['user'] },
+					);
+					if (existingInstructorLink && existingInstructorLink.user.id !== instructorUser.id) {
+						throw new Error(`${USER2_INSTRUCTOR_SEED_SLUG} is already linked to a different user.`);
+					}
+
+					if (!existingInstructorLink) {
+						transactionalEm.persist(transactionalEm.create(InstructorUser, { instructor, user: instructorUser }));
+					}
 				}
 			}
 
@@ -298,6 +378,7 @@ export class DatabaseSeeder extends Seeder {
 						game,
 						description: gameVersionSeed.description,
 						publishedAt: gameVersionSeed.publishedAt,
+						progressStructure: gameVersionSeed.progressStructure,
 						publisherVersion: gameVersionSeed.publisherVersion,
 						runUrl: gameVersionSeed.runUrl,
 					});
@@ -305,6 +386,7 @@ export class DatabaseSeeder extends Seeder {
 					transactionalEm.assign(gameVersion, {
 						description: gameVersionSeed.description,
 						publishedAt: gameVersionSeed.publishedAt,
+						progressStructure: gameVersionSeed.progressStructure,
 						runUrl: gameVersionSeed.runUrl,
 					});
 				}
@@ -555,6 +637,107 @@ export class DatabaseSeeder extends Seeder {
 						user,
 					});
 				}
+			}
+
+			await transactionalEm.flush();
+
+			for (const progressSnapshotSeed of gameProgressSnapshotSeedList) {
+				const gameLicense = await transactionalEm.findOne(GameLicense, { id: progressSnapshotSeed.gameLicenseSeedId });
+				if (!gameLicense) {
+					throw new Error(`Missing game license for progress snapshot: ${progressSnapshotSeed.id}`);
+				}
+
+				let progressSnapshot = await transactionalEm.findOne(GameProgressSnapshot, { gameLicense });
+				if (!progressSnapshot) {
+					progressSnapshot = transactionalEm.create(GameProgressSnapshot, {
+						content: progressSnapshotSeed.content,
+						gameLicense,
+						id: progressSnapshotSeed.id,
+						schemaVersion: progressSnapshotSeed.schemaVersion,
+					});
+				} else {
+					transactionalEm.assign(progressSnapshot, {
+						content: progressSnapshotSeed.content,
+						schemaVersion: progressSnapshotSeed.schemaVersion,
+					});
+				}
+				await transactionalEm.flush();
+			}
+
+			for (const gradingRuleSeed of classroomGameGradingRuleSeedList) {
+				const classroomGameListing = classroomGameListingSeedMap.get(gradingRuleSeed.classroomGameListingSeedId);
+				const createdBy = await transactionalEm.findOne(User, { email: gradingRuleSeed.createdByEmail });
+				if (!classroomGameListing || !createdBy) {
+					throw new Error(`Missing listing or user for grading rule: ${gradingRuleSeed.id}`);
+				}
+
+				let gradingRule = await transactionalEm.findOne(ClassroomGameGradingRule, {
+					classroomGameListing,
+					revision: gradingRuleSeed.revision,
+				});
+				if (!gradingRule) {
+					gradingRule = transactionalEm.create(ClassroomGameGradingRule, {
+						classroomGameListing,
+						createdBy,
+						config: gradingRuleSeed.config,
+						id: gradingRuleSeed.id,
+						revision: gradingRuleSeed.revision,
+					});
+				} else {
+					transactionalEm.assign(gradingRule, {
+						config: gradingRuleSeed.config,
+						createdBy,
+					});
+				}
+				await transactionalEm.flush();
+			}
+
+			for (const progressSnapshotSeed of gameProgressSnapshotSeedList) {
+				const gameLicense = await transactionalEm.findOne(
+					GameLicense,
+					{ id: progressSnapshotSeed.gameLicenseSeedId },
+					{ populate: ['classroomGameListing', 'gameVersion'] },
+				);
+				const progressSnapshot = gameLicense
+					? await transactionalEm.findOne(GameProgressSnapshot, { gameLicense })
+					: undefined;
+				const gradingRule = gameLicense?.classroomGameListing
+					? await transactionalEm.findOne(
+						ClassroomGameGradingRule,
+						{ classroomGameListing: gameLicense.classroomGameListing },
+						{ orderBy: { revision: 'DESC' } },
+					)
+					: undefined;
+				if (!gameLicense || !progressSnapshot || !gradingRule) {
+					throw new Error(`Missing grading inputs for progress snapshot: ${progressSnapshotSeed.id}`);
+				}
+
+				const sourceProgressHash = getGameProgressSnapshotHash(progressSnapshot.schemaVersion, progressSnapshot.content);
+				const resultData = {
+					content: calculateClassroomGameGrade(
+						progressSnapshot.schemaVersion,
+						gameLicense.gameVersion.progressStructure,
+						progressSnapshot.content,
+						gradingRule.config,
+					),
+					gameLicense,
+					gradingRule,
+					progressSnapshot,
+					sourceProgressContent: progressSnapshot.content,
+					sourceProgressHash,
+					sourceProgressUpdatedAt: progressSnapshot.updatedAt!,
+				};
+				let gradeResult = await transactionalEm.findOne(GameGradeResult, {
+					gameLicense,
+					gradingRule,
+					sourceProgressHash,
+				});
+				if (!gradeResult) {
+					gradeResult = transactionalEm.create(GameGradeResult, resultData);
+				} else {
+					transactionalEm.assign(gradeResult, resultData);
+				}
+				await transactionalEm.flush();
 			}
 		});
 	}

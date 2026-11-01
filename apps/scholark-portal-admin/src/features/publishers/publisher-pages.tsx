@@ -8,6 +8,7 @@ import {
 	ChevronRight,
 	ExternalLink,
 	Gamepad2,
+	Mail,
 	Pencil,
 	Plus,
 	RefreshCw,
@@ -30,6 +31,7 @@ import {
 	type CreatePublisherInput,
 	getPublisher,
 	getPublisherList,
+	linkPublisherMember,
 	type Publisher,
 	type PublisherListResponse,
 	type PublisherProfile,
@@ -190,6 +192,26 @@ export function PublisherDetailPage() {
 function PublisherDetails({ publisher }: { publisher: PublisherProfile }) {
 	const [currentPublisher, setCurrentPublisher] = useState(publisher);
 	const [isEditing, setEditing] = useState(false);
+	const [memberEmail, setMemberEmail] = useState('');
+	const [memberError, setMemberError] = useState<string>();
+	const [memberMessage, setMemberMessage] = useState<string>();
+	const [isLinkingMember, setLinkingMember] = useState(false);
+
+	async function handleLinkMember(event: FormEvent<HTMLFormElement>): Promise<void> {
+		event.preventDefault();
+		setMemberError(undefined);
+		setMemberMessage(undefined);
+		setLinkingMember(true);
+
+		try {
+			setMemberMessage(await linkPublisherMember(currentPublisher.id, memberEmail.trim()));
+			setMemberEmail('');
+		} catch (requestError) {
+			setMemberError(requestError instanceof Error ? requestError.message : 'Publisher account could not be linked.');
+		} finally {
+			setLinkingMember(false);
+		}
+	}
 
 	return (
 		<>
@@ -222,6 +244,20 @@ function PublisherDetails({ publisher }: { publisher: PublisherProfile }) {
 					<div><dt>Website</dt><dd>{currentPublisher.websiteUrl ? <a href={currentPublisher.websiteUrl} rel="noreferrer" target="_blank">{currentPublisher.websiteUrl}<ExternalLink size={13}/></a> : 'Not provided'}</dd></div>
 					<div><dt>Games</dt><dd>{currentPublisher.gameList.length}</dd></div>
 				</dl>
+			</div>
+			<div className="detail-section">
+				<h2><Mail size={15}/> Portal access</h2>
+				<p>Link an existing, email-confirmed ScholArk account to this publisher.</p>
+				<form className="institution-form" onSubmit={handleLinkMember}>
+					<div className="institution-form-fields">
+						<label>Account email<input autoComplete="email" onChange={(event) => setMemberEmail(event.target.value)} required type="email" value={memberEmail}/></label>
+					</div>
+					{memberError && <div className="institution-form-error" role="alert"><AlertCircle size={16}/>{memberError}</div>}
+					{memberMessage && <p role="status">{memberMessage}</p>}
+					<div className="institution-form-actions">
+						<Button disabled={isLinkingMember} size="sm" type="submit"><Check size={14}/>{isLinkingMember ? 'Linking...' : 'Link account'}</Button>
+					</div>
+				</form>
 			</div>
 			<div className="detail-section">
 				<h2><Gamepad2 size={15}/> Games <Link className="publisher-catalog-link" to={`/games?publisherId=${encodeURIComponent(currentPublisher.id)}`}>View catalog <ExternalLink size={13}/></Link></h2>

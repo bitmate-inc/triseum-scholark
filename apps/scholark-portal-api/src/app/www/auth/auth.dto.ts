@@ -83,10 +83,10 @@ export class UserResponseDto {
 	@ApiPropertyOptional({ nullable: true })
 	lastName?: string;
 
-	@ApiPropertyOptional({ enum: ['student', 'instructor'], isArray: true })
-	userTypeList?: ('student' | 'instructor')[];
+	@ApiPropertyOptional({ enum: ['student', 'instructor', 'publisher'], isArray: true })
+	userTypeList?: ('student' | 'instructor' | 'publisher')[];
 
-	static fromEntity(user: User, userTypeList?: ('student' | 'instructor')[]): UserResponseDto {
+	static fromEntity(user: User, userTypeList?: ('student' | 'instructor' | 'publisher')[]): UserResponseDto {
 		return {
 			email: user.email,
 			firstName: user.firstName,

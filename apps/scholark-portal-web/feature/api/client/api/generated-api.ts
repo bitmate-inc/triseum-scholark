@@ -384,6 +384,18 @@ const injectedRtkApi = api.injectEndpoints({
 				},
 			}),
 		}),
+		adminGetAcquisitionReport: build.query<
+			AdminGetAcquisitionReportApiResponse,
+			AdminGetAcquisitionReportApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/admin/billing/acquisition-report`,
+				params: {
+					from: queryArg["from"],
+					to: queryArg.to,
+				},
+			}),
+		}),
 		adminGetAcquisition: build.query<
 			AdminGetAcquisitionApiResponse,
 			AdminGetAcquisitionApiArg
@@ -525,6 +537,16 @@ const injectedRtkApi = api.injectEndpoints({
 				url: `/api/v1/admin/instructors/${queryArg.instructorId}/account`,
 				method: "POST",
 				body: queryArg.linkAdminInstructorAccountRequestDto,
+			}),
+		}),
+		adminPublisherMemberLinkMember: build.mutation<
+			AdminPublisherMemberLinkMemberApiResponse,
+			AdminPublisherMemberLinkMemberApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/admin/publishers/${queryArg.publisherId}/members`,
+				method: "POST",
+				body: queryArg.linkAdminPublisherMemberRequestDto,
 			}),
 		}),
 		authGetSession: build.query<
@@ -801,6 +823,16 @@ const injectedRtkApi = api.injectEndpoints({
 				url: `/api/v1/instructor/me/classrooms/${queryArg.classroomId}`,
 			}),
 		}),
+		instructorCreateClassroomGameGradingRule: build.mutation<
+			InstructorCreateClassroomGameGradingRuleApiResponse,
+			InstructorCreateClassroomGameGradingRuleApiArg
+		>({
+			query: (queryArg) => ({
+				url: `/api/v1/instructor/me/classrooms/${queryArg.classroomId}/game-listings/${queryArg.classroomGameListingId}/grading-rules`,
+				method: "POST",
+				body: queryArg.createInstructorClassroomGameGradingRuleRequestDto,
+			}),
+		}),
 		instructorInvitationGetDetails: build.query<
 			InstructorInvitationGetDetailsApiResponse,
 			InstructorInvitationGetDetailsApiArg
@@ -821,6 +853,12 @@ const injectedRtkApi = api.injectEndpoints({
 				method: "POST",
 				body: queryArg.acceptInstructorInvitationRequestDto,
 			}),
+		}),
+		publisherGetRevenue: build.query<
+			PublisherGetRevenueApiResponse,
+			PublisherGetRevenueApiArg
+		>({
+			query: () => ({ url: `/api/v1/publisher/me/revenue` }),
 		}),
 		userGetLibrary: build.query<
 			UserGetLibraryApiResponse,
@@ -1123,6 +1161,12 @@ export type AdminGetAcquisitionListApiArg = {
 	q?: string;
 	id?: string[];
 };
+export type AdminGetAcquisitionReportApiResponse =
+/** status 200  */ GetAdminAcquisitionReportResponseDto;
+export type AdminGetAcquisitionReportApiArg = {
+	from?: string;
+	to?: string;
+};
 export type AdminGetAcquisitionApiResponse =
 /** status 200  */ GetAdminAcquisitionDetailResponseDto;
 export type AdminGetAcquisitionApiArg = {
@@ -1207,6 +1251,12 @@ export type AdminInstructorAccountLinkAccountApiResponse =
 export type AdminInstructorAccountLinkAccountApiArg = {
 	instructorId: string;
 	linkAdminInstructorAccountRequestDto: LinkAdminInstructorAccountRequestDto;
+};
+export type AdminPublisherMemberLinkMemberApiResponse =
+/** status 201  */ LinkAdminPublisherMemberResponseDto;
+export type AdminPublisherMemberLinkMemberApiArg = {
+	publisherId: string;
+	linkAdminPublisherMemberRequestDto: LinkAdminPublisherMemberRequestDto;
 };
 export type AuthGetSessionApiResponse = /** status 200  */ UserResponseDto;
 export type AuthGetSessionApiArg = void;
@@ -1394,6 +1444,13 @@ export type InstructorGetClassroomApiResponse =
 export type InstructorGetClassroomApiArg = {
 	classroomId: string;
 };
+export type InstructorCreateClassroomGameGradingRuleApiResponse =
+/** status 201  */ InstructorClassroomGameGradingRuleResponseDto;
+export type InstructorCreateClassroomGameGradingRuleApiArg = {
+	classroomId: string;
+	classroomGameListingId: string;
+	createInstructorClassroomGameGradingRuleRequestDto: CreateInstructorClassroomGameGradingRuleRequestDto;
+};
 export type InstructorInvitationGetDetailsApiResponse =
 /** status 200  */ InstructorInvitationResponseDto;
 export type InstructorInvitationGetDetailsApiArg = {
@@ -1404,6 +1461,9 @@ export type InstructorInvitationAcceptApiResponse =
 export type InstructorInvitationAcceptApiArg = {
 	acceptInstructorInvitationRequestDto: AcceptInstructorInvitationRequestDto;
 };
+export type PublisherGetRevenueApiResponse =
+/** status 200  */ PublisherRevenueReportResponseDto;
+export type PublisherGetRevenueApiArg = void;
 export type UserGetLibraryApiResponse =
 /** status 200  */ UserLibraryResponseDto;
 export type UserGetLibraryApiArg = void;
@@ -1441,7 +1501,7 @@ export type UserResponseDto = {
 	email: string;
 	firstName?: string | null;
 	lastName?: string | null;
-	userTypeList?: ("student" | "instructor")[];
+	userTypeList?: ("student" | "instructor" | "publisher")[];
 };
 export type MediaResponseDto = {
 	type: "image" | "video";
@@ -1639,6 +1699,7 @@ export type AdminInstructorListItemResponseDto = {
 	id: string;
 	name: string;
 	slug: string;
+	hasAccount: boolean;
 };
 export type GetAdminInstructorListResponseDto = {
 	instructorList: AdminInstructorListItemResponseDto[];
@@ -1770,6 +1831,7 @@ export type AdminGameVersionResponseDto = {
 	publisherVersion: string;
 	description?: string;
 	runUrl: string;
+	progressStructure?: object;
 	publishedAt?: string;
 	publicListingList: AdminGamePublicListingResponseDto[];
 	customizationList: AdminGameCustomizationResponseDto[];
@@ -1805,16 +1867,32 @@ export type UpdateAdminGameRequestDto = {
 	summary?: string;
 	title?: string;
 };
+export type AdminGameProgressMetricDefinitionDto = {
+	key: string;
+	label: string;
+	pointsPossible?: number;
+};
+export type AdminGameProgressSectionDefinitionDto = {
+	sectionIndex: string;
+	label: string;
+	metricList: AdminGameProgressMetricDefinitionDto[];
+};
+export type AdminGameProgressStructureDto = {
+	schemaVersion: number;
+	sectionList: AdminGameProgressSectionDefinitionDto[];
+};
 export type CreateAdminGameVersionRequestDto = {
 	publisherVersion: string;
 	description?: string;
 	runUrl: string;
+	progressStructure?: AdminGameProgressStructureDto;
 	publishedAt?: string;
 };
 export type UpdateAdminGameVersionRequestDto = {
 	publisherVersion?: string;
 	description?: string;
 	runUrl?: string;
+	progressStructure?: AdminGameProgressStructureDto | null;
 	publishedAt?: string | null;
 };
 export type AdminGameListingPriceGroupRequestDto = {
@@ -1931,6 +2009,41 @@ export type AdminAcquisitionListItemResponseDto = {
 export type GetAdminAcquisitionListResponseDto = {
 	acquisitionList: AdminAcquisitionListItemResponseDto[];
 	totalItemCount: number;
+};
+export type InstitutionLicenseReportItemResponseDto = {
+	activeLicenseCount: number;
+	classroomId: string;
+	classroomName: string;
+	codeIssuedCount: number;
+	codeRedemptionCount: number;
+	expiredLicenseCount: number;
+	gameTitle: string;
+	/** Informational listing quantity; it is not enforced as a license cap. */
+	includedLicenseQuantity?: number;
+	institutionFundedLicenseCount: number;
+	institutionId: string;
+	institutionName: string;
+	listingId: string;
+	publisherName: string;
+	publisherVersion: string;
+	scheduledLicenseCount: number;
+	uniqueCodeRedeemerCount: number;
+	uniqueLicenseeCount: number;
+};
+export type PublisherAcquisitionReportItemResponseDto = {
+	currency: string;
+	gameId: string;
+	gameTitle: string;
+	institutionFundedLicenseCount: number;
+	paidAcquisitionCount: number;
+	/** Captured paid amount in minor currency units. */
+	paidSalesMinorUnitAmount: number;
+	publisherId: string;
+	publisherName: string;
+};
+export type GetAdminAcquisitionReportResponseDto = {
+	institutionReportList: InstitutionLicenseReportItemResponseDto[];
+	publisherReportList: PublisherAcquisitionReportItemResponseDto[];
 };
 export type AdminAcquisitionEventResponseDto = {
 	id: string;
@@ -2076,6 +2189,12 @@ export type CreateAdminInstructorInvitationResponseDto = {
 	invitationUrl?: string;
 };
 export type LinkAdminInstructorAccountRequestDto = {
+	email: string;
+};
+export type LinkAdminPublisherMemberResponseDto = {
+	message: string;
+};
+export type LinkAdminPublisherMemberRequestDto = {
 	email: string;
 };
 export type MessageResponseDto = {
@@ -2230,6 +2349,49 @@ export type InstructorClassroomListItemResponseDto = {
 export type InstructorClassroomListResponseDto = {
 	classroomList: InstructorClassroomListItemResponseDto[];
 };
+export type InstructorProgressSummaryResponseDto = {
+	playTimeSeconds?: number | null;
+	sessionCount?: number | null;
+	completionPercent?: number | null;
+	completed?: boolean | null;
+	metrics?: {
+		[key: string]: any;
+	} | null;
+};
+export type InstructorProgressSectionResponseDto = {
+	sectionIndex: string;
+	completionPercent?: number | null;
+	completed?: boolean | null;
+	metrics?: {
+		[key: string]: any;
+	} | null;
+};
+export type InstructorProgressResponseDto = {
+	schemaVersion: number;
+	updatedAt: string;
+	summary?: InstructorProgressSummaryResponseDto | null;
+	sectionList?: InstructorProgressSectionResponseDto[];
+};
+export type InstructorGradeSectionResultResponseDto = {
+	sectionIndex: string;
+	label: string;
+	points: number;
+	pointsPossible: number;
+	percentage: number;
+};
+export type InstructorGradeResultContentResponseDto = {
+	scoreGiven: number | null;
+	scoreMaximum: number;
+	percentage: number | null;
+	activityProgress: "unknown" | "in_progress" | "completed";
+	gradingProgress: "not_ready" | "pending" | "fully_graded" | "incompatible";
+	sectionResultList: InstructorGradeSectionResultResponseDto[];
+};
+export type InstructorGradeResultResponseDto = {
+	ruleRevision: number;
+	content: InstructorGradeResultContentResponseDto;
+	createdAt: string;
+};
 export type InstructorStudentResponseDto = {
 	id: string;
 	email: string;
@@ -2238,12 +2400,45 @@ export type InstructorStudentResponseDto = {
 	licenseStatus: "active" | "upcoming" | "expired";
 	startAt: string;
 	endAt: string;
+	progress?: InstructorProgressResponseDto;
+	gradeResult?: InstructorGradeResultResponseDto;
+};
+export type CreateInstructorClassroomGameGradingRuleRequestDto = {
+	schemaVersion: number;
+	progressSchemaVersion: number;
+	method: "points" | "completion_threshold";
+	sectionIndexList: string[];
+	scoreMaximum: number;
+	completionThresholdPercent?: number;
+	allowPartial: boolean;
+};
+export type InstructorClassroomGameGradingRuleResponseDto = {
+	id: string;
+	revision: number;
+	config: CreateInstructorClassroomGameGradingRuleRequestDto;
+	createdAt: string;
+};
+export type InstructorProgressMetricDefinitionResponseDto = {
+	key: string;
+	label: string;
+	pointsPossible?: number;
+};
+export type InstructorProgressStructureSectionResponseDto = {
+	sectionIndex: string;
+	label: string;
+	metricList: InstructorProgressMetricDefinitionResponseDto[];
+};
+export type InstructorProgressStructureResponseDto = {
+	schemaVersion: number;
+	sectionList: InstructorProgressStructureSectionResponseDto[];
 };
 export type InstructorClassroomGameListingResponseDto = {
 	id: string;
 	gameTitle: string;
 	publisherVersion: string;
 	studentList: InstructorStudentResponseDto[];
+	gradingRule?: InstructorClassroomGameGradingRuleResponseDto;
+	progressStructure?: InstructorProgressStructureResponseDto;
 };
 export type InstructorClassroomResponseDto = {
 	classroom: InstructorClassroomListItemResponseDto;
@@ -2267,6 +2462,20 @@ export type AcceptInstructorInvitationRequestDto = {
 	password?: string;
 	token: string;
 };
+export type PublisherRevenueReportItemResponseDto = {
+	currency: string;
+	gameId: string;
+	gameTitle: string;
+	institutionFundedLicenseCount: number;
+	paidAcquisitionCount: number;
+	/** Gross paid acquisition amount in minor currency units. */
+	paidSalesMinorUnitAmount: number;
+	publisherId: string;
+	publisherName: string;
+};
+export type PublisherRevenueReportResponseDto = {
+	reportList: PublisherRevenueReportItemResponseDto[];
+};
 export type UserLibraryGameResponseDto = {
 	id: string;
 	title: string;
@@ -2281,6 +2490,29 @@ export type UserLibraryClassroomResponseDto = {
 	id: string;
 	name: string;
 	slug: string;
+};
+export type UserLibraryProgressSummaryResponseDto = {
+	playTimeSeconds?: number | null;
+	sessionCount?: number | null;
+	completionPercent?: number | null;
+	completed?: boolean | null;
+	metrics?: {
+		[key: string]: any;
+	} | null;
+};
+export type UserLibraryProgressSectionResponseDto = {
+	sectionIndex: string;
+	completionPercent?: number | null;
+	completed?: boolean | null;
+	metrics?: {
+		[key: string]: any;
+	} | null;
+};
+export type UserLibraryProgressResponseDto = {
+	schemaVersion: number;
+	updatedAt: string;
+	summary?: UserLibraryProgressSummaryResponseDto | null;
+	sectionList?: UserLibraryProgressSectionResponseDto[];
 };
 export type UserLibraryItemResponseDto = {
 	id: string;
@@ -2297,6 +2529,7 @@ export type UserLibraryItemResponseDto = {
 	isActive: boolean;
 	status: "active" | "scheduled" | "expired";
 	acquisitionMechanism: string;
+	progress?: UserLibraryProgressResponseDto;
 };
 export type UserLibraryResponseDto = {
 	itemList: UserLibraryItemResponseDto[];
@@ -2368,6 +2601,7 @@ export const {
 	useAdminUpdateTaxonomyTermMutation,
 	useAdminGetUserListQuery,
 	useAdminGetAcquisitionListQuery,
+	useAdminGetAcquisitionReportQuery,
 	useAdminGetAcquisitionQuery,
 	useAdminGetPaymentAttemptListQuery,
 	useAdminGetLicenseListQuery,
@@ -2381,6 +2615,7 @@ export const {
 	useAdminUpdateCourseMutation,
 	useAdminInstructorAccountCreateInvitationMutation,
 	useAdminInstructorAccountLinkAccountMutation,
+	useAdminPublisherMemberLinkMemberMutation,
 	useAuthGetSessionQuery,
 	useAuthRegisterMutation,
 	useAuthLoginMutation,
@@ -2412,8 +2647,10 @@ export const {
 	useInstructorGetProfileQuery,
 	useInstructorGetClassroomListQuery,
 	useInstructorGetClassroomQuery,
+	useInstructorCreateClassroomGameGradingRuleMutation,
 	useInstructorInvitationGetDetailsQuery,
 	useInstructorInvitationAcceptMutation,
+	usePublisherGetRevenueQuery,
 	useUserGetLibraryQuery,
 	useUserLaunchGameMutation,
 	useUserGetOwnUserQuery,

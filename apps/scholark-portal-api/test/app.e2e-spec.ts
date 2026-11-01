@@ -9,8 +9,10 @@ import { AcquisitionCode } from '../src/app/core/feature/education/model/acquisi
 import { AcquisitionCodeRedemption } from '../src/app/core/feature/education/model/acquisition.code.redemption.entity';
 import { digestAcquisitionCode, getAcquisitionCodeSuffix } from '../src/app/core/feature/education/model/acquisition.code.util';
 import { Classroom } from '../src/app/core/feature/education/model/classroom.entity';
+import { ClassroomGameGradingRule } from '../src/app/core/feature/education/model/classroom.game.grading.rule.entity';
 import { ClassroomGameListing , ClassroomGameListingDesignatedPayor } from '../src/app/core/feature/education/model/classroom.game.listing.entity';
 import { EducationCatalogStatus } from '../src/app/core/feature/education/model/education.catalog.status';
+import { GameGradeResult } from '../src/app/core/feature/education/model/game.grade.result.entity';
 import { Institution } from '../src/app/core/feature/education/model/institution.entity';
 import { Instructor } from '../src/app/core/feature/education/model/instructor.entity';
 import { InstructorInvitation } from '../src/app/core/feature/education/model/instructor.invitation.entity';
@@ -18,6 +20,7 @@ import { InstructorUser } from '../src/app/core/feature/education/model/instruct
 import { GameAcquisition, GameAcquisitionMechanism } from '../src/app/core/feature/game/model/game.acquisition.entity';
 import { GameAcquisitionEvent } from '../src/app/core/feature/game/model/game.acquisition.event.entity';
 import { GameLicense } from '../src/app/core/feature/game/model/game.license.entity';
+import { GameProgressSnapshot } from '../src/app/core/feature/game/model/game.progress.snapshot.entity';
 import { User, UserStatus } from '../src/app/core/feature/user/model/user.entity';
 import { RedisExpressSessionRevoker } from '../src/app/core/infrastructure/auth/transport/express-session/redis.express-session.revoker';
 import { MailerClient } from '../src/app/core/infrastructure/nodemailer/nodemailer.module';
@@ -30,6 +33,10 @@ describe('AppController (e2e)', () => {
 	let app: NestExpressApplication;
 
 	beforeAll(async () => {
+		if (!process.env.GAME_PROXY_PUBLIC_ORIGIN?.trim()) {
+			process.env.GAME_PROXY_ALLOW_SAME_ORIGIN_DEV = 'true';
+		}
+
 		const moduleFixture: TestingModule = await Test.createTestingModule({
 			imports: [WwwModule],
 		}).compile();
@@ -49,6 +56,73 @@ describe('AppController (e2e)', () => {
 	it('registers the acquisition event entity prototype', () => {
 		const metadata = app.get(MikroORM).getMetadata().get(GameAcquisitionEvent);
 		expect(metadata.class).toBe(GameAcquisitionEvent);
+	});
+
+	it('registers the game progress snapshot entity prototype', () => {
+		const metadata = app.get(MikroORM).getMetadata().get(GameProgressSnapshot);
+		expect(metadata.class).toBe(GameProgressSnapshot);
+	});
+
+	it('stores progress from an authenticated game session and returns it in the library', async () => {
+		const userAgent = request.agent(app.getHttpServer());
+		await userAgent
+			.post('/api/v1/auth/login')
+			.send({ email: 'student2@scholark.com', password: 'password' })
+			.expect(200);
+
+		const entityManager = app.get(MikroORM).em.fork();
+		const user = await entityManager.findOne(User, { email: 'student2@scholark.com' });
+		const now = new Date();
+		const license = await entityManager.findOne(
+			GameLicense,
+			{
+				classroomGameListing: '00000000-0000-4000-8000-000000000233',
+				endAt: { $gt: now },
+				startAt: { $lte: now },
+				user: user!,
+			},
+			{ populate: ['gameVersion'] },
+		);
+		expect(license).toBeDefined();
+		expect(license!.gameVersion.isPublished()).toBe(true);
+
+		const gameAgent = request.agent(app.getHttpServer());
+		try {
+			const launchResponse = await userAgent
+				.post(`/api/v1/user/me/library/${license!.id}/launch`)
+				.expect(201);
+			await gameAgent
+				.post('/api/v1/game/launch/exchange')
+				.send({ launchTicket: launchResponse.body.launchTicket })
+				.expect(303);
+
+			const progressData = {
+				schemaVersion: 1,
+				summary: { completionPercent: 54, playTimeSeconds: 32_394, sessionCount: 26 },
+				sectionList: [
+					{ sectionIndex: '0', metrics: { points: 54 }, completionPercent: 60 },
+				],
+			};
+			const progressResponse = await gameAgent
+				.put('/api/v1/game/progress')
+				.set('Origin', process.env.GAME_PROXY_PUBLIC_ORIGIN?.trim()
+					? new URL(process.env.GAME_PROXY_PUBLIC_ORIGIN).origin
+					: `http://localhost:${process.env.PORT ?? '3001'}`)
+				.send(progressData);
+			if (progressResponse.status !== 200) {
+				throw new Error(`Progress upload failed: ${JSON.stringify(progressResponse.body)}`);
+			}
+
+			const libraryResponse = await userAgent.get('/api/v1/user/me/library').expect(200);
+			const libraryItem = libraryResponse.body.itemList.find((item: { id: string }) => item.id === license!.id);
+			expect(libraryItem.progress).toMatchObject({
+				schemaVersion: 1,
+				summary: { completionPercent: 54 },
+				sectionList: progressData.sectionList,
+			});
+		} finally {
+			await entityManager.nativeDelete(GameProgressSnapshot, { gameLicense: license! });
+		}
 	});
 
 	it('searches billing records by game title', async () => {
@@ -906,6 +980,174 @@ describe('AppController (e2e)', () => {
 			.expect(200);
 		const classroomSlugList = classroomResponse.body.classroomList.map(({ slug }: { slug: string }) => slug);
 		expect(classroomSlugList).toEqual(['florence-seminar-fall-2026']);
+		const classroomId = classroomResponse.body.classroomList[0].id;
+		const classroomDetailResponse = await instructorAgent
+			.get(`/api/v1/instructor/me/classrooms/${classroomId}`)
+			.expect(200);
+		const mecenasListing = classroomDetailResponse.body.classroomGameListingList.find(
+			(item: { id: string }) => item.id === '00000000-0000-4000-8000-000000000231',
+		);
+		const seededLearner = mecenasListing.studentList.find(
+			(student: { email: string }) => student.email === 'user1@scholark.com',
+		);
+		expect(seededLearner.progress.summary).toMatchObject({ completionPercent: 85, completed: true });
+		expect(seededLearner.gradeResult).toMatchObject({
+			ruleRevision: 1,
+			content: { scoreGiven: 85, scoreMaximum: 100, gradingProgress: 'fully_graded' },
+		});
+	});
+
+	it('grades a classroom game from progress using an instructor rule', async () => {
+		const instructorAgent = request.agent(app.getHttpServer());
+		await instructorAgent
+			.post('/api/v1/auth/login')
+			.send({ email: 'user2@scholark.com', password: 'password' })
+			.expect(200);
+
+		const classroomListResponse = await instructorAgent.get('/api/v1/instructor/me/classrooms').expect(200);
+		const classroom = classroomListResponse.body.classroomList[0];
+		const classroomResponse = await instructorAgent
+			.get(`/api/v1/instructor/me/classrooms/${classroom.id}`)
+			.expect(200);
+		const listing = classroomResponse.body.classroomGameListingList.find(
+			(item: { studentList: unknown[]; gradingRule?: unknown }) => item.studentList.length > 0 && !item.gradingRule,
+		);
+		expect(listing).toBeDefined();
+
+		const entityManager = app.get(MikroORM).em.fork();
+		const learner = await entityManager.findOne(User, { email: 'user1@scholark.com' });
+		const license = await entityManager.findOne(GameLicense, {
+			user: learner!,
+			classroomGameListing: listing.id,
+		});
+		expect(license).toBeDefined();
+
+		const gradingRuleIdList: string[] = [];
+		const learnerAgent = request.agent(app.getHttpServer());
+		const gameAgent = request.agent(app.getHttpServer());
+		try {
+			await learnerAgent
+				.post('/api/v1/auth/login')
+				.send({ email: 'user1@scholark.com', password: 'password' })
+				.expect(200);
+			const launchResponse = await learnerAgent
+				.post(`/api/v1/user/me/library/${license!.id}/launch`)
+				.expect(201);
+			await gameAgent
+				.post('/api/v1/game/launch/exchange')
+				.send({ launchTicket: launchResponse.body.launchTicket })
+				.expect(303);
+			const gameOrigin = process.env.GAME_PROXY_PUBLIC_ORIGIN?.trim()
+				? new URL(process.env.GAME_PROXY_PUBLIC_ORIGIN).origin
+				: `http://localhost:${process.env.PORT ?? '3001'}`;
+			const firstProgressPayload = {
+				schemaVersion: 1,
+				sectionList: [{ sectionIndex: '0', metrics: { points: 80 }, completed: true }],
+				summary: { completed: true },
+			};
+			await gameAgent
+				.put('/api/v1/game/progress')
+				.set('Origin', gameOrigin)
+				.send(firstProgressPayload)
+				.expect(200);
+
+			const createRuleResponse = await instructorAgent
+				.post(`/api/v1/instructor/me/classrooms/${classroom.id}/game-listings/${listing.id}/grading-rules`)
+				.send({
+					allowPartial: false,
+					method: 'points',
+					progressSchemaVersion: 1,
+					schemaVersion: 1,
+					scoreMaximum: 100,
+					sectionIndexList: ['0'],
+				})
+				.expect(201);
+			gradingRuleIdList.push(createRuleResponse.body.id);
+			expect(createRuleResponse.body.revision).toBe(1);
+
+			const updatedClassroomResponse = await instructorAgent
+				.get(`/api/v1/instructor/me/classrooms/${classroom.id}`)
+				.expect(200);
+			const updatedListing = updatedClassroomResponse.body.classroomGameListingList.find(
+				(item: { id: string }) => item.id === listing.id,
+			);
+			const learnerResult = updatedListing.studentList.find((student: { id: string }) => student.id === learner!.id);
+			expect(updatedListing.gradingRule).toMatchObject({ revision: 1 });
+			expect(learnerResult.gradeResult.content).toMatchObject({
+				activityProgress: 'completed',
+				gradingProgress: 'fully_graded',
+				scoreGiven: 80,
+				scoreMaximum: 100,
+			});
+
+			await gameAgent
+				.put('/api/v1/game/progress')
+				.set('Origin', gameOrigin)
+				.send(firstProgressPayload)
+				.expect(200);
+			expect(await entityManager.count(GameGradeResult, { gameLicense: license! })).toBe(1);
+
+			await gameAgent
+				.put('/api/v1/game/progress')
+				.set('Origin', gameOrigin)
+				.send({
+					...firstProgressPayload,
+					sectionList: [{ sectionIndex: '0', metrics: { points: 70 }, completed: true }],
+				})
+				.expect(200);
+			const updatedSnapshotGradeResponse = await instructorAgent
+				.get(`/api/v1/instructor/me/classrooms/${classroom.id}`)
+				.expect(200);
+			const updatedSnapshotListing = updatedSnapshotGradeResponse.body.classroomGameListingList.find(
+				(item: { id: string }) => item.id === listing.id,
+			);
+			const updatedSnapshotLearner = updatedSnapshotListing.studentList.find((student: { id: string }) => student.id === learner!.id);
+			expect(updatedSnapshotLearner.gradeResult.content.scoreGiven).toBe(70);
+			expect(await entityManager.count(GameGradeResult, { gameLicense: license! })).toBe(2);
+
+			const revisedRuleResponse = await instructorAgent
+				.post(`/api/v1/instructor/me/classrooms/${classroom.id}/game-listings/${listing.id}/grading-rules`)
+				.send({
+					allowPartial: false,
+					method: 'points',
+					progressSchemaVersion: 1,
+					schemaVersion: 1,
+					scoreMaximum: 50,
+					sectionIndexList: ['0'],
+				})
+				.expect(201);
+			gradingRuleIdList.push(revisedRuleResponse.body.id);
+			expect(revisedRuleResponse.body.revision).toBe(2);
+
+			const revisedClassroomResponse = await instructorAgent
+				.get(`/api/v1/instructor/me/classrooms/${classroom.id}`)
+				.expect(200);
+			const revisedListing = revisedClassroomResponse.body.classroomGameListingList.find(
+				(item: { id: string }) => item.id === listing.id,
+			);
+			const revisedLearnerResult = revisedListing.studentList.find((student: { id: string }) => student.id === learner!.id);
+			expect(revisedLearnerResult.gradeResult).toMatchObject({
+				ruleRevision: 2,
+				content: { scoreGiven: 35, scoreMaximum: 50 },
+			});
+			expect(await entityManager.count(GameGradeResult, { gameLicense: license! })).toBe(3);
+
+			const studentAgent = request.agent(app.getHttpServer());
+			await studentAgent
+				.post('/api/v1/auth/login')
+				.send({ email: 'user1@scholark.com', password: 'password' })
+				.expect(200);
+			await studentAgent
+				.post(`/api/v1/instructor/me/classrooms/${classroom.id}/game-listings/${listing.id}/grading-rules`)
+				.send({})
+				.expect(403);
+		} finally {
+			await entityManager.nativeDelete(GameGradeResult, { gameLicense: license! });
+			await entityManager.nativeDelete(GameProgressSnapshot, { gameLicense: license! });
+			if (gradingRuleIdList.length > 0) {
+				await entityManager.nativeDelete(ClassroomGameGradingRule, { id: { $in: gradingRuleIdList } });
+			}
+		}
 	});
 
 	it('invites a new instructor, activates the account, and reports instructor access', async () => {

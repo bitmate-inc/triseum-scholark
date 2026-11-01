@@ -15,7 +15,11 @@ import { ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import gameProxyConfig from '../../../config/game-proxy';
-import { GamePlayEventDto, GameStateDto } from './game-interaction.dto';
+import {
+	GamePlayEventDto,
+	GameProgressSnapshotDto,
+	GameStateDto
+} from './game-interaction.dto';
 import { GameInteractionService } from './game-interaction.service';
 import { GameLaunchExchangeDto } from './game-launch-exchange.dto';
 import { GameLaunchSessionService } from './game-launch-session.service';
@@ -75,6 +79,18 @@ export class GameApiController {
 	@ApiExcludeEndpoint()
 	getState(@Headers('cookie') cookieHeader?: string) {
 		return this.gameInteractionService.getState(cookieHeader);
+	}
+
+	@Put('progress')
+	@ApiExcludeEndpoint()
+	saveProgress(
+		@Headers('cookie') cookieHeader: string | undefined,
+		@Headers('origin') origin: string | undefined,
+		@Body() body: GameProgressSnapshotDto,
+	) {
+		this.assertGameOrigin(origin);
+
+		return this.gameInteractionService.saveProgress(cookieHeader, body);
 	}
 
 	@Put('state')

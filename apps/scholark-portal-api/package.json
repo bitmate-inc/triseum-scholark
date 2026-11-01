@@ -24,6 +24,8 @@
     "migration:up": "mikro-orm migration:up",
     "mikro-orm": "mikro-orm",
     "seed": "mikro-orm seeder:run",
+    "seed:triseum-catalog": "mikro-orm seeder:run --class=TriseumCatalogSeeder",
+    "seed:triseum-classroom": "mikro-orm seeder:run --class=TriseumClassroomSeeder",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {

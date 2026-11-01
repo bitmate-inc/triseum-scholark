@@ -2,6 +2,7 @@
 
 import { Button, buttonVariants } from "@repo/ui/button";
 import {
+	BarChart3,
 	CreditCard,
 	GraduationCap,
 	LogOut,
@@ -23,7 +24,9 @@ export function AccountControl() {
 	const user = useAuthGetSessionQuery();
 	const [logout, logoutResult] = useAuthLogoutMutation();
 	const hasInstructorAccess = user.data?.userTypeList?.includes("instructor") ?? false;
+	const hasPublisherAccess = user.data?.userTypeList?.includes("publisher") ?? false;
 	const isInstructorRoute = pathname.includes("/instructor");
+	const isPublisherRoute = pathname.includes("/publisher");
 
 	async function signOut() {
 		const response = await logout();
@@ -42,12 +45,18 @@ export function AccountControl() {
 	return (
 		<>
 			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/library">
-				{isInstructorRoute && hasInstructorAccess ? t("studentPortal") : t("library")}
+				{(isInstructorRoute && hasInstructorAccess) || (isPublisherRoute && hasPublisherAccess) ? t("studentPortal") : t("library")}
 			</Link>
 			{hasInstructorAccess && !isInstructorRoute ? (
 				<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/instructor">
 					<GraduationCap data-icon="inline-start"/>
 					{t("instructorPortal")}
+				</Link>
+			) : null}
+			{hasPublisherAccess && !isPublisherRoute ? (
+				<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/publisher">
+					<BarChart3 data-icon="inline-start"/>
+					{t("publisherPortal")}
 				</Link>
 			) : null}
 			<Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/billing">

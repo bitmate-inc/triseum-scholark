@@ -6,12 +6,17 @@ import { RedeemAcquisitionCodeCommand } from '../game/command/redeem.acquisition
 import { GameModule } from '../game/game.module';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { AcceptInstructorInvitationCommand } from './command/accept.instructor.invitation.command';
+import { CalculateGameLicenseGradeCommand } from './command/calculate.game.license.grade.command';
+import { CreateClassroomGameGradingRuleCommand } from './command/create.classroom.game.grading.rule.command';
 import { CreateInstructorInvitationCommand } from './command/create.instructor.invitation.command';
+import { RecalculateClassroomGameGradesCommand } from './command/recalculate.classroom.game.grades.command';
 import { AcquisitionCode } from './model/acquisition.code.entity';
 import { AcquisitionCodeRedemption } from './model/acquisition.code.redemption.entity';
 import { Classroom } from './model/classroom.entity';
+import { ClassroomGameGradingRule } from './model/classroom.game.grading.rule.entity';
 import { ClassroomGameListing } from './model/classroom.game.listing.entity';
 import { Course } from './model/course.entity';
+import { GameGradeResult } from './model/game.grade.result.entity';
 import { Institution } from './model/institution.entity';
 import { Instructor } from './model/instructor.entity';
 import { InstructorInvitation } from './model/instructor.invitation.entity';
@@ -35,6 +40,9 @@ import { InstructorUserRepository } from './repository/instructor.user.repositor
 	exports: [
 		AcquireClassroomGameListingCommand,
 		RedeemAcquisitionCodeCommand,
+		CreateClassroomGameGradingRuleCommand,
+		CalculateGameLicenseGradeCommand,
+		RecalculateClassroomGameGradesCommand,
 		ClassroomGameListingRepository,
 		AcquisitionCodeRepository,
 		ClassroomRepository,
@@ -55,7 +63,9 @@ import { InstructorUserRepository } from './repository/instructor.user.repositor
 			Institution,
 			Course,
 			Classroom,
+			ClassroomGameGradingRule,
 			ClassroomGameListing,
+			GameGradeResult,
 			Instructor,
 			InstructorInvitation,
 			InstructorUser,
@@ -68,6 +78,9 @@ import { InstructorUserRepository } from './repository/instructor.user.repositor
 	providers: [
 		AcquireClassroomGameListingCommand,
 		RedeemAcquisitionCodeCommand,
+		CreateClassroomGameGradingRuleCommand,
+		CalculateGameLicenseGradeCommand,
+		RecalculateClassroomGameGradesCommand,
 		ClassroomGameListingRepository,
 		AcquisitionCodeRepository,
 		ClassroomRepository,

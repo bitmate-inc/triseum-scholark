@@ -7,6 +7,7 @@ import {
 } from '@mikro-orm/decorators/legacy';
 
 import { Game } from './game.entity';
+import type { GameProgressStructure } from './game.progress.structure';
 
 @Entity({ tableName: 'game_version' })
 @Unique({ properties: ['game', 'publisherVersion'] })
@@ -26,6 +27,9 @@ export class GameVersion {
 
 	@Property()
 	runUrl!: string;
+
+	@Property({ nullable: true, type: 'json' })
+	progressStructure?: GameProgressStructure;
 
 	@Property({ onCreate: () => new Date() })
 	createdAt?: Date;

@@ -34,6 +34,7 @@ import {
 	createAdminGame,
 	type CreateAdminGameInput,
 	createAdminGameVersion,
+	type AdminGameProgressStructure,
 	type CreateAdminGameVersionInput,
 	createAdminPublicGameListing,
 	type CreateAdminPublicGameListingInput,
@@ -334,6 +335,7 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 						onSubmit={async (input) => {
 							const updatedGame = await createAdminGameVersion(currentGame.id, {
 								...input,
+								progressStructure: input.progressStructure ?? undefined,
 								publishedAt: input.publishedAt ?? undefined,
 							});
 							setCurrentGame(updatedGame);
@@ -395,7 +397,10 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 	);
 }
 
-type AdminGameVersionFormInput = Omit<CreateAdminGameVersionInput, 'publishedAt'> & { publishedAt?: string | null };
+type AdminGameVersionFormInput = Omit<CreateAdminGameVersionInput, 'publishedAt' | 'progressStructure'> & {
+	publishedAt?: string | null;
+	progressStructure?: AdminGameProgressStructure | null;
+};
 
 function GameVersionForm({
 	onCancel,
@@ -410,17 +415,33 @@ function GameVersionForm({
 	const [description, setDescription] = useState(version?.description ?? '');
 	const [runUrl, setRunUrl] = useState(version?.runUrl ?? '');
 	const [publishedAt, setPublishedAt] = useState(toDateTimeInput(version?.publishedAt));
+	const [progressStructureJson, setProgressStructureJson] = useState(
+		version?.progressStructure ? JSON.stringify(version.progressStructure, null, 2) : '',
+	);
 	const [error, setError] = useState<string>();
 	const [isSaving, setSaving] = useState(false);
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
 		event.preventDefault();
 		setError(undefined);
+		let progressStructure: AdminGameProgressStructure | null | undefined;
+		if (progressStructureJson.trim()) {
+			try {
+				progressStructure = JSON.parse(progressStructureJson) as AdminGameProgressStructure;
+			} catch {
+				setError('Progress structure must be valid JSON.');
+				return;
+			}
+		} else if (version) {
+			progressStructure = null;
+		}
+
 		setSaving(true);
 		try {
 			await onSubmit({
 				description: description.trim() || undefined,
 				publishedAt: publishedAt ? new Date(publishedAt).toISOString() : version ? null : undefined,
+				progressStructure,
 				publisherVersion: publisherVersion.trim(),
 				runUrl: runUrl.trim(),
 			});
@@ -441,6 +462,7 @@ function GameVersionForm({
 				<label>Publisher version<input autoComplete="off" maxLength={120} onChange={(event) => setPublisherVersion(event.target.value)} required value={publisherVersion}/></label>
 				<label>Runtime URL<input autoComplete="url" onChange={(event) => setRunUrl(event.target.value)} placeholder="https://games.example.edu/runtime" required type="url" value={runUrl}/><span>Use the HTTPS URL that serves this game version.</span></label>
 				<label className="institution-form-description">Description<textarea maxLength={10000} onChange={(event) => setDescription(event.target.value)} rows={2} value={description}/></label>
+				<label className="institution-form-description">Progress structure (JSON)<textarea autoComplete="off" onChange={(event) => setProgressStructureJson(event.target.value)} placeholder={'{"schemaVersion":1,"sectionList":[{"sectionIndex":"0","label":"Act 1","metricList":[{"key":"points","label":"Points","pointsPossible":100}]}]}'} rows={10} value={progressStructureJson}/><span>Define dotted section indices and the metrics this version reports. Parent sections must exist.</span></label>
 				<label>Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/><span>Leave blank to save as a draft.</span></label>
 				<div className="game-version-date-shortcuts institution-form-description">
 					<Button onClick={() => setPublishedAt(toDateTimeInput(new Date().toISOString()))} size="sm" type="button" variant="outline">Publish now</Button>

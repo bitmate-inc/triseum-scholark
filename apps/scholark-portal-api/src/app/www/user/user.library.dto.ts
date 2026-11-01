@@ -1,6 +1,58 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import { UserLibraryItem } from '../../core/feature/catalog/query/get.user.library.query';
+import type { GameProgressSection, GameProgressSummary } from '../../core/feature/game/model/game.progress.snapshot.entity';
+
+class UserLibraryProgressSummaryResponseDto implements GameProgressSummary {
+
+	@ApiPropertyOptional({ type: Number, nullable: true })
+	playTimeSeconds?: number | null;
+
+	@ApiPropertyOptional({ nullable: true })
+	sessionCount?: number | null;
+
+	@ApiPropertyOptional({ type: Number, minimum: 0, maximum: 100, nullable: true })
+	completionPercent?: number | null;
+
+	@ApiPropertyOptional({ nullable: true })
+	completed?: boolean | null;
+
+	@ApiPropertyOptional({ type: Object, nullable: true })
+	metrics?: Record<string, number | null> | null;
+
+}
+
+class UserLibraryProgressSectionResponseDto implements GameProgressSection {
+
+	@ApiProperty({ maxLength: 200 })
+	sectionIndex!: string;
+
+	@ApiPropertyOptional({ minimum: 0, maximum: 100, type: Number, nullable: true })
+	completionPercent?: number | null;
+
+	@ApiPropertyOptional({ nullable: true })
+	completed?: boolean | null;
+
+	@ApiPropertyOptional({ type: Object, nullable: true })
+	metrics?: Record<string, number | null> | null;
+
+}
+
+class UserLibraryProgressResponseDto {
+
+	@ApiProperty({ minimum: 1 })
+	schemaVersion!: number;
+
+	@ApiProperty({ type: String, format: 'date-time' })
+	updatedAt!: Date;
+
+	@ApiPropertyOptional({ type: UserLibraryProgressSummaryResponseDto, nullable: true })
+	summary?: UserLibraryProgressSummaryResponseDto | null;
+
+	@ApiPropertyOptional({ type: [UserLibraryProgressSectionResponseDto] })
+	sectionList?: UserLibraryProgressSectionResponseDto[];
+
+}
 
 class UserLibraryGameResponseDto {
 
@@ -85,6 +137,9 @@ class UserLibraryItemResponseDto {
 	@ApiProperty()
 	acquisitionMechanism!: string;
 
+	@ApiPropertyOptional({ type: UserLibraryProgressResponseDto })
+	progress?: UserLibraryProgressResponseDto;
+
 }
 
 export class UserLibraryResponseDto {
@@ -96,7 +151,7 @@ export class UserLibraryResponseDto {
 		const now = new Date();
 
 		return {
-			itemList: result.map(({ license, acquisition }) => {
+			itemList: result.map(({ license, acquisition, progressSnapshot }) => {
 				const classroomGameListing = license.classroomGameListing;
 
 				return {
@@ -126,6 +181,11 @@ export class UserLibraryResponseDto {
 					startAt: license.startAt,
 					status: license.isActive(now) ? 'active' : license.startAt > now ? 'scheduled' : 'expired',
 					acquisitionMechanism: acquisition?.mechanism ?? 'unknown',
+					progress: progressSnapshot ? {
+						...progressSnapshot.content,
+						schemaVersion: progressSnapshot.schemaVersion,
+						updatedAt: progressSnapshot.updatedAt!,
+					} : undefined,
 				};
 			}),
 		};

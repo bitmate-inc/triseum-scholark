@@ -2,12 +2,14 @@ import {
 	Entity,
 	ManyToOne,
 	PrimaryKey,
+	Unique,
 } from '@mikro-orm/decorators/legacy';
 
 import { User } from '../../user/model/user.entity';
 import { Publisher } from './publisher.entity';
 
 @Entity({ tableName: 'publisher_member' })
+@Unique({ properties: ['publisher', 'user'] })
 export class PublisherMember {
 
 	@PrimaryKey({ defaultRaw: 'gen_random_uuid()', type: 'uuid' })

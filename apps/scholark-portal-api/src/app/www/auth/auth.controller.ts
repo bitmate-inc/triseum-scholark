@@ -36,6 +36,7 @@ import {
 	SendResetPasswordEmailCommandData
 } from '../../core/feature/account/command/send-email/send.reset-password.email.command';
 import { GetInstructorProfileQuery } from '../../core/feature/education/query/get.instructor.portal.query';
+import { GetPublisherRevenueReportQuery } from '../../core/feature/publisher/query/get.publisher.revenue.report.query';
 import { UserStatus } from '../../core/feature/user/model/user.entity';
 import { GetUserQuery, GetUserQueryData } from '../../core/feature/user/query/get.user.query';
 import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
@@ -66,6 +67,7 @@ export class AuthController {
 		private readonly verifyEmailAddressCommand: VerifyEmailAddressCommand,
 		private readonly getUserQuery: GetUserQuery,
 		private readonly getInstructorProfileQuery: GetInstructorProfileQuery,
+		private readonly getPublisherRevenueReportQuery: GetPublisherRevenueReportQuery,
 	) {
 	}
 
@@ -138,9 +140,10 @@ export class AuthController {
 	}
 
 	private async getUserResponse(userId: string): Promise<UserResponseDto> {
-		const [queryResult, instructor] = await Promise.all([
+		const [queryResult, instructor, hasPublisherAccess] = await Promise.all([
 			this.getUserQuery.execute(GetUserQueryData.create({ filterBy: { id: userId } })),
 			this.getInstructorProfileQuery.execute(userId),
+			this.getPublisherRevenueReportQuery.hasAccess(userId),
 		]);
 
 		if (!queryResult.user) {
@@ -149,7 +152,11 @@ export class AuthController {
 
 		return UserResponseDto.fromEntity(
 			queryResult.user,
-			instructor ? ['student', 'instructor'] : ['student'],
+			[
+				'student',
+				...(instructor ? ['instructor' as const] : []),
+				...(hasPublisherAccess ? ['publisher' as const] : []),
+			],
 		);
 	}
 

@@ -9,6 +9,7 @@ import { GetListRequestQueryParamsDto } from '../../../lib/http/request-query.dt
 import type { GetAdminGameListQueryData } from '../../core/feature/admin/query/get.admin.game.query';
 import { GameCustomization } from '../../core/feature/game/model/game.customization.entity';
 import { Game } from '../../core/feature/game/model/game.entity';
+import type { GameProgressStructure } from '../../core/feature/game/model/game.progress.structure';
 import { GameVersion } from '../../core/feature/game/model/game.version.entity';
 import { PublicGameListing } from '../../core/feature/game/model/public.game.listing.entity';
 import { MoneyDto } from '../catalog/game.dto';
@@ -168,6 +169,9 @@ export class AdminGameVersionResponseDto {
 	@ApiProperty({ format: 'uri' })
 	runUrl!: string;
 
+	@ApiPropertyOptional({ type: Object })
+	progressStructure?: GameProgressStructure;
+
 	@ApiPropertyOptional({ format: 'date-time', type: String })
 	publishedAt?: Date;
 
@@ -249,6 +253,7 @@ export class AdminGameResponseDto {
 				id: version.id!,
 				publishedAt: version.publishedAt,
 				publisherVersion: version.publisherVersion,
+				progressStructure: version.progressStructure,
 				runUrl: version.runUrl,
 				publicListingList: (publicListingsByVersionId.get(version.id!) ?? []).map(AdminGamePublicListingResponseDto.fromEntity),
 			})),

@@ -1,18 +1,22 @@
 import {
+	Body,
 	Controller,
 	Get,
 	NotFoundException,
 	Param,
 	ParseUUIDPipe,
+	Post,
 	UseGuards,
 } from '@nestjs/common';
 import {
 	ApiCookieAuth,
+	ApiCreatedResponse,
 	ApiNotFoundResponse,
 	ApiOkResponse,
 	ApiTags,
 } from '@nestjs/swagger';
 
+import { CreateClassroomGameGradingRuleCommand } from '../../core/feature/education/command/create.classroom.game.grading.rule.command';
 import {
 	GetInstructorClassroomListQuery,
 	GetInstructorClassroomQuery,
@@ -23,6 +27,8 @@ import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.
 import { SessionAuthGuard } from '../auth/session.auth.guard';
 import { InstructorAuthGuard } from './instructor.auth.guard';
 import {
+	CreateInstructorClassroomGameGradingRuleRequestDto,
+	InstructorClassroomGameGradingRuleResponseDto,
 	InstructorClassroomListResponseDto,
 	InstructorClassroomResponseDto,
 	InstructorProfileResponseDto,
@@ -38,6 +44,7 @@ export class InstructorController {
 		private readonly getInstructorProfileQuery: GetInstructorProfileQuery,
 		private readonly getInstructorClassroomListQuery: GetInstructorClassroomListQuery,
 		private readonly getInstructorClassroomQuery: GetInstructorClassroomQuery,
+		private readonly createClassroomGameGradingRuleCommand: CreateClassroomGameGradingRuleCommand,
 	) {}
 
 	@Get()
@@ -71,6 +78,24 @@ export class InstructorController {
 		}
 
 		return InstructorClassroomResponseDto.fromQueryResult(result);
+	}
+
+	@Post('classrooms/:classroomId/game-listings/:classroomGameListingId/grading-rules')
+	@ApiCreatedResponse({ type: InstructorClassroomGameGradingRuleResponseDto })
+	async createClassroomGameGradingRule(
+		@AuthSession() session: AuthSessionData,
+		@Param('classroomId', ParseUUIDPipe) classroomId: string,
+		@Param('classroomGameListingId', ParseUUIDPipe) classroomGameListingId: string,
+		@Body() body: CreateInstructorClassroomGameGradingRuleRequestDto,
+	): Promise<InstructorClassroomGameGradingRuleResponseDto> {
+		const gradingRule = await this.createClassroomGameGradingRuleCommand.execute({
+			classroomGameListingId,
+			classroomId,
+			config: body,
+			userId: session.user.id,
+		});
+
+		return InstructorClassroomGameGradingRuleResponseDto.fromEntity(gradingRule);
 	}
 
 }

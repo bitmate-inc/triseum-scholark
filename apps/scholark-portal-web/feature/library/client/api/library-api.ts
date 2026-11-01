@@ -22,8 +22,21 @@ export type UserLibraryItem = {
 	};
 	classroomGameListingId?: string;
 	progress?: {
-		completedCount: number;
-		totalCount: number;
+		schemaVersion: number;
+		updatedAt: string;
+		summary?: {
+			playTimeSeconds?: number | null;
+			sessionCount?: number | null;
+			completionPercent?: number | null;
+			completed?: boolean | null;
+			metrics?: Record<string, number | null> | null;
+		} | null;
+		sectionList?: Array<{
+			sectionIndex: string;
+			completionPercent?: number | null;
+			completed?: boolean | null;
+			metrics?: Record<string, number | null> | null;
+		}>;
 	};
 	startAt: string;
 	endAt: string;

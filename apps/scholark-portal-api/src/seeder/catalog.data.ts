@@ -1,5 +1,8 @@
+import { ClassroomGameGradingMethod, type ClassroomGameGradingRuleConfig } from '../app/core/feature/education/model/classroom.game.grading.rule.entity';
 import { ClassroomGameListingDesignatedPayor } from '../app/core/feature/education/model/classroom.game.listing.entity';
 import { EducationCatalogStatus } from '../app/core/feature/education/model/education.catalog.status';
+import type { GameProgressSnapshotContent } from '../app/core/feature/game/model/game.progress.snapshot.entity';
+import type { GameProgressStructure } from '../app/core/feature/game/model/game.progress.structure';
 import type { Media } from '../app/core/feature/media/model/media';
 import { TaxonomyType } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 import { Currency } from '../app/core/shared/commerce/model/currency';
@@ -19,6 +22,11 @@ export interface PublisherSeed {
 	name: string;
 	slug: string;
 	websiteUrl?: string;
+}
+
+export interface PublisherMemberSeed {
+	email: string;
+	publisherSlug: string;
 }
 
 export interface GameSeed {
@@ -49,6 +57,7 @@ export interface GameVersionSeed {
 	publisherVersion: string;
 	publishedAt: Date;
 	runUrl: string;
+	progressStructure?: GameProgressStructure;
 }
 
 export interface PublicListingSeed {
@@ -137,6 +146,21 @@ export interface AcquisitionCodeSeed {
 	expiresAt: Date;
 }
 
+export interface GameProgressSnapshotSeed {
+	id: string;
+	gameLicenseSeedId: string;
+	schemaVersion: number;
+	content: GameProgressSnapshotContent;
+}
+
+export interface ClassroomGameGradingRuleSeed {
+	id: string;
+	classroomGameListingSeedId: string;
+	createdByEmail: string;
+	revision: number;
+	config: ClassroomGameGradingRuleConfig;
+}
+
 type TaxonomyTermSeedInput = Pick<TaxonomyTermSeed, 'label' | 'slug' | 'type'> & {
 	isPrimary?: boolean;
 };
@@ -164,6 +188,13 @@ export const publisherSeedList: PublisherSeed[] = [
 		name: 'Triseum',
 		slug: 'triseum',
 		websiteUrl: 'https://triseum.com',
+	},
+];
+
+export const publisherMemberSeedList: PublisherMemberSeed[] = [
+	{
+		email: 'user1@scholark.com',
+		publisherSlug: 'triseum',
 	},
 ];
 
@@ -370,6 +401,23 @@ export const gameSeedList: GameSeed[] = [
 	},
 ];
 
+const mecenasProgressStructure: GameProgressStructure = {
+	schemaVersion: 1,
+	sectionList: [
+		{ sectionIndex: '0', label: 'Level 1', metricList: [{ key: 'points', label: 'Points', pointsPossible: 25 }, { key: 'turns', label: 'Turns' }] },
+		{ sectionIndex: '1', label: 'Level 2', metricList: [{ key: 'points', label: 'Points', pointsPossible: 25 }, { key: 'turns', label: 'Turns' }] },
+		{ sectionIndex: '2', label: 'Level 3', metricList: [{ key: 'points', label: 'Points', pointsPossible: 25 }, { key: 'turns', label: 'Turns' }] },
+		{ sectionIndex: '3', label: 'Level 4', metricList: [{ key: 'points', label: 'Points', pointsPossible: 25 }, { key: 'turns', label: 'Turns' }] },
+	],
+};
+
+const singleScoreProgressStructure: GameProgressStructure = {
+	schemaVersion: 1,
+	sectionList: [
+		{ sectionIndex: '0', label: 'Game progress', metricList: [{ key: 'points', label: 'Points', pointsPossible: 100 }] },
+	],
+};
+
 export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game, index) => [
 	{
 		gameSlug: game.slug,
@@ -378,6 +426,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		description: 'The initial published build of this learning experience.',
 		publisherVersion: '1.0.0',
 		runUrl: `https://play.triseum.com/${game.slug}`,
+		...(game.slug === 'shadow-of-the-plague' ? { progressStructure: singleScoreProgressStructure } : {}),
 	},
 	...(game.slug === 'arte-mecenas' ? [
 		{
@@ -394,6 +443,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 			publishedAt: new Date('2026-05-15T00:00:00.000Z'),
 			description: 'A shorter demo build for introductory exploration.',
 			publisherVersion: 'v1.4.1-demo',
+			progressStructure: mecenasProgressStructure,
 			runUrl: 'https://play.triseum.com/arte-mecenas/demo',
 		},
 	] : []),
@@ -403,6 +453,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 		publishedAt: new Date('2026-04-10T00:00:00.000Z'),
 		description: 'Refined scenarios focused on interpreting variation.',
 		publisherVersion: '1.1.0',
+		progressStructure: singleScoreProgressStructure,
 		runUrl: 'https://play.triseum.com/variant-limits',
 	}] : []),
 ]).concat({
@@ -705,7 +756,7 @@ export const classroomGameListingSeedList: ClassroomGameListingSeed[] = [
 	{
 		classroomSlug: 'limits-lab-fall-2026',
 		gameSlug: 'variant-limits',
-		gameVersionSeedId: gameVersionSeedList.find((version) => version.gameSlug === 'variant-limits')!.id,
+		gameVersionSeedId: '00000000-0000-4000-8000-000000000313',
 		designatedPayor: ClassroomGameListingDesignatedPayor.STUDENT,
 		id: '00000000-0000-4000-8000-000000000233',
 	},
@@ -782,6 +833,46 @@ export const userGameLicenseSeedList: UserGameLicenseSeed[] = [
 		publicListingSeedId: publicListingSeedList.find((seed) => seed.gameVersionSeedId === '00000000-0000-4000-8000-000000000313')!.id,
 		id: '00000000-0000-4000-8000-000000000345',
 		startAt: new Date('2026-09-01T00:00:00.000Z'),
+	},
+];
+
+export const gameProgressSnapshotSeedList: GameProgressSnapshotSeed[] = [
+	{
+		content: {
+			sectionList: [
+				{ sectionIndex: '0', metrics: { points: 24, turns: 22 }, completionPercent: 100, completed: true },
+				{ sectionIndex: '1', metrics: { points: 21, turns: 24 }, completionPercent: 100, completed: true },
+				{ sectionIndex: '2', metrics: { points: 20, turns: 21 }, completionPercent: 100, completed: true },
+				{ sectionIndex: '3', metrics: { points: 20, turns: 23 }, completionPercent: 100, completed: true },
+			],
+			summary: {
+				completed: true,
+				completionPercent: 85,
+				metrics: { points: 85, turns: 90 },
+				playTimeSeconds: 12_300,
+				sessionCount: 8,
+			},
+		},
+		gameLicenseSeedId: '00000000-0000-4000-8000-000000000341',
+		id: '00000000-0000-4000-8000-000000000352',
+		schemaVersion: 1,
+	},
+];
+
+export const classroomGameGradingRuleSeedList: ClassroomGameGradingRuleSeed[] = [
+	{
+		classroomGameListingSeedId: '00000000-0000-4000-8000-000000000231',
+		config: {
+			allowPartial: false,
+			method: ClassroomGameGradingMethod.POINTS,
+			progressSchemaVersion: 1,
+			schemaVersion: 1,
+			scoreMaximum: 100,
+			sectionIndexList: ['0', '1', '2', '3'],
+		},
+		createdByEmail: 'user2@scholark.com',
+		id: '00000000-0000-4000-8000-000000000353',
+		revision: 1,
 	},
 ];
 

@@ -1,9 +1,13 @@
 import { EntityManager } from '@mikro-orm/postgresql';
 
 import { GameLicense } from '../../game/model/game.license.entity';
+import { GameProgressSnapshot } from '../../game/model/game.progress.snapshot.entity';
 import { Classroom } from '../model/classroom.entity';
+import { ClassroomGameGradingRule } from '../model/classroom.game.grading.rule.entity';
 import { ClassroomGameListing } from '../model/classroom.game.listing.entity';
+import { GameGradeResult } from '../model/game.grade.result.entity';
 import { InstructorUser } from '../model/instructor.user.entity';
+import { getGameProgressSnapshotHash } from '../service/game.progress.snapshot.hash';
 import { GetInstructorClassroomQuery } from './get.instructor.portal.query';
 
 describe('GetInstructorClassroomQuery', () => {
@@ -22,12 +26,30 @@ describe('GetInstructorClassroomQuery', () => {
 		const classroom = { id: 'classroom-1' };
 		const listingList = [{ id: 'listing-1' }];
 		const licenseList = [{ id: 'license-1' }];
+		const gradingRuleList = [{ classroomGameListing: { id: 'listing-1' }, revision: 1 }];
+		const progressContent = { summary: { completionPercent: 85 } };
+		const progressSnapshotList = [{
+			content: progressContent,
+			gameLicense: { id: 'license-1' },
+			schemaVersion: 1,
+		}];
+		const gradeResultList = [
+			{ gameLicense: { id: 'license-1' }, gradingRule: gradingRuleList[0], sourceProgressHash: 'stale-hash' },
+			{
+				gameLicense: { id: 'license-1' },
+				gradingRule: gradingRuleList[0],
+				sourceProgressHash: getGameProgressSnapshotHash(1, progressContent),
+			},
+		];
 		findOne
 			.mockResolvedValueOnce(instructorUser)
 			.mockResolvedValueOnce(classroom);
 		find
 			.mockResolvedValueOnce(listingList)
-			.mockResolvedValueOnce(licenseList);
+			.mockResolvedValueOnce(licenseList)
+			.mockResolvedValueOnce(gradingRuleList)
+			.mockResolvedValueOnce(progressSnapshotList)
+			.mockResolvedValueOnce(gradeResultList);
 
 		const result = await query.execute('user-1', 'classroom-1');
 
@@ -55,10 +77,30 @@ describe('GetInstructorClassroomQuery', () => {
 			{ classroomGameListing: { id: { $in: ['listing-1'] } } },
 			expect.objectContaining({ populate: ['user', 'classroomGameListing'] }),
 		);
+		expect(find).toHaveBeenNthCalledWith(
+			3,
+			ClassroomGameGradingRule,
+			{ classroomGameListing: { id: { $in: ['listing-1'] } } },
+			expect.objectContaining({ orderBy: { revision: 'DESC' } }),
+		);
+		expect(find).toHaveBeenNthCalledWith(
+			4,
+			GameProgressSnapshot,
+			{ gameLicense: { $in: licenseList } },
+		);
+		expect(find).toHaveBeenNthCalledWith(
+			5,
+			GameGradeResult,
+			expect.objectContaining({ gameLicense: { $in: licenseList } }),
+			expect.objectContaining({ populate: ['gradingRule'] }),
+		);
 		expect(result).toEqual({
 			classroom,
 			classroomGameListingList: listingList,
 			gameLicenseList: licenseList,
+			progressSnapshotList,
+			gradingRuleList,
+			gradeResultList: [gradeResultList[1]],
 		});
 	});
 
@@ -72,6 +114,9 @@ describe('GetInstructorClassroomQuery', () => {
 
 		expect(find).toHaveBeenCalledTimes(1);
 		expect(result?.gameLicenseList).toEqual([]);
+		expect(result?.progressSnapshotList).toEqual([]);
+		expect(result?.gradingRuleList).toEqual([]);
+		expect(result?.gradeResultList).toEqual([]);
 	});
 
 	it('returns no classroom data when the instructor is not assigned', async () => {

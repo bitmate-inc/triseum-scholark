@@ -5,6 +5,8 @@ import {
 	NotFoundException
 } from '@nestjs/common';
 
+import type { GameProgressStructure } from '../../game/model/game.progress.structure';
+import { validateGameProgressStructure } from '../../game/model/game.progress.structure';
 import { GameVersion } from '../../game/model/game.version.entity';
 import { GameRepository } from '../../game/repository/game.repository';
 import { GameVersionRepository } from '../../game/repository/game.version.repository';
@@ -14,6 +16,7 @@ export interface CreateAdminGameVersionCommandData {
 	gameId: string;
 	publishedAt?: Date;
 	publisherVersion: string;
+	progressStructure?: GameProgressStructure;
 	runUrl: string;
 }
 
@@ -26,6 +29,13 @@ export class CreateAdminGameVersionCommand {
 	) {}
 
 	async execute(data: CreateAdminGameVersionCommandData): Promise<GameVersion> {
+		const structureValidationError = data.progressStructure
+			? validateGameProgressStructure(data.progressStructure)
+			: undefined;
+		if (structureValidationError) {
+			throw new BadRequestException(structureValidationError);
+		}
+
 		const game = await this.gameRepository.findOneBy({ id: data.gameId });
 		if (!game) {
 			throw new NotFoundException('Game not found.');
@@ -43,6 +53,7 @@ export class CreateAdminGameVersionCommand {
 			game,
 			publishedAt: data.publishedAt,
 			publisherVersion,
+			progressStructure: data.progressStructure,
 			runUrl: data.runUrl.trim(),
 		});
 		await this.gameVersionRepository.save(version);

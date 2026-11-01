@@ -214,6 +214,15 @@ erDiagram
         datetime updatedAt
     }
 
+    CLASSROOM_GAME_GRADING_RULE {
+        uuid id PK
+        uuid classroomGameListingId FK
+        uuid createdById FK
+        int revision
+        json config
+        datetime createdAt
+    }
+
     INSTITUTION ||--o{ COURSE : offers
     INSTITUTION ||--o{ CLASSROOM : contains
     INSTITUTION }o--o{ INSTRUCTOR : has_instructors
@@ -223,6 +232,8 @@ erDiagram
     CLASSROOM ||--o{ CLASSROOM_GAME_LISTING : lists
     GAME_VERSION ||--o{ CLASSROOM_GAME_LISTING : selected_for
     GAME_CUSTOMIZATION o|--o{ CLASSROOM_GAME_LISTING : optionally_customizes
+    CLASSROOM_GAME_LISTING ||--o{ CLASSROOM_GAME_GRADING_RULE : defines_grading
+    USER ||--o{ CLASSROOM_GAME_GRADING_RULE : authors
 
     %% Licenses, purchases, redemptions, and payment processing
     GAME_LICENSE {
@@ -346,6 +357,26 @@ erDiagram
         datetime savedAt
     }
 
+    GAME_PROGRESS_SNAPSHOT {
+        uuid id PK
+        uuid gameLicenseId FK UK
+        int schemaVersion
+        json content
+        datetime updatedAt
+    }
+
+    GAME_GRADE_RESULT {
+        uuid id PK
+        uuid gameLicenseId FK
+        uuid gradingRuleId FK
+        uuid progressSnapshotId FK
+        string sourceProgressHash
+        datetime sourceProgressUpdatedAt
+        json sourceProgressContent
+        json content
+        datetime createdAt
+    }
+
     GAME_PLAY_EVENT {
         uuid id PK
         uuid gameLicenseId FK
@@ -360,6 +391,10 @@ erDiagram
 
     GAME_LICENSE ||--o| GAME_STATE : stores_state
     GAME_VERSION ||--o{ GAME_STATE : versions_state
+    GAME_LICENSE ||--o| GAME_PROGRESS_SNAPSHOT : stores_progress
+    GAME_LICENSE ||--o{ GAME_GRADE_RESULT : receives_grade
+    CLASSROOM_GAME_GRADING_RULE ||--o{ GAME_GRADE_RESULT : calculates
+    GAME_PROGRESS_SNAPSHOT ||--o{ GAME_GRADE_RESULT : grades_snapshot
     GAME_LICENSE ||--o{ GAME_PLAY_EVENT : emits
     GAME_VERSION ||--o{ GAME_PLAY_EVENT : versions_events
 ```
@@ -378,6 +413,9 @@ erDiagram
 - `GamePaymentAttempt.stripeCheckoutSessionId` is unique when present.
 - `GameAcquisition.codeRedemption` and `GameAcquisition.paymentAttempt` are each unique when present.
 - `GameState.gameLicense` is unique.
+- `GameProgressSnapshot.gameLicense` is unique.
+- `ClassroomGameGradingRule(classroomGameListing, revision)` is unique.
+- `GameGradeResult(gameLicense, gradingRule, sourceProgressHash)` is unique.
 - `GamePlayEvent(gameLicense, eventId)` is unique.
 - `StripeWebhookEvent.stripeEventId` is unique.
 
@@ -393,3 +431,7 @@ Money = { minorUnitAmount: integer, currency: Currency }
 Payment attempts snapshot the selected price, language, course type, license duration, and customization; fulfillment uses those values rather than rereading mutable listing configuration. Listing windows are half-open `[startAt, endAt)` intervals, so adjacent windows do not overlap. A publisher cannot have overlapping windows for the same GameVersion and configuration, and a classroom cannot have overlapping windows for the same GameVersion and configuration. Published classroom listing terms are immutable. Published public listing terms are immutable except that `endAt` may be moved earlier to close the listing. Acquisition codes are stored as digests and are scoped directly to a classroom game listing. Account session records are managed outside this relational model.
 
 Optional entity references in the diagram correspond to nullable MikroORM relations. Payment source exclusivity and other transactional acquisition rules are enforced in application workflows rather than by additional database relationships.
+
+`GameState` is the latest game-owned resume snapshot. `GameProgressSnapshot` is a separate, replaceable, versioned summary for one license; its JSON `content` contains optional summary metrics and a flexible `sectionList` with optional parent keys, awarded/possible points, completion percentage/status, and named metrics. Completion percentages are stored as supplied; the API does not infer `completed` using a platform-wide threshold. `GamePlayEvent` remains the append-only source event history.
+
+`ClassroomGameGradingRule` is an immutable revision scoped to one `ClassroomGameListing`, so it applies to that classroom's exact GameVersion. Its `config` selects progress sections and the scoring method. `GameGradeResult` stores the calculated score, status, rule revision reference, source snapshot content/update time, and a canonical source-content hash for idempotent recalculation; changing a rule or progress snapshot creates a distinct result rather than rewriting progress or prior grades. The initial calculation supports selected-points normalization and an explicit completion threshold. LMS line-item export format and student identifier mapping are not represented in this domain model.

@@ -5,15 +5,19 @@ import { AccountIdentity, AccountIdentityProvider } from '../app/core/feature/ac
 import { AdminUser } from '../app/core/feature/admin/model/admin.user.entity';
 import { User } from '../app/core/feature/user/model/user.entity';
 import { BCryptPasswordEncoder } from '../lib/security/encoder/bcrypt.password-encoder';
-import { userSeedList } from './user.data';
+import { type UserSeed,userSeedList as defaultUserSeedList } from './user.data';
 
 export class UserSeeder extends Seeder {
+
+	protected get userSeedList(): UserSeed[] {
+		return defaultUserSeedList;
+	}
 
 	async run(em: EntityManager): Promise<void> {
 		await em.transactional(async (transactionalEm) => {
 			const passwordEncoder = new BCryptPasswordEncoder();
 
-			for (const userSeed of userSeedList) {
+			for (const userSeed of this.userSeedList) {
 				const email = userSeed.email.trim().toLowerCase();
 				let user = await transactionalEm.findOne(User, { email });
 

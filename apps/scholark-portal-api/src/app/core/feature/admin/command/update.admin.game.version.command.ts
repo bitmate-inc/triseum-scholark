@@ -5,6 +5,8 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 
+import type { GameProgressStructure } from '../../game/model/game.progress.structure';
+import { validateGameProgressStructure } from '../../game/model/game.progress.structure';
 import { GameVersion } from '../../game/model/game.version.entity';
 import { GameVersionRepository } from '../../game/repository/game.version.repository';
 
@@ -12,6 +14,7 @@ export interface UpdateAdminGameVersionCommandData {
 	description?: string;
 	publishedAt?: Date | null;
 	publisherVersion?: string;
+	progressStructure?: GameProgressStructure | null;
 	runUrl?: string;
 }
 
@@ -34,6 +37,12 @@ export class UpdateAdminGameVersionCommand {
 		if (version.isPublished()) {
 			throw new ConflictException('Published game versions are immutable.');
 		}
+		const structureValidationError = data.progressStructure
+			? validateGameProgressStructure(data.progressStructure)
+			: undefined;
+		if (structureValidationError) {
+			throw new BadRequestException(structureValidationError);
+		}
 
 		const publisherVersion = data.publisherVersion?.trim();
 		if (publisherVersion && publisherVersion !== version.publisherVersion) {
@@ -47,6 +56,9 @@ export class UpdateAdminGameVersionCommand {
 		}
 		if (data.runUrl !== undefined) {
 			version.runUrl = data.runUrl.trim();
+		}
+		if (Object.prototype.hasOwnProperty.call(data, 'progressStructure')) {
+			version.progressStructure = data.progressStructure ?? undefined;
 		}
 		if (Object.prototype.hasOwnProperty.call(data, 'publishedAt')) {
 			version.publishedAt = data.publishedAt ?? undefined;

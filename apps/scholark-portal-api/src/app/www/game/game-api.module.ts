@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 
 import { GamePlayEvent } from '../../core/feature/game/model/game.play.event.entity';
+import { GameProgressSnapshot } from '../../core/feature/game/model/game.progress.snapshot.entity';
 import { GameState } from '../../core/feature/game/model/game.state.entity';
 import { GameApiController } from './game-api.controller';
 import { GameContentProxyMiddleware } from './game-content-proxy.middleware';
@@ -15,7 +16,7 @@ import { GameLaunchSessionService } from './game-launch-session.service';
 
 @Module({
 	controllers: [GameApiController],
-	imports: [MikroOrmModule.forFeature([GamePlayEvent, GameState])],
+	imports: [MikroOrmModule.forFeature([GamePlayEvent, GameProgressSnapshot, GameState])],
 	providers: [GameContentProxyMiddleware, GameInteractionService, GameLaunchSessionService],
 })
 export class GameApiModule implements NestModule {

@@ -574,6 +574,7 @@ export class AdminController {
 			description: body.description,
 			gameId: id,
 			publishedAt: body.publishedAt ? new Date(body.publishedAt) : undefined,
+			progressStructure: body.progressStructure,
 			publisherVersion: body.publisherVersion,
 			runUrl: body.runUrl,
 		});
@@ -594,9 +595,10 @@ export class AdminController {
 		@Param('versionId', ParseUUIDPipe) versionId: string,
 		@Body() body: UpdateAdminGameVersionRequestDto,
 	): Promise<GetAdminGameResponseDto> {
-		const { publishedAt, ...fields } = body;
+		const { publishedAt, progressStructure, ...fields } = body;
 		await this.updateAdminGameVersionCommand.execute(id, versionId, {
 			...fields,
+			...(progressStructure === undefined ? {} : { progressStructure }),
 			...(publishedAt === undefined ? {} : { publishedAt: publishedAt === null ? null : new Date(publishedAt) }),
 		});
 		const result = await this.getAdminGameQuery.execute({ filterBy: { id } });
