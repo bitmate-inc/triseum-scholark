@@ -21,7 +21,6 @@ describe(calculateClassroomGameGrade.name, () => {
 			],
 			summary: { completed: true },
 		}, {
-			allowPartial: false,
 			method: ClassroomGameGradingMethod.POINTS,
 			progressSchemaVersion: 1,
 			schemaVersion: 1,
@@ -48,7 +47,6 @@ describe(calculateClassroomGameGrade.name, () => {
 			sectionList: [{ sectionIndex: '0', metrics: { points: null } }],
 			summary: { completed: true },
 		}, {
-			allowPartial: false,
 			method: ClassroomGameGradingMethod.POINTS,
 			progressSchemaVersion: 1,
 			schemaVersion: 1,
@@ -63,7 +61,6 @@ describe(calculateClassroomGameGrade.name, () => {
 		const result = calculateClassroomGameGrade(1, progressStructure, {
 			sectionList: [{ sectionIndex: '0', metrics: {} }],
 		}, {
-			allowPartial: false,
 			method: ClassroomGameGradingMethod.POINTS,
 			progressSchemaVersion: 1,
 			schemaVersion: 1,
@@ -74,11 +71,10 @@ describe(calculateClassroomGameGrade.name, () => {
 		expect(result).toMatchObject({ activityProgress: 'unknown', gradingProgress: 'not_ready', scoreGiven: null });
 	});
 
-	it('returns a pending partial score only when the rule permits it', () => {
+	it('returns a pending live score while points progress is incomplete', () => {
 		const result = calculateClassroomGameGrade(1, progressStructure, {
 			sectionList: [{ sectionIndex: '0', metrics: { points: 25 }, completed: false }],
 		}, {
-			allowPartial: true,
 			method: ClassroomGameGradingMethod.POINTS,
 			progressSchemaVersion: 1,
 			schemaVersion: 1,
@@ -95,7 +91,6 @@ describe(calculateClassroomGameGrade.name, () => {
 		const result = calculateClassroomGameGrade(1, summaryOnlyStructure, {
 			summary: { completionPercent: 60 },
 		}, {
-			allowPartial: false,
 			completionThresholdPercent: 60,
 			method: ClassroomGameGradingMethod.COMPLETION_THRESHOLD,
 			progressSchemaVersion: 1,
@@ -109,7 +104,6 @@ describe(calculateClassroomGameGrade.name, () => {
 
 	it('rejects a rule for a different source progress schema', () => {
 		const result = calculateClassroomGameGrade(2, progressStructure, { summary: { completed: true } }, {
-			allowPartial: false,
 			method: ClassroomGameGradingMethod.POINTS,
 			progressSchemaVersion: 1,
 			schemaVersion: 1,
@@ -135,7 +129,6 @@ describe(calculateClassroomGameGrade.name, () => {
 			],
 			summary: { completed: true },
 		}, {
-			allowPartial: false,
 			method: ClassroomGameGradingMethod.POINTS,
 			progressSchemaVersion: 1,
 			schemaVersion: 1,

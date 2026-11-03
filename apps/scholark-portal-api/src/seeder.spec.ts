@@ -43,5 +43,23 @@ describe('Triseum seed profiles', () => {
 		expect(triseumClassroomSeedData.publisherMemberSeedList).toEqual([
 			{ email: 'user1@scholark.com', publisherSlug: 'triseum' },
 		]);
+		expect(triseumClassroomSeedData.gameProgressSnapshotSeedList).toMatchObject([
+			{
+				gameLicenseSeedId: '00000000-0000-4000-8000-000000000905',
+				schemaVersion: 1,
+				content: {
+					sectionList: expect.arrayContaining([
+						expect.objectContaining({ sectionIndex: '0', metrics: { points: 24, turns: 21 } }),
+					]),
+					summary: { completionPercent: 62 },
+				},
+			},
+		]);
+		expect(triseumClassroomSeedData.classroomGameGradingRuleSeedList).toMatchObject([
+			{
+				classroomGameListingSeedId: triseumClassroomSeedData.classroomGameListingSeedList[0].id,
+				config: { scoreMaximum: 100, sectionIndexList: ['0', '1', '2', '3'] },
+			},
+		]);
 	});
 });

@@ -26,7 +26,7 @@ src/lib/                        Adapted, app-local reusable primitives
 
 Instructor grading rules are revisioned per ClassroomGameListing and calculate a numeric result from a license-scoped GameProgressSnapshot. LMS file export remains format-specific work; the pilot LMS format and stable external student identifier must be selected before an export adapter is added.
 
-Instructors publish a new rule revision with `POST /api/v1/instructor/me/classrooms/{classroomId}/game-listings/{classroomGameListingId}/grading-rules`. The classroom response includes current progress, the latest result for the current rule, and rule status. Rule revisions and calculated results are retained; changing progress or publishing a new rule recalculates without rewriting prior results.
+Instructors publish a new rule revision with `POST /api/v1/instructor/me/classrooms/{classroomId}/game-listings/{classroomGameListingId}/grading-rules`. The classroom response includes current progress, the latest result for the current rule, and rule status. While a ClassroomGameListing is active, progress and rule changes recalculate the grade while retaining prior results. At `endAt`, the grade freezes using the latest eligible progress and rule created on or before that cutoff. Later progress remains available but does not affect the grade, and grading-rule changes are rejected.
 
 Controllers remain thin and delegate to one-use-case command or query classes. Features own their models and repositories. Infrastructure exposes technical capabilities and must not contain business workflows.
 

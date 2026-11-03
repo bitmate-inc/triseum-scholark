@@ -23,6 +23,10 @@ function formatDate(value: string, locale: string): string {
 	return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(value));
 }
 
+function formatNumber(value: number, locale: string): string {
+	return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(value);
+}
+
 function shortId(id: string): string {
 	return id.replaceAll("-", "").slice(0, 7);
 }
@@ -34,28 +38,24 @@ function sortLibraryItems<Item extends { createdAt: string; id: string }>(itemLi
 	});
 }
 
-type ProgressSummary = { percentage: number };
-
-function getProgressSummary(item: UserLibraryItem): ProgressSummary | undefined {
+function getProgressPercentage(item: UserLibraryItem): number | undefined {
 	const completionPercent = item.progress?.summary?.completionPercent;
 	if (typeof completionPercent !== "number" || !Number.isFinite(completionPercent)) {
 		return undefined;
 	}
 
-	return { percentage: Math.round(Math.max(0, Math.min(100, completionPercent))) };
+	return Math.round(Math.max(0, Math.min(100, completionPercent)));
 }
 
-function getSampleProgressSummary(item: UserLibraryItem): ProgressSummary {
-	const sampleIndex = [...item.id].reduce((total, character) => total + character.charCodeAt(0), 0) % 10;
-	return { percentage: (sampleIndex + 1) * 10 };
-}
-
-function LibraryItemCard({ item, showProgress }: { item: UserLibraryItem; showProgress: boolean }) {
+function LibraryItemCard({ item }: { item: UserLibraryItem }) {
 	const locale = useLocale();
 	const t = useTranslations("library");
-	const realProgress = showProgress ? getProgressSummary(item) : undefined;
-	const isSampleProgress = showProgress && !realProgress && process.env.NODE_ENV !== "production";
-	const progress = realProgress ?? (isSampleProgress ? getSampleProgressSummary(item) : undefined);
+	const progress = item.progress;
+	const progressPercentage = getProgressPercentage(item);
+	const sectionList = progress?.sectionList ?? [];
+	const summaryMetricList = Object.entries(progress?.summary?.metrics ?? {});
+	const progressStructure = item.gameVersion.progressStructure;
+	const gradeResult = item.gradeResult;
 	const itemClassName = item.status === "expired" ? `${styles.item} ${styles.expiredItem}` : styles.item;
 
 	return (
@@ -76,19 +76,100 @@ function LibraryItemCard({ item, showProgress }: { item: UserLibraryItem; showPr
 			{progress ? (
 				<div className={styles.progressSection}>
 					<div className={styles.progressHeading}>
-						<span className={styles.progressSummary}>{t("progress")} <strong>{progress.percentage}%</strong></span>
+						<span className={styles.progressSummary}>
+							{t("progress")}
+							{progressPercentage !== undefined ? <strong>{progressPercentage}%</strong> : null}
+						</span>
 					</div>
-					<div
-						className={styles.progressTrack}
-						role="progressbar"
-						aria-label={t("overallProgress", { gameTitle: item.game.title })}
-						aria-valuemin={0}
-						aria-valuemax={100}
-						aria-valuenow={progress.percentage}
-						aria-valuetext={t("progressPercentage", { percentage: progress.percentage })}
-					>
-						<span className={styles.progressFill} style={{ width: `${progress.percentage}%` }}/>
+					{progressPercentage !== undefined ? (
+						<div
+							className={styles.progressTrack}
+							role="progressbar"
+							aria-label={t("overallProgress", { gameTitle: item.game.title })}
+							aria-valuemin={0}
+							aria-valuemax={100}
+							aria-valuenow={progressPercentage}
+							aria-valuetext={t("progressPercentage", { percentage: progressPercentage })}
+						>
+							<span className={styles.progressFill} style={{ width: `${progressPercentage}%` }}/>
+						</div>
+					) : null}
+					{sectionList.length || summaryMetricList.length ? (
+						<details className={styles.progressDetails}>
+							<summary>{t("progressDetails")}</summary>
+							<p className={styles.progressContext}>{t("progressSchemaVersion", { version: progress.schemaVersion })}</p>
+							<ul>
+								{sectionList.map((section) => {
+									const structureMatches = progressStructure?.schemaVersion === progress.schemaVersion;
+									const sectionDefinition = structureMatches
+										? progressStructure.sectionList.find((definition) => definition.sectionIndex === section.sectionIndex)
+										: undefined;
+									const metricDefinitionList = sectionDefinition?.metricList ?? [];
+									const metricLineList = metricDefinitionList.map((metric) => {
+										const value = section.metrics?.[metric.key];
+										const formattedValue = value == null
+											? t("progressUnavailable")
+											: metric.pointsPossible == null
+												? formatNumber(value, locale)
+												: `${formatNumber(value, locale)} / ${formatNumber(metric.pointsPossible, locale)}`;
+										return `${metric.label}: ${formattedValue}`;
+									});
+									const unconfiguredMetricLineList = Object.entries(section.metrics ?? {})
+										.filter(([key]) => !metricDefinitionList.some((metric) => metric.key === key))
+										.map(([key, value]) => `${key}: ${value == null ? t("progressUnavailable") : formatNumber(value, locale)}`);
+									if (section.completionPercent != null) {
+										metricLineList.push(`${t("sectionCompletion")}: ${formatNumber(section.completionPercent, locale)}%`);
+									}
+
+									return (
+										<li key={section.sectionIndex}>
+											<strong>{sectionDefinition?.label ?? t("sectionIndexFallback", { sectionIndex: section.sectionIndex })}</strong>
+											<span>{[...metricLineList, ...unconfiguredMetricLineList].join(" · ") || t("progressUnavailable")}</span>
+										</li>
+									);
+								})}
+								{summaryMetricList.length ? (
+									<li>
+										<strong>{t("summaryMetrics")}</strong>
+										<span>{summaryMetricList.map(([key, value]) => `${key}: ${value == null
+											? t("progressUnavailable")
+											: formatNumber(value, locale)}`).join(" · ")}</span>
+									</li>
+								) : null}
+							</ul>
+						</details>
+					) : null}
+				</div>
+			) : null}
+			{gradeResult ? (
+				<div className={styles.gradeSection}>
+					<div className={styles.progressHeading}>
+						<span className={styles.progressSummary}>{t("grade")}</span>
+						<strong>{gradeResult.content.scoreGiven == null
+							? t("gradeUnavailable")
+							: `${formatNumber(gradeResult.content.scoreGiven, locale)} / ${formatNumber(gradeResult.content.scoreMaximum, locale)}`}</strong>
 					</div>
+					<div className={styles.gradeMeta}>
+						<span>{t(`gradingStatus.${gradeResult.content.gradingProgress}`)}</span>
+						<span>{t("gradingRuleRevision", { revision: gradeResult.ruleRevision })}</span>
+					</div>
+					{gradeResult.content.sectionResultList.length ? (
+						<details className={styles.progressDetails}>
+							<summary>{t("gradeDetails")}</summary>
+							<ul>
+								{gradeResult.content.sectionResultList.map((section) => (
+									<li key={section.sectionIndex}>
+										<strong>{section.label}</strong>
+										<span>{t("gradeSectionValue", {
+											percentage: formatNumber(section.percentage, locale),
+											points: formatNumber(section.points, locale),
+											pointsPossible: formatNumber(section.pointsPossible, locale),
+										})}</span>
+									</li>
+								))}
+							</ul>
+						</details>
+					) : null}
 				</div>
 			) : null}
 		</article>
@@ -148,10 +229,10 @@ function LibraryView({ mode = "classroom" }: { mode?: LibraryMode }) {
 							<div className={styles.sectionHeading}>
 								<h3><Link className={styles.classroomLink} href={`/classroom/${classroom.slug}`}>{classroom.name}</Link></h3>
 							</div>
-							<div className={styles.list}>{sortLibraryItems(classroomItemList).map((item) => <LibraryItemCard item={item} showProgress key={item.id}/>)}</div>
+							<div className={styles.list}>{sortLibraryItems(classroomItemList).map((item) => <LibraryItemCard item={item} key={item.id}/>)}</div>
 						</div>
 					)) : (
-						<div className={styles.list}>{statusItemList.map((item) => <LibraryItemCard item={item} showProgress={false} key={item.id}/>)}</div>
+						<div className={styles.list}>{statusItemList.map((item) => <LibraryItemCard item={item} key={item.id}/>)}</div>
 					)}
 				</section>
 			)) : (

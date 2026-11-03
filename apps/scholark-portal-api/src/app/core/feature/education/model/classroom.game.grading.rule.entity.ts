@@ -21,7 +21,6 @@ export type ClassroomGameGradingRuleConfig = {
 	sectionIndexList: string[];
 	scoreMaximum: number;
 	completionThresholdPercent?: number;
-	allowPartial: boolean;
 };
 
 @Entity({ tableName: 'classroom_game_grading_rule' })

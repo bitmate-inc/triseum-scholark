@@ -3,7 +3,6 @@ import {
 	ArrayMaxSize,
 	ArrayUnique,
 	IsArray,
-	IsBoolean,
 	IsEnum,
 	IsInt,
 	IsNumber,
@@ -75,10 +74,6 @@ export class CreateInstructorClassroomGameGradingRuleRequestDto {
 	@Min(0)
 	@Max(100)
 	completionThresholdPercent?: number;
-
-	@ApiProperty()
-	@IsBoolean()
-	allowPartial!: boolean;
 
 }
 
@@ -401,6 +396,9 @@ class InstructorClassroomGameListingResponseDto {
 	gameTitle!: string;
 
 	@ApiProperty()
+	isGradingFinalized!: boolean;
+
+	@ApiProperty()
 	publisherVersion!: string;
 
 	@ApiProperty({ type: [InstructorStudentResponseDto] })
@@ -433,6 +431,7 @@ class InstructorClassroomGameListingResponseDto {
 
 		return {
 			gameTitle: classroomGameListing.gameVersion.game.title,
+			isGradingFinalized: classroomGameListing.isExpired(referenceDate),
 			gradingRule: gradingRule ? InstructorClassroomGameGradingRuleResponseDto.fromEntity(gradingRule) : undefined,
 			id: classroomGameListing.id!,
 			progressStructure: classroomGameListing.gameVersion.progressStructure,

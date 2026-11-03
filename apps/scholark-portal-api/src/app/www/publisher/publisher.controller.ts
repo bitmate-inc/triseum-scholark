@@ -1,6 +1,7 @@
 import {
 	Controller,
 	Get,
+	Query,
 	UseGuards,
 } from '@nestjs/common';
 import {
@@ -15,7 +16,7 @@ import { AuthSession } from '../../core/infrastructure/auth/auth.decorator';
 import type { AuthSessionData } from '../../core/infrastructure/auth/model/auth.session.model';
 import { SessionAuthGuard } from '../auth/session.auth.guard';
 import { PublisherAuthGuard } from './publisher.auth.guard';
-import { PublisherRevenueReportResponseDto } from './publisher.dto';
+import { GetPublisherRevenueReportQueryDto, PublisherRevenueReportResponseDto } from './publisher.dto';
 
 @ApiTags('Publisher Portal')
 @ApiCookieAuth()
@@ -28,8 +29,11 @@ export class PublisherController {
 
 	@Get('revenue')
 	@ApiOkResponse({ type: PublisherRevenueReportResponseDto })
-	async getRevenue(@AuthSession() session: AuthSessionData): Promise<PublisherRevenueReportResponseDto> {
-		const result = await this.getPublisherRevenueReportQuery.execute(session.user.id);
+	async getRevenue(
+		@AuthSession() session: AuthSessionData,
+		@Query() query: GetPublisherRevenueReportQueryDto,
+	): Promise<PublisherRevenueReportResponseDto> {
+		const result = await this.getPublisherRevenueReportQuery.execute(session.user.id, query);
 		return PublisherRevenueReportResponseDto.fromQueryResult(result);
 	}
 

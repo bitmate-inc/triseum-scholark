@@ -87,12 +87,6 @@ export function calculateClassroomGameGrade(
 	const complete = activityProgress === 'completed';
 	result.sectionResultList = sectionResultList;
 	result.percentage = percentage;
-
-	if (!complete && !config.allowPartial) {
-		result.gradingProgress = activityProgress === 'unknown' ? 'not_ready' : 'pending';
-		return result;
-	}
-
 	result.scoreGiven = percentage / 100 * config.scoreMaximum;
 	result.gradingProgress = complete ? 'fully_graded' : 'pending';
 	return result;

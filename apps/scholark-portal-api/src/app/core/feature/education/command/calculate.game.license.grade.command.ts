@@ -26,12 +26,16 @@ export class CalculateGameLicenseGradeCommand {
 		const [gradingRule, progressSnapshot] = await Promise.all([
 			this.entityManager.findOne(
 				ClassroomGameGradingRule,
-				{ classroomGameListing: license.classroomGameListing },
+				{
+					classroomGameListing: license.classroomGameListing,
+					createdAt: { $lte: license.classroomGameListing.endAt },
+				},
 				{ orderBy: { revision: 'DESC' } },
 			),
 			this.entityManager.findOne(GameProgressSnapshot, { gameLicense: license }),
 		]);
-		if (!gradingRule || !progressSnapshot) {
+		if (!gradingRule || !progressSnapshot
+			|| (progressSnapshot.updatedAt && progressSnapshot.updatedAt > license.classroomGameListing.endAt)) {
 			return;
 		}
 		const sourceProgressHash = getGameProgressSnapshotHash(progressSnapshot.schemaVersion, progressSnapshot.content);

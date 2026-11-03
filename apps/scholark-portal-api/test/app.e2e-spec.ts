@@ -115,6 +115,10 @@ describe('AppController (e2e)', () => {
 
 			const libraryResponse = await userAgent.get('/api/v1/user/me/library').expect(200);
 			const libraryItem = libraryResponse.body.itemList.find((item: { id: string }) => item.id === license!.id);
+			expect(libraryItem.gameVersion.progressStructure).toMatchObject({
+				schemaVersion: 1,
+				sectionList: [{ sectionIndex: '0', label: 'Game progress' }],
+			});
 			expect(libraryItem.progress).toMatchObject({
 				schemaVersion: 1,
 				summary: { completionPercent: 54 },
@@ -123,6 +127,44 @@ describe('AppController (e2e)', () => {
 		} finally {
 			await entityManager.nativeDelete(GameProgressSnapshot, { gameLicense: license! });
 		}
+	});
+
+	it('returns the signed-in student\'s mapped progress and current grade result', async () => {
+		const userAgent = request.agent(app.getHttpServer());
+		await userAgent
+			.post('/api/v1/auth/login')
+			.send({ email: 'user1@scholark.com', password: 'password' })
+			.expect(200);
+
+		const libraryResponse = await userAgent.get('/api/v1/user/me/library').expect(200);
+		const libraryItem = libraryResponse.body.itemList.find(
+			(item: { id: string }) => item.id === '00000000-0000-4000-8000-000000000341',
+		);
+
+		expect(libraryItem.progress.sectionList).toHaveLength(4);
+		expect(libraryItem.gameVersion.progressStructure).toMatchObject({
+			schemaVersion: 1,
+			sectionList: expect.arrayContaining([
+				expect.objectContaining({ sectionIndex: '0', label: 'Level 1' }),
+			]),
+		});
+		expect(libraryItem.gradeResult).toMatchObject({
+			ruleRevision: 1,
+			content: {
+				activityProgress: 'completed',
+				gradingProgress: 'fully_graded',
+				scoreGiven: 85,
+				scoreMaximum: 100,
+				sectionResultList: expect.arrayContaining([
+					expect.objectContaining({
+						sectionIndex: '0',
+						label: 'Level 1',
+						points: 24,
+						pointsPossible: 25,
+					}),
+				]),
+			},
+		});
 	});
 
 	it('searches billing records by game title', async () => {
@@ -979,8 +1021,15 @@ describe('AppController (e2e)', () => {
 			.get('/api/v1/instructor/me/classrooms')
 			.expect(200);
 		const classroomSlugList = classroomResponse.body.classroomList.map(({ slug }: { slug: string }) => slug);
-		expect(classroomSlugList).toEqual(['florence-seminar-fall-2026']);
-		const classroomId = classroomResponse.body.classroomList[0].id;
+		expect(classroomSlugList).toEqual(expect.arrayContaining([
+			'florence-seminar-fall-2026',
+			'triseum-demo-classroom',
+		]));
+		const classroom = classroomResponse.body.classroomList.find(
+			({ slug }: { slug: string }) => slug === 'florence-seminar-fall-2026',
+		);
+		expect(classroom).toBeDefined();
+		const classroomId = classroom.id;
 		const classroomDetailResponse = await instructorAgent
 			.get(`/api/v1/instructor/me/classrooms/${classroomId}`)
 			.expect(200);
@@ -1005,14 +1054,22 @@ describe('AppController (e2e)', () => {
 			.expect(200);
 
 		const classroomListResponse = await instructorAgent.get('/api/v1/instructor/me/classrooms').expect(200);
-		const classroom = classroomListResponse.body.classroomList[0];
-		const classroomResponse = await instructorAgent
-			.get(`/api/v1/instructor/me/classrooms/${classroom.id}`)
-			.expect(200);
-		const listing = classroomResponse.body.classroomGameListingList.find(
+		const classroomContextList = await Promise.all(classroomListResponse.body.classroomList.map(async (classroom: { id: string }) => {
+			const classroomResponse = await instructorAgent
+				.get(`/api/v1/instructor/me/classrooms/${classroom.id}`)
+				.expect(200);
+
+			return { classroom, listingList: classroomResponse.body.classroomGameListingList };
+		}));
+		const classroomContext = classroomContextList.find(({ listingList }) => listingList.some(
+			(item: { studentList: unknown[]; gradingRule?: unknown }) => item.studentList.length > 0 && !item.gradingRule,
+		));
+		const classroom = classroomContext?.classroom;
+		const listing = classroomContext?.listingList.find(
 			(item: { studentList: unknown[]; gradingRule?: unknown }) => item.studentList.length > 0 && !item.gradingRule,
 		);
 		expect(listing).toBeDefined();
+		expect(classroom).toBeDefined();
 
 		const entityManager = app.get(MikroORM).em.fork();
 		const learner = await entityManager.findOne(User, { email: 'user1@scholark.com' });
@@ -1021,6 +1078,9 @@ describe('AppController (e2e)', () => {
 			classroomGameListing: listing.id,
 		});
 		expect(license).toBeDefined();
+		const classroomGameListing = await entityManager.findOne(ClassroomGameListing, { id: listing.id });
+		expect(classroomGameListing).toBeDefined();
+		const originalListingEndAt = classroomGameListing!.endAt;
 
 		const gradingRuleIdList: string[] = [];
 		const learnerAgent = request.agent(app.getHttpServer());
@@ -1054,7 +1114,6 @@ describe('AppController (e2e)', () => {
 			const createRuleResponse = await instructorAgent
 				.post(`/api/v1/instructor/me/classrooms/${classroom.id}/game-listings/${listing.id}/grading-rules`)
 				.send({
-					allowPartial: false,
 					method: 'points',
 					progressSchemaVersion: 1,
 					schemaVersion: 1,
@@ -1108,7 +1167,6 @@ describe('AppController (e2e)', () => {
 			const revisedRuleResponse = await instructorAgent
 				.post(`/api/v1/instructor/me/classrooms/${classroom.id}/game-listings/${listing.id}/grading-rules`)
 				.send({
-					allowPartial: false,
 					method: 'points',
 					progressSchemaVersion: 1,
 					schemaVersion: 1,
@@ -1125,12 +1183,63 @@ describe('AppController (e2e)', () => {
 			const revisedListing = revisedClassroomResponse.body.classroomGameListingList.find(
 				(item: { id: string }) => item.id === listing.id,
 			);
+			expect(revisedListing.isGradingFinalized).toBe(false);
 			const revisedLearnerResult = revisedListing.studentList.find((student: { id: string }) => student.id === learner!.id);
 			expect(revisedLearnerResult.gradeResult).toMatchObject({
 				ruleRevision: 2,
 				content: { scoreGiven: 35, scoreMaximum: 50 },
 			});
 			expect(await entityManager.count(GameGradeResult, { gameLicense: license! })).toBe(3);
+
+			const progressSnapshot = await entityManager.findOne(GameProgressSnapshot, { gameLicense: license! });
+			const latestGradingRule = await entityManager.findOne(ClassroomGameGradingRule, { id: revisedRuleResponse.body.id });
+			const frozenAt = new Date(Math.max(
+				progressSnapshot!.updatedAt!.getTime(),
+				latestGradingRule!.createdAt!.getTime(),
+			) + 1);
+			await entityManager.nativeUpdate(ClassroomGameListing, { id: listing.id }, { endAt: frozenAt });
+
+			await gameAgent
+				.put('/api/v1/game/progress')
+				.set('Origin', gameOrigin)
+				.send({
+					...firstProgressPayload,
+					sectionList: [{ sectionIndex: '0', metrics: { points: 10 }, completed: true }],
+				})
+				.expect(200);
+			expect(await entityManager.count(GameGradeResult, { gameLicense: license! })).toBe(3);
+
+			const frozenClassroomResponse = await instructorAgent
+				.get(`/api/v1/instructor/me/classrooms/${classroom.id}`)
+				.expect(200);
+			const frozenListing = frozenClassroomResponse.body.classroomGameListingList.find(
+				(item: { id: string }) => item.id === listing.id,
+			);
+			expect(frozenListing.isGradingFinalized).toBe(true);
+			const frozenLearner = frozenListing.studentList.find((student: { id: string }) => student.id === learner!.id);
+			expect(frozenLearner.progress.sectionList[0].metrics.points).toBe(10);
+			expect(frozenLearner.gradeResult).toMatchObject({
+				ruleRevision: 2,
+				content: { scoreGiven: 35, scoreMaximum: 50 },
+			});
+
+			await instructorAgent
+				.post(`/api/v1/instructor/me/classrooms/${classroom.id}/game-listings/${listing.id}/grading-rules`)
+				.send({
+					method: 'points',
+					progressSchemaVersion: 1,
+					schemaVersion: 1,
+					scoreMaximum: 100,
+					sectionIndexList: ['0'],
+				})
+				.expect(400);
+
+			const libraryResponse = await learnerAgent.get('/api/v1/user/me/library').expect(200);
+			const libraryItem = libraryResponse.body.itemList.find((item: { id: string }) => item.id === license!.id);
+			expect(libraryItem.gradeResult).toMatchObject({
+				ruleRevision: 2,
+				content: { scoreGiven: 35, scoreMaximum: 50 },
+			});
 
 			const studentAgent = request.agent(app.getHttpServer());
 			await studentAgent
@@ -1142,6 +1251,7 @@ describe('AppController (e2e)', () => {
 				.send({})
 				.expect(403);
 		} finally {
+			await entityManager.nativeUpdate(ClassroomGameListing, { id: listing.id }, { endAt: originalListingEndAt });
 			await entityManager.nativeDelete(GameGradeResult, { gameLicense: license! });
 			await entityManager.nativeDelete(GameProgressSnapshot, { gameLicense: license! });
 			if (gradingRuleIdList.length > 0) {

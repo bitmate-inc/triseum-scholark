@@ -49,8 +49,8 @@
 .gradingFields input[type="number"] { width: 135px; }
 .sectionChoices { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 0; padding: 0; border: 0; }
 .sectionChoices legend { margin-bottom: 8px; color: var(--muted-foreground); font-size: 11px; }
-.sectionChoices label, .partialGradeOption { display: inline-flex; align-items: center; gap: 7px; color: var(--foreground); font-size: 12px; }
-.sectionChoices input, .partialGradeOption input { accent-color: #147a74; }
+.sectionChoices label { display: inline-flex; align-items: center; gap: 7px; color: var(--foreground); font-size: 12px; }
+.sectionChoices input { accent-color: #147a74; }
 .sectionChoices p { width: 100%; margin: 0; color: var(--muted-foreground); font-size: 12px; }
 .gradingEditorActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .gradingEditorActions button { display: inline-flex; min-height: 38px; align-items: center; gap: 7px; padding: 0 12px; border: 1px solid #147a74; color: white; background: #147a74; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }

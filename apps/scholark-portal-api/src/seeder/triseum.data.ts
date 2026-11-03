@@ -1,3 +1,4 @@
+import { ClassroomGameGradingMethod } from '../app/core/feature/education/model/classroom.game.grading.rule.entity';
 import { ClassroomGameListingDesignatedPayor } from '../app/core/feature/education/model/classroom.game.listing.entity';
 import { EducationCatalogStatus } from '../app/core/feature/education/model/education.catalog.status';
 import { TaxonomyType } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
@@ -156,6 +157,21 @@ const triseumDemoPublicListingSeed = publicListingSeedList.find(
 
 export const triseumClassroomSeedData: CatalogSeedData = {
 	...triseumCatalogSeedData,
+	classroomGameGradingRuleSeedList: [
+		{
+			classroomGameListingSeedId: triseumDemoClassroomGameListingId,
+			config: {
+				method: ClassroomGameGradingMethod.POINTS,
+				progressSchemaVersion: 1,
+				schemaVersion: 1,
+				scoreMaximum: 100,
+				sectionIndexList: ['0', '1', '2', '3'],
+			},
+			createdByEmail: 'user2@scholark.com',
+			id: '00000000-0000-4000-8000-000000000907',
+			revision: 1,
+		},
+	],
 	classroomGameListingSeedList: [
 		{
 			id: triseumDemoClassroomGameListingId,
@@ -181,6 +197,28 @@ export const triseumClassroomSeedData: CatalogSeedData = {
 				`${TaxonomyType.Subject}:art-history`,
 				`${TaxonomyType.Category}:humanities`,
 			],
+		},
+	],
+	gameProgressSnapshotSeedList: [
+		{
+			content: {
+				sectionList: [
+					{ sectionIndex: '0', metrics: { points: 24, turns: 21 }, completionPercent: 100, completed: true },
+					{ sectionIndex: '1', metrics: { points: 18, turns: 17 }, completionPercent: 75, completed: false },
+					{ sectionIndex: '2', metrics: { points: 12, turns: 14 }, completionPercent: 50, completed: false },
+					{ sectionIndex: '3', metrics: { points: 5, turns: 10 }, completionPercent: 20, completed: false },
+				],
+				summary: {
+					completed: false,
+					completionPercent: 62,
+					metrics: { points: 59, turns: 62 },
+					playTimeSeconds: 4_680,
+					sessionCount: 6,
+				},
+			},
+			gameLicenseSeedId: '00000000-0000-4000-8000-000000000905',
+			id: '00000000-0000-4000-8000-000000000906',
+			schemaVersion: 1,
 		},
 	],
 	courseSeedList: [

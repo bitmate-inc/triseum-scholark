@@ -11,6 +11,14 @@ export type UserLibraryItem = {
 		id: string;
 		publisherVersion: string;
 		runUrl: string;
+		progressStructure?: {
+			schemaVersion: number;
+			sectionList: Array<{
+				sectionIndex: string;
+				label: string;
+				metricList: Array<{ key: string; label: string; pointsPossible?: number }>;
+			}>;
+		};
 	};
 	language: string;
 	courseType: string;
@@ -37,6 +45,24 @@ export type UserLibraryItem = {
 			completed?: boolean | null;
 			metrics?: Record<string, number | null> | null;
 		}>;
+	};
+	gradeResult?: {
+		ruleRevision: number;
+		createdAt: string;
+		content: {
+			scoreGiven: number | null;
+			scoreMaximum: number;
+			percentage: number | null;
+			activityProgress: "unknown" | "in_progress" | "completed";
+			gradingProgress: "not_ready" | "pending" | "fully_graded" | "incompatible";
+			sectionResultList: Array<{
+				sectionIndex: string;
+				label: string;
+				points: number;
+				pointsPossible: number;
+				percentage: number;
+			}>;
+		};
 	};
 	startAt: string;
 	endAt: string;

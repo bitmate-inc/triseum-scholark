@@ -858,7 +858,14 @@ const injectedRtkApi = api.injectEndpoints({
 			PublisherGetRevenueApiResponse,
 			PublisherGetRevenueApiArg
 		>({
-			query: () => ({ url: `/api/v1/publisher/me/revenue` }),
+			query: (queryArg) => ({
+				url: `/api/v1/publisher/me/revenue`,
+				params: {
+					from: queryArg["from"],
+					interval: queryArg.interval,
+					to: queryArg.to,
+				},
+			}),
 		}),
 		userGetLibrary: build.query<
 			UserGetLibraryApiResponse,
@@ -1463,7 +1470,11 @@ export type InstructorInvitationAcceptApiArg = {
 };
 export type PublisherGetRevenueApiResponse =
 /** status 200  */ PublisherRevenueReportResponseDto;
-export type PublisherGetRevenueApiArg = void;
+export type PublisherGetRevenueApiArg = {
+	from?: string;
+	interval?: "day" | "week" | "month" | "year";
+	to?: string;
+};
 export type UserGetLibraryApiResponse =
 /** status 200  */ UserLibraryResponseDto;
 export type UserGetLibraryApiArg = void;
@@ -2410,7 +2421,6 @@ export type CreateInstructorClassroomGameGradingRuleRequestDto = {
 	sectionIndexList: string[];
 	scoreMaximum: number;
 	completionThresholdPercent?: number;
-	allowPartial: boolean;
 };
 export type InstructorClassroomGameGradingRuleResponseDto = {
 	id: string;
@@ -2435,6 +2445,7 @@ export type InstructorProgressStructureResponseDto = {
 export type InstructorClassroomGameListingResponseDto = {
 	id: string;
 	gameTitle: string;
+	isGradingFinalized: boolean;
 	publisherVersion: string;
 	studentList: InstructorStudentResponseDto[];
 	gradingRule?: InstructorClassroomGameGradingRuleResponseDto;
@@ -2473,18 +2484,44 @@ export type PublisherRevenueReportItemResponseDto = {
 	publisherId: string;
 	publisherName: string;
 };
+export type PublisherRevenueTimeSeriesResponseDto = {
+	bucketStartAt: string;
+	currency: string;
+	paidAcquisitionCount: number;
+	/** Gross paid acquisition amount in minor currency units. */
+	paidSalesMinorUnitAmount: number;
+};
 export type PublisherRevenueReportResponseDto = {
+	from: string;
+	interval: "day" | "week" | "month" | "year";
 	reportList: PublisherRevenueReportItemResponseDto[];
+	timeSeriesList: PublisherRevenueTimeSeriesResponseDto[];
+	to: string;
 };
 export type UserLibraryGameResponseDto = {
 	id: string;
 	title: string;
 	slug: string;
 };
+export type UserLibraryProgressMetricDefinitionResponseDto = {
+	key: string;
+	label: string;
+	pointsPossible?: number;
+};
+export type UserLibraryProgressStructureSectionResponseDto = {
+	sectionIndex: string;
+	label: string;
+	metricList: UserLibraryProgressMetricDefinitionResponseDto[];
+};
+export type UserLibraryProgressStructureResponseDto = {
+	schemaVersion: number;
+	sectionList: UserLibraryProgressStructureSectionResponseDto[];
+};
 export type UserLibraryVersionResponseDto = {
 	id: string;
 	publisherVersion: string;
 	runUrl: string;
+	progressStructure?: UserLibraryProgressStructureResponseDto;
 };
 export type UserLibraryClassroomResponseDto = {
 	id: string;
@@ -2514,6 +2551,26 @@ export type UserLibraryProgressResponseDto = {
 	summary?: UserLibraryProgressSummaryResponseDto | null;
 	sectionList?: UserLibraryProgressSectionResponseDto[];
 };
+export type UserLibraryGradeSectionResultResponseDto = {
+	sectionIndex: string;
+	label: string;
+	points: number;
+	pointsPossible: number;
+	percentage: number;
+};
+export type UserLibraryGradeResultContentResponseDto = {
+	scoreGiven: number | null;
+	scoreMaximum: number;
+	percentage: number | null;
+	activityProgress: "unknown" | "in_progress" | "completed";
+	gradingProgress: "not_ready" | "pending" | "fully_graded" | "incompatible";
+	sectionResultList: UserLibraryGradeSectionResultResponseDto[];
+};
+export type UserLibraryGradeResultResponseDto = {
+	ruleRevision: number;
+	content: UserLibraryGradeResultContentResponseDto;
+	createdAt: string;
+};
 export type UserLibraryItemResponseDto = {
 	id: string;
 	game: UserLibraryGameResponseDto;
@@ -2530,6 +2587,7 @@ export type UserLibraryItemResponseDto = {
 	status: "active" | "scheduled" | "expired";
 	acquisitionMechanism: string;
 	progress?: UserLibraryProgressResponseDto;
+	gradeResult?: UserLibraryGradeResultResponseDto;
 };
 export type UserLibraryResponseDto = {
 	itemList: UserLibraryItemResponseDto[];

@@ -29,7 +29,6 @@ import { PublicGameListing } from '../app/core/feature/game/model/public.game.li
 import { PublicGameListingPriceGroup } from '../app/core/feature/game/model/public.game.listing.price.group.entity';
 import { PublicGameListingPriceGroupLanguage } from '../app/core/feature/game/model/public.game.listing.price.group.language.entity';
 import { Publisher } from '../app/core/feature/publisher/model/publisher.entity';
-import { PublisherMember } from '../app/core/feature/publisher/model/publisher.member.entity';
 import { TaxonomyTerm } from '../app/core/feature/taxonomy/model/taxonomy.term.entity';
 import { User } from '../app/core/feature/user/model/user.entity';
 import {
@@ -152,29 +151,6 @@ export class DatabaseSeeder extends Seeder {
 
 				publisherMap.set(publisher.slug, publisher);
 			}
-
-			for (const publisherMemberSeed of publisherMemberSeedList) {
-				const publisher = publisherMap.get(publisherMemberSeed.publisherSlug);
-				const user = await transactionalEm.findOne(User, {
-					email: publisherMemberSeed.email.trim().toLowerCase(),
-				});
-				if (!publisher) {
-					throw new Error(`Missing seeded publisher: ${publisherMemberSeed.publisherSlug}`);
-				}
-				if (!user) {
-					throw new Error(`Missing seeded publisher account: ${publisherMemberSeed.email}`);
-				}
-
-				const existingPublisherMember = await transactionalEm.findOne(
-					PublisherMember,
-					{ publisher: publisher.id!, user: user.id! },
-				);
-				if (!existingPublisherMember) {
-					transactionalEm.persist(transactionalEm.create(PublisherMember, { publisher, user }));
-				}
-			}
-
-			await transactionalEm.flush();
 
 			for (const gameSeed of gameSeedList) {
 				for (const taxonomySeed of gameSeed.taxonomyList) {

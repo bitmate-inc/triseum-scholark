@@ -68,7 +68,7 @@ export function InstructorClassroomView({ classroomId }: { classroomId: string }
 						</div>
 						<p className={styles.count}>{t("studentCount", { count: listing.studentList.length })}</p>
 					</header>
-					<GradingRuleEditor classroomId={classroom.id} listing={listing} onSaved={() => refetch()}/>
+					<GradingRuleEditor classroomId={classroom.id} isGradingFinalized={listing.isGradingFinalized} listing={listing} onSaved={() => refetch()}/>
 
 					{listing.studentList.length ? (
 						<div className={styles.tableWrap}>
@@ -185,10 +185,12 @@ function formatNumber(value: number, locale: string): string {
 
 function GradingRuleEditor({
 	classroomId,
+	isGradingFinalized,
 	listing,
 	onSaved,
 }: {
 	classroomId: string;
+	isGradingFinalized: boolean;
 	listing: InstructorClassroomGameListingResponseDto;
 	onSaved: () => void;
 }) {
@@ -200,7 +202,6 @@ function GradingRuleEditor({
 	const [sectionIndexList, setSectionIndexList] = useState<string[]>(currentConfig?.sectionIndexList ?? []);
 	const [scoreMaximum, setScoreMaximum] = useState(currentConfig?.scoreMaximum ?? 100);
 	const [completionThresholdPercent, setCompletionThresholdPercent] = useState(currentConfig?.completionThresholdPercent ?? 100);
-	const [allowPartial, setAllowPartial] = useState(currentConfig?.allowPartial ?? false);
 	const [saved, setSaved] = useState(false);
 	const [saveFailed, setSaveFailed] = useState(false);
 	const [createRule, { isLoading }] = useInstructorCreateClassroomGameGradingRuleMutation();
@@ -211,6 +212,9 @@ function GradingRuleEditor({
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
+		if (isGradingFinalized) {
+			return;
+		}
 		setSaved(false);
 		setSaveFailed(false);
 		try {
@@ -218,7 +222,6 @@ function GradingRuleEditor({
 				classroomId,
 				classroomGameListingId: listing.id,
 				createInstructorClassroomGameGradingRuleRequestDto: {
-					allowPartial,
 					completionThresholdPercent: method === "completion_threshold" ? completionThresholdPercent : undefined,
 					method,
 					progressSchemaVersion,
@@ -234,37 +237,30 @@ function GradingRuleEditor({
 		}
 	}
 
-	function handleMethodChange(value: CreateInstructorClassroomGameGradingRuleRequestDto["method"]): void {
-		setMethod(value);
-		if (value === "completion_threshold") {
-			setAllowPartial(false);
-		}
-	}
-
 	return (
 		<form className={styles.gradingEditor} onSubmit={handleSubmit}>
 			<div className={styles.gradingEditorHeading}>
-				<div><h3>{t("gradingRule")}</h3>{listing.gradingRule ? <span>{t("gradingRevision", { revision: listing.gradingRule.revision })}</span> : null}</div>
+				<div><h3>{t("gradingRule")}</h3>{isGradingFinalized ? <span>{t("gradingFinalized")}</span> : listing.gradingRule ? <span>{t("gradingRevision", { revision: listing.gradingRule.revision })}</span> : null}</div>
 				<p>{t("progressSchemaVersion", { version: progressSchemaVersion })}</p>
 			</div>
 			<div className={styles.gradingFields}>
 				<label>{t("gradingMethod")}
-					<select onChange={(event) => handleMethodChange(event.target.value as CreateInstructorClassroomGameGradingRuleRequestDto["method"])} value={method}>
+					<select disabled={isGradingFinalized} onChange={(event) => setMethod(event.target.value as CreateInstructorClassroomGameGradingRuleRequestDto["method"])} value={method}>
 						<option value="points">{t("pointsToPercentage")}</option>
 						<option value="completion_threshold">{t("completionThreshold")}</option>
 					</select>
 				</label>
 				<label>{t("scoreMaximum")}
-					<input min="0.01" onChange={(event) => setScoreMaximum(Number(event.target.value))} required step="any" type="number" value={scoreMaximum}/>
+					<input disabled={isGradingFinalized} min="0.01" onChange={(event) => setScoreMaximum(Number(event.target.value))} required step="any" type="number" value={scoreMaximum}/>
 				</label>
 				{method === "completion_threshold" ? (
 					<label>{t("completionThresholdPercent")}
-						<input max="100" min="0" onChange={(event) => setCompletionThresholdPercent(Number(event.target.value))} required step="any" type="number" value={completionThresholdPercent}/>
+						<input disabled={isGradingFinalized} max="100" min="0" onChange={(event) => setCompletionThresholdPercent(Number(event.target.value))} required step="any" type="number" value={completionThresholdPercent}/>
 					</label>
 				) : null}
 			</div>
 			{method === "points" ? (
-				<fieldset className={styles.sectionChoices}>
+				<fieldset className={styles.sectionChoices} disabled={isGradingFinalized}>
 					<legend>{t("sectionsToGrade")}</legend>
 					{sectionOptionList.length ? sectionOptionList.map((section) => {
 						const isSelected = sectionIndexList.includes(section.sectionIndex);
@@ -284,14 +280,8 @@ function GradingRuleEditor({
 					}) : <p>{t("sectionsUnavailable")}</p>}
 				</fieldset>
 			) : null}
-			{method === "points" ? (
-				<label className={styles.partialGradeOption}>
-					<input checked={allowPartial} onChange={(event) => setAllowPartial(event.target.checked)} type="checkbox"/>
-					<span>{t("allowPartialGrades")}</span>
-				</label>
-			) : null}
 			<div className={styles.gradingEditorActions}>
-				<button disabled={isLoading || (method === "points" && sectionIndexList.length === 0)} type="submit">
+				<button disabled={isLoading || isGradingFinalized || (method === "points" && sectionIndexList.length === 0)} type="submit">
 					{isLoading ? <RefreshCw className={styles.spin} aria-hidden="true"/> : saved ? <Check aria-hidden="true"/> : <Save aria-hidden="true"/>}
 					{isLoading ? t("savingGradingRule") : saved ? t("gradingRuleSaved") : t("publishGradingRule")}
 				</button>

@@ -41,6 +41,9 @@ export class CreateClassroomGameGradingRuleCommand {
 		if (!classroomGameListing) {
 			throw new NotFoundException('Classroom game listing not found.');
 		}
+		if (classroomGameListing.isExpired()) {
+			throw new BadRequestException('Grading rules cannot be changed after the classroom game expires.');
+		}
 		const progressStructure = classroomGameListing.gameVersion.progressStructure;
 		if (!progressStructure || progressStructure.schemaVersion !== data.config.progressSchemaVersion) {
 			throw new BadRequestException('Grading rule must match the configured GameVersion progress structure.');
@@ -69,6 +72,9 @@ export class CreateClassroomGameGradingRuleCommand {
 			);
 			if (!classroomGameListing) {
 				throw new NotFoundException('Classroom game listing not found.');
+			}
+			if (classroomGameListing.isExpired()) {
+				throw new BadRequestException('Grading rules cannot be changed after the classroom game expires.');
 			}
 
 			const latestGradingRule = await transactionalEntityManager.findOne(
@@ -114,8 +120,5 @@ function validateGradingRuleConfig(config: ClassroomGameGradingRuleConfig): void
 			|| config.completionThresholdPercent < 0
 			|| config.completionThresholdPercent > 100)) {
 		throw new BadRequestException('Completion threshold must be between zero and one hundred.');
-	}
-	if (config.method === ClassroomGameGradingMethod.COMPLETION_THRESHOLD && config.allowPartial) {
-		throw new BadRequestException('Completion threshold grading does not support partial grades.');
 	}
 }

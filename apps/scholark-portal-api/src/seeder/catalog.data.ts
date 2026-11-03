@@ -401,7 +401,7 @@ export const gameSeedList: GameSeed[] = [
 	},
 ];
 
-const mecenasProgressStructure: GameProgressStructure = {
+export const mecenasProgressStructure: GameProgressStructure = {
 	schemaVersion: 1,
 	sectionList: [
 		{ sectionIndex: '0', label: 'Level 1', metricList: [{ key: 'points', label: 'Points', pointsPossible: 25 }, { key: 'turns', label: 'Turns' }] },
@@ -462,6 +462,7 @@ export const gameVersionSeedList: GameVersionSeed[] = gameSeedList.flatMap((game
 	id: '00000000-0000-4000-8000-000000000314',
 	publishedAt: new Date('2026-09-27T00:00:00.000Z'),
 	publisherVersion: '2.0',
+	progressStructure: mecenasProgressStructure,
 	runUrl: 'http://arte-web.triseum.com/2.0.5/',
 });
 
@@ -863,7 +864,6 @@ export const classroomGameGradingRuleSeedList: ClassroomGameGradingRuleSeed[] = 
 	{
 		classroomGameListingSeedId: '00000000-0000-4000-8000-000000000231',
 		config: {
-			allowPartial: false,
 			method: ClassroomGameGradingMethod.POINTS,
 			progressSchemaVersion: 1,
 			schemaVersion: 1,

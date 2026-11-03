@@ -4,6 +4,17 @@
 .kicker { margin: 0; color: #147a74; font-family: var(--font-geist-mono); font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .description { max-width: 680px; margin: 0; color: var(--muted-foreground); line-height: 1.55; }
 .period { flex: 0 0 auto; margin: 0; padding-left: 14px; border-left: 3px solid #c65039; color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 12px; }
+.filters { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px; margin: 24px 0 32px; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.dateFields { display: flex; flex-wrap: wrap; gap: 12px; }
+.dateFields label { display: grid; min-width: 165px; gap: 6px; color: var(--muted-foreground); font-size: 12px; font-weight: 600; }
+.dateFields input { min-height: 40px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 4px; color: var(--foreground); background: var(--card); font: inherit; font-size: 13px; }
+.intervalFieldset { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+.intervalFieldset legend { margin-bottom: 6px; color: var(--muted-foreground); font-size: 12px; font-weight: 600; }
+.intervalControl { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 4px; background: var(--card); }
+.intervalControl button { min-width: 58px; min-height: 32px; padding: 0 9px; border: 0; border-radius: 2px; color: var(--muted-foreground); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+.intervalControl button:hover { color: var(--foreground); }
+.intervalControl .intervalSelected { color: #fff; background: #147a74; font-weight: 700; }
+.rangeError { color: #824331; font-size: 13px; }
 .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 28px 0 42px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .metric { display: grid; min-width: 0; gap: 7px; padding: 20px 24px 20px 0; }
 .metric + .metric { padding-left: 24px; border-left: 1px solid var(--border); }
@@ -14,6 +25,18 @@
 .sectionHeader { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 14px; }
 .sectionHeader h2 { display: flex; align-items: center; gap: 9px; margin: 7px 0 0; font-family: var(--font-display); font-size: 30px; font-weight: 400; line-height: 1.12; }
 .sectionHeader h2 svg { width: 21px; height: 21px; color: #147a74; }
+.chartList { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 26px; }
+.chartPanel { min-width: 0; padding: 16px 0 10px; border-top: 1px solid var(--border); }
+.chartHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 5px; }
+.chartHeading strong { font-family: var(--font-display); font-size: 20px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.currencyLabel { color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 11px; font-weight: 700; }
+.chartScroll { width: 100%; overflow-x: auto; }
+.chart { display: block; width: 100%; min-width: 680px; height: auto; overflow: visible; }
+.chartGrid line { stroke: var(--border); stroke-width: 1; }
+.chartGrid text, .chartAxisLabels text { fill: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 11px; }
+.chartArea { fill: rgba(20, 122, 116, .1); }
+.chartLine { fill: none; stroke: #147a74; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+.chartPoint { fill: var(--card); stroke: #147a74; stroke-width: 2; }
 .tableWrap { width: 100%; overflow-x: auto; }
 .table { width: 100%; min-width: 660px; border-collapse: collapse; text-align: left; }
 .table th, .table td { padding: 15px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -37,6 +60,11 @@
 	.page { padding-top: 38px; padding-bottom: 64px; }
 	.pageHeader { align-items: flex-start; flex-direction: column; gap: 18px; }
 	.pageHeader h1 { font-size: 38px; }
+	.filters { align-items: stretch; flex-direction: column; }
+	.dateFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.dateFields label { min-width: 0; }
+	.intervalControl { display: flex; }
+	.intervalControl button { flex: 1; min-width: 0; padding: 0 6px; }
 	.metrics { grid-template-columns: 1fr; }
 	.metric { padding: 16px 0; }
 	.metric + .metric { padding-left: 0; border-top: 1px solid var(--border); border-left: 0; }

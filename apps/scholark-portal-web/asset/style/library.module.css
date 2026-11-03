@@ -42,6 +42,17 @@
 .progressHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .progressSummary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; color: var(--muted-foreground); font-size: 13px; }
 .progressSummary strong { color: var(--foreground); font-variant-numeric: tabular-nums; }
+.progressDetails { display: grid; gap: 8px; border-top: 1px solid var(--border); padding-top: 9px; color: var(--muted-foreground); font-size: 12px; }
+.progressDetails summary { width: fit-content; color: var(--foreground); cursor: pointer; font-weight: 700; }
+.progressContext { margin: 0; color: var(--muted-foreground); font-family: var(--font-geist-mono); font-size: 10px; }
+.progressDetails ul { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.progressDetails li { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr); gap: 14px; align-items: start; color: var(--foreground); }
+.progressDetails li strong { font-weight: 650; }
+.progressDetails li > span { overflow-wrap: anywhere; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.gradeSection { display: grid; grid-column: 1 / -1; gap: 9px; border-top: 1px solid var(--border); padding-top: 12px; }
+.gradeSection > .progressHeading > strong { color: var(--foreground); font-size: 14px; font-variant-numeric: tabular-nums; }
+.gradeMeta { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted-foreground); font-size: 12px; }
+.gradeMeta span:last-child { font-family: var(--font-geist-mono); font-size: 10px; }
 .progressTooltip { position: relative; display: flex; align-items: center; }
 .progressTooltipTrigger { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border); color: #147a74; background: var(--card); cursor: help; }
 .progressTooltipTrigger svg { width: 15px; height: 15px; }
@@ -62,4 +73,4 @@
 .empty a svg { width: 16px; height: 16px; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 680px) { .sections { gap: 38px; } .sectionHeading { align-items: start; } .sectionHeading h3 { font-size: 23px; } .statusHeading h2 { font-size: 27px; } .item { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 16px; } .itemIcon { width: 42px; } .item h3 { font-size: 25px; } .itemHeading { display: block; } .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .facts dd { overflow-wrap: anywhere; } .actions { grid-column: 2; width: min(100%, 220px); } .progressHeading { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 680px) { .sections { gap: 38px; } .sectionHeading { align-items: start; } .sectionHeading h3 { font-size: 23px; } .statusHeading h2 { font-size: 27px; } .item { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 16px; } .itemIcon { width: 42px; } .item h3 { font-size: 25px; } .itemHeading { display: block; } .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .facts dd { overflow-wrap: anywhere; } .actions { grid-column: 2; width: min(100%, 220px); } .progressHeading { align-items: flex-start; flex-direction: column; } .progressDetails li { grid-template-columns: minmax(0, 1fr); gap: 3px; } }
