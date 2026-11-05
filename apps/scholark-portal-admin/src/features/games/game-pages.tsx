@@ -3,14 +3,17 @@ import {
 	AlertCircle,
 	ArrowLeft,
 	Check,
+	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
+	ChevronUp,
 	ExternalLink,
 	Gamepad2,
 	Pencil,
 	Plus,
 	RefreshCw,
 	Search,
+	Trash2,
 	X,
 } from 'lucide-react';
 import {
@@ -31,10 +34,10 @@ import {
 	type AdminGame,
 	type AdminGameListResponse,
 	type AdminGameProfile,
+	type AdminGameProgressStructure,
 	createAdminGame,
 	type CreateAdminGameInput,
 	createAdminGameVersion,
-	type AdminGameProgressStructure,
 	type CreateAdminGameVersionInput,
 	createAdminPublicGameListing,
 	type CreateAdminPublicGameListingInput,
@@ -397,6 +400,249 @@ function GameDetails({ game }: { game: AdminGameProfile }) {
 	);
 }
 
+type ProgressMetricDefinition = AdminGameProgressStructure['sectionList'][number]['metricList'][number];
+type ProgressSectionDefinition = AdminGameProgressStructure['sectionList'][number];
+
+type ProgressMetricDraft = {
+	id: string;
+	key: string;
+	label: string;
+	pointsPossible: string;
+};
+
+type ProgressSectionDraft = {
+	id: string;
+	label: string;
+	metricList: ProgressMetricDraft[];
+	childList: ProgressSectionDraft[];
+	isExpanded: boolean;
+};
+
+let progressDraftId = 0;
+
+function createProgressDraftId(prefix: string): string {
+	progressDraftId += 1;
+	return `${prefix}-${progressDraftId}`;
+}
+
+function createProgressMetricDraft(metric?: ProgressMetricDefinition): ProgressMetricDraft {
+	return {
+		id: createProgressDraftId('metric'),
+		key: metric?.key ?? '',
+		label: metric?.label ?? '',
+		pointsPossible: metric?.pointsPossible == null ? '' : String(metric.pointsPossible),
+	};
+}
+
+function createProgressSectionDraft(section?: ProgressSectionDefinition): ProgressSectionDraft {
+	return {
+		childList: [],
+		id: createProgressDraftId('section'),
+		isExpanded: !section,
+		label: section?.label ?? '',
+		metricList: section?.metricList.map(createProgressMetricDraft) ?? [],
+	};
+}
+
+function buildProgressSectionDraftList(sectionList: ProgressSectionDefinition[]): ProgressSectionDraft[] {
+	const sectionDraftByIndex = new Map<string, ProgressSectionDraft>();
+	for (const section of sectionList) {
+		sectionDraftByIndex.set(section.sectionIndex, createProgressSectionDraft(section));
+	}
+
+	const rootList: ProgressSectionDraft[] = [];
+	for (const section of sectionList) {
+		const sectionDraft = sectionDraftByIndex.get(section.sectionIndex)!;
+		const separatorIndex = section.sectionIndex.lastIndexOf('.');
+		if (separatorIndex < 0) {
+			rootList.push(sectionDraft);
+			continue;
+		}
+
+		const parentDraft = sectionDraftByIndex.get(section.sectionIndex.slice(0, separatorIndex));
+		if (parentDraft) {
+			parentDraft.childList.push(sectionDraft);
+		} else {
+			rootList.push(sectionDraft);
+		}
+	}
+
+	return rootList;
+}
+
+function flattenProgressSectionDraftList(
+	sectionList: ProgressSectionDraft[],
+	schemaVersion: number,
+): AdminGameProgressStructure {
+	const flatSectionList: ProgressSectionDefinition[] = [];
+
+	function visitSectionList(currentSectionList: ProgressSectionDraft[], parentSectionIndex = ''): void {
+		currentSectionList.forEach((section, index) => {
+			const sectionIndex = parentSectionIndex ? `${parentSectionIndex}.${index}` : String(index);
+			flatSectionList.push({
+				metricList: section.metricList.map((metric) => ({
+					key: metric.key.trim(),
+					label: metric.label.trim(),
+					...(metric.pointsPossible.trim() ? { pointsPossible: Number(metric.pointsPossible) } : {}),
+				})),
+				sectionIndex,
+				label: section.label.trim(),
+			});
+			visitSectionList(section.childList, sectionIndex);
+		});
+	}
+
+	visitSectionList(sectionList);
+	return { schemaVersion, sectionList: flatSectionList };
+}
+
+function updateProgressSectionDraftList(
+	sectionList: ProgressSectionDraft[],
+	sectionId: string,
+	update: (section: ProgressSectionDraft) => ProgressSectionDraft,
+): ProgressSectionDraft[] {
+	return sectionList.map((section) => section.id === sectionId
+		? update(section)
+		: { ...section, childList: updateProgressSectionDraftList(section.childList, sectionId, update) },
+	);
+}
+
+function appendProgressSectionDraft(
+	sectionList: ProgressSectionDraft[],
+	parentSectionId?: string,
+): ProgressSectionDraft[] {
+	if (!parentSectionId) {
+		return [...sectionList, createProgressSectionDraft()];
+	}
+
+	return updateProgressSectionDraftList(sectionList, parentSectionId, (section) => ({
+		...section,
+		childList: [...section.childList, createProgressSectionDraft()],
+	}));
+}
+
+function removeProgressSectionDraft(sectionList: ProgressSectionDraft[], sectionId: string): ProgressSectionDraft[] {
+	return sectionList
+		.filter((section) => section.id !== sectionId)
+		.map((section) => ({ ...section, childList: removeProgressSectionDraft(section.childList, sectionId) }));
+}
+
+function moveProgressSectionDraft(sectionList: ProgressSectionDraft[], sectionId: string, offset: -1 | 1): ProgressSectionDraft[] {
+	const sectionIndex = sectionList.findIndex((section) => section.id === sectionId);
+	if (sectionIndex >= 0) {
+		const targetIndex = sectionIndex + offset;
+		if (targetIndex < 0 || targetIndex >= sectionList.length) {
+			return sectionList;
+		}
+
+		const nextSectionList = [...sectionList];
+		[nextSectionList[sectionIndex], nextSectionList[targetIndex]] = [nextSectionList[targetIndex], nextSectionList[sectionIndex]];
+		return nextSectionList;
+	}
+
+	return sectionList.map((section) => ({
+		...section,
+		childList: moveProgressSectionDraft(section.childList, sectionId, offset),
+	}));
+}
+
+function GameProgressSectionEditor({
+	section,
+	sectionIndex,
+	siblingIndex,
+	siblingCount,
+	onAddSection,
+	onAddMetric,
+	onRemoveMetric,
+	onMoveSection,
+	onRemoveSection,
+	onToggle,
+	onUpdateLabel,
+	onUpdateMetric,
+}: {
+	section: ProgressSectionDraft;
+	sectionIndex: string;
+	siblingIndex: number;
+	siblingCount: number;
+	onAddSection: (parentSectionId: string) => void;
+	onAddMetric: (sectionId: string) => void;
+	onRemoveMetric: (sectionId: string, metricId: string) => void;
+	onMoveSection: (sectionId: string, offset: -1 | 1) => void;
+	onRemoveSection: (sectionId: string) => void;
+	onToggle: (sectionId: string, isExpanded: boolean) => void;
+	onUpdateLabel: (sectionId: string, label: string) => void;
+	onUpdateMetric: (sectionId: string, metricId: string, update: Partial<ProgressMetricDraft>) => void;
+}) {
+	const metricCountLabel = section.metricList.length === 1 ? '1 metric' : `${section.metricList.length} metrics`;
+	const childCountLabel = section.childList.length === 1 ? '1 sub-section' : `${section.childList.length} sub-sections`;
+
+	return (
+		<details
+			className="game-progress-section"
+			open={section.isExpanded}
+			onToggle={(event) => onToggle(section.id, event.currentTarget.open)}
+		>
+			<summary className="game-progress-section-summary">
+				<code>{sectionIndex}</code>
+				<strong>{section.label || 'Untitled section'}</strong>
+				<span>{metricCountLabel}{section.childList.length > 0 ? ` · ${childCountLabel}` : ''}</span>
+			</summary>
+			<div className="game-progress-section-content">
+				<div className="game-progress-section-fields">
+					<label className="game-progress-section-label">Section label<input aria-label={`Label for section ${sectionIndex}`} maxLength={200} onChange={(event) => onUpdateLabel(section.id, event.target.value)} required value={section.label}/></label>
+					<div className="game-progress-section-actions">
+						<Button aria-label={`Move section ${sectionIndex} up`} disabled={siblingIndex === 0} onClick={() => onMoveSection(section.id, -1)} size="icon" title="Move up" type="button" variant="ghost"><ChevronUp/></Button>
+						<Button aria-label={`Move section ${sectionIndex} down`} disabled={siblingIndex === siblingCount - 1} onClick={() => onMoveSection(section.id, 1)} size="icon" title="Move down" type="button" variant="ghost"><ChevronDown/></Button>
+						<Button onClick={() => onAddSection(section.id)} size="sm" type="button" variant="outline"><Plus size={14}/> Sub-section</Button>
+						<Button aria-label={`Remove section ${sectionIndex}`} onClick={() => onRemoveSection(section.id)} size="icon" title="Remove section and descendants" type="button" variant="ghost"><Trash2/></Button>
+					</div>
+				</div>
+				<div className="game-progress-metrics">
+					<div className="game-progress-metrics-heading">
+						<strong>Metrics</strong>
+						<Button onClick={() => onAddMetric(section.id)} size="sm" type="button" variant="outline"><Plus size={14}/> Add metric</Button>
+					</div>
+					{section.metricList.length === 0 && <p className="game-progress-empty-metrics">No metrics configured.</p>}
+					{section.metricList.length > 0 && (
+						<div className="game-progress-metric-table">
+							<div className="game-progress-metric-columns"><span>Key</span><span>Label</span><span>Possible points</span><span/></div>
+							{section.metricList.map((metric, metricIndex) => (
+								<div className="game-progress-metric-row" key={metric.id}>
+									<input aria-label={`Metric key for section ${sectionIndex}, row ${metricIndex + 1}`} autoComplete="off" maxLength={120} onChange={(event) => onUpdateMetric(section.id, metric.id, { key: event.target.value })} placeholder="points" required value={metric.key}/>
+									<input aria-label={`Metric label for section ${sectionIndex}, row ${metricIndex + 1}`} maxLength={200} onChange={(event) => onUpdateMetric(section.id, metric.id, { label: event.target.value })} placeholder="Points" required value={metric.label}/>
+									<input aria-label={`Possible points for section ${sectionIndex}, row ${metricIndex + 1}`} min="0.01" onChange={(event) => onUpdateMetric(section.id, metric.id, { pointsPossible: event.target.value })} placeholder="Not gradeable" step="any" type="number" value={metric.pointsPossible}/>
+									<Button aria-label={`Remove metric ${metric.key || metricIndex + 1}`} onClick={() => onRemoveMetric(section.id, metric.id)} size="icon" title="Remove metric" type="button" variant="ghost"><Trash2/></Button>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+				{section.childList.length > 0 && (
+					<div className="game-progress-child-list">
+						{section.childList.map((childSection, childIndex) => (
+							<GameProgressSectionEditor
+								key={childSection.id}
+								section={childSection}
+								sectionIndex={`${sectionIndex}.${childIndex}`}
+								siblingIndex={childIndex}
+								siblingCount={section.childList.length}
+								onAddSection={onAddSection}
+								onAddMetric={onAddMetric}
+								onRemoveMetric={onRemoveMetric}
+								onMoveSection={onMoveSection}
+								onRemoveSection={onRemoveSection}
+								onToggle={onToggle}
+								onUpdateLabel={onUpdateLabel}
+								onUpdateMetric={onUpdateMetric}
+							/>
+						))}
+					</div>
+				)}
+			</div>
+		</details>
+	);
+}
+
 type AdminGameVersionFormInput = Omit<CreateAdminGameVersionInput, 'publishedAt' | 'progressStructure'> & {
 	publishedAt?: string | null;
 	progressStructure?: AdminGameProgressStructure | null;
@@ -415,8 +661,10 @@ function GameVersionForm({
 	const [description, setDescription] = useState(version?.description ?? '');
 	const [runUrl, setRunUrl] = useState(version?.runUrl ?? '');
 	const [publishedAt, setPublishedAt] = useState(toDateTimeInput(version?.publishedAt));
-	const [progressStructureJson, setProgressStructureJson] = useState(
-		version?.progressStructure ? JSON.stringify(version.progressStructure, null, 2) : '',
+	const [isProgressStructureEnabled, setProgressStructureEnabled] = useState(Boolean(version?.progressStructure));
+	const [progressSchemaVersion, setProgressSchemaVersion] = useState(version?.progressStructure?.schemaVersion ?? 1);
+	const [progressSectionList, setProgressSectionList] = useState(() =>
+		buildProgressSectionDraftList(version?.progressStructure?.sectionList ?? []),
 	);
 	const [error, setError] = useState<string>();
 	const [isSaving, setSaving] = useState(false);
@@ -424,17 +672,9 @@ function GameVersionForm({
 	async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
 		event.preventDefault();
 		setError(undefined);
-		let progressStructure: AdminGameProgressStructure | null | undefined;
-		if (progressStructureJson.trim()) {
-			try {
-				progressStructure = JSON.parse(progressStructureJson) as AdminGameProgressStructure;
-			} catch {
-				setError('Progress structure must be valid JSON.');
-				return;
-			}
-		} else if (version) {
-			progressStructure = null;
-		}
+		const progressStructure = isProgressStructureEnabled
+			? flattenProgressSectionDraftList(progressSectionList, progressSchemaVersion)
+			: version ? null : undefined;
 
 		setSaving(true);
 		try {
@@ -462,7 +702,55 @@ function GameVersionForm({
 				<label>Publisher version<input autoComplete="off" maxLength={120} onChange={(event) => setPublisherVersion(event.target.value)} required value={publisherVersion}/></label>
 				<label>Runtime URL<input autoComplete="url" onChange={(event) => setRunUrl(event.target.value)} placeholder="https://games.example.edu/runtime" required type="url" value={runUrl}/><span>Use the HTTPS URL that serves this game version.</span></label>
 				<label className="institution-form-description">Description<textarea maxLength={10000} onChange={(event) => setDescription(event.target.value)} rows={2} value={description}/></label>
-				<label className="institution-form-description">Progress structure (JSON)<textarea autoComplete="off" onChange={(event) => setProgressStructureJson(event.target.value)} placeholder={'{"schemaVersion":1,"sectionList":[{"sectionIndex":"0","label":"Act 1","metricList":[{"key":"points","label":"Points","pointsPossible":100}]}]}'} rows={10} value={progressStructureJson}/><span>Define dotted section indices and the metrics this version reports. Parent sections must exist.</span></label>
+				<div className="game-progress-builder">
+					{isProgressStructureEnabled ? (
+						<>
+							<div className="game-progress-builder-heading">
+								<div><strong>Progress structure</strong><p>Section indices follow order. Only metrics with possible points count toward grades.</p></div>
+								<div className="game-progress-builder-controls">
+									<label>Schema version<input min="1" onChange={(event) => setProgressSchemaVersion(Math.max(1, Number(event.target.value) || 1))} required step="1" type="number" value={progressSchemaVersion}/></label>
+									<Button onClick={() => setProgressSectionList((current) => appendProgressSectionDraft(current))} size="sm" type="button" variant="outline"><Plus size={14}/> Add section</Button>
+									<Button aria-label="Remove progress structure" onClick={() => setProgressStructureEnabled(false)} size="icon" title="Remove progress structure" type="button" variant="ghost"><Trash2/></Button>
+								</div>
+							</div>
+							{progressSectionList.length > 0 ? (
+								<div className="game-progress-section-list">
+									{progressSectionList.map((section, index) => (
+										<GameProgressSectionEditor
+											key={section.id}
+											section={section}
+											sectionIndex={String(index)}
+											siblingIndex={index}
+											siblingCount={progressSectionList.length}
+											onAddSection={(parentSectionId) => setProgressSectionList((current) => appendProgressSectionDraft(current, parentSectionId))}
+											onAddMetric={(sectionId) => setProgressSectionList((current) => updateProgressSectionDraftList(current, sectionId, (currentSection) => ({
+												...currentSection,
+												metricList: [...currentSection.metricList, createProgressMetricDraft()],
+											})))}
+											onMoveSection={(sectionId, offset) => setProgressSectionList((current) => moveProgressSectionDraft(current, sectionId, offset))}
+											onRemoveMetric={(sectionId, metricId) => setProgressSectionList((current) => updateProgressSectionDraftList(current, sectionId, (currentSection) => ({
+												...currentSection,
+												metricList: currentSection.metricList.filter((metric) => metric.id !== metricId),
+											})))}
+											onRemoveSection={(sectionId) => setProgressSectionList((current) => removeProgressSectionDraft(current, sectionId))}
+											onToggle={(sectionId, isExpanded) => setProgressSectionList((current) => updateProgressSectionDraftList(current, sectionId, (currentSection) => ({ ...currentSection, isExpanded })))}
+											onUpdateLabel={(sectionId, label) => setProgressSectionList((current) => updateProgressSectionDraftList(current, sectionId, (currentSection) => ({ ...currentSection, label })))}
+											onUpdateMetric={(sectionId, metricId, update) => setProgressSectionList((current) => updateProgressSectionDraftList(current, sectionId, (currentSection) => ({
+												...currentSection,
+												metricList: currentSection.metricList.map((metric) => metric.id === metricId ? { ...metric, ...update } : metric),
+											})))}
+										/>
+									))}
+								</div>
+							) : <p className="game-progress-empty">No sections configured. This structure can still be used with summary-only progress.</p>}
+						</>
+					) : (
+						<div className="game-progress-disabled">
+							<div><strong>No progress structure configured</strong><p>Configure this version before sending section-level progress from the game.</p></div>
+							<Button onClick={() => setProgressStructureEnabled(true)} size="sm" type="button" variant="outline"><Plus size={14}/> Configure progress structure</Button>
+						</div>
+					)}
+				</div>
 				<label>Publication date<input onChange={(event) => setPublishedAt(event.target.value)} type="datetime-local" value={publishedAt}/><span>Leave blank to save as a draft.</span></label>
 				<div className="game-version-date-shortcuts institution-form-description">
 					<Button onClick={() => setPublishedAt(toDateTimeInput(new Date().toISOString()))} size="sm" type="button" variant="outline">Publish now</Button>
